@@ -45,3 +45,9 @@ export {
   getServerFunctionHandler,
 } from "./server-functions";
 export { renderErrorOverlay } from "./error-overlay";
+export {
+  connectSQLite,
+  connectPostgres,
+  runSQLiteMigrations,
+  runPostgresMigrations,
+} from "./data/index";

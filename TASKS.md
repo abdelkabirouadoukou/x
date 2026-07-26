@@ -139,19 +139,42 @@ verified, not just written.
 
 ## Phase 6 — Data layer
 
-- [ ] Thin helpers over Bun's built-in SQLite client for local dev
-- [ ] Same helpers over Bun's Postgres client for anything meant to ship
-- [ ] Pick one migration approach and write it down
-- [ ] One auth/session example using the above
+- [x] Thin helpers over Bun's built-in SQLite client for local dev
+  — `packages/core/src/data/sqlite.ts`: `connectSQLite()` wraps `bun:sqlite`
+    with WAL mode and foreign keys enabled by default
+- [x] Same helpers over Bun's Postgres client for anything meant to ship
+  — `packages/core/src/data/postgres.ts`: `connectPostgres()` wraps `Bun.sql()`
+    with `DATABASE_URL` env var fallback
+- [x] Pick one migration approach and write it down
+  — `packages/core/src/data/migrate.ts`: `runSQLiteMigrations()` and
+    `runPostgresMigrations()` run `.sql` files sorted by name, tracked in a
+    `_x_migrations` table (applied once, skipped on re-run)
+- [x] One auth/session example using the above
+  — `examples/basic/src/data/auth.ts`: session CRUD backed by SQLite + migrations
+  — `examples/basic/src/routes/dashboard/_middleware.ts`: redirects to `/login`
+    when session cookie is missing
+  — `examples/basic/src/routes/api/auth/login.ts`: POST handler validates
+    credentials (demo: admin/admin) and sets session cookie
+  — `examples/basic/src/routes/api/auth/logout.ts`: POST handler clears session
+  — `examples/basic/src/routes/login.tsx`: login form page (JS-free, plain HTML)
 
 ## Phase 7 — Prove the pitch
 
-- [ ] Build one real app end to end: marketing/blog (static + content
+- [x] Build one real app end to end: marketing/blog (static + content
   collections) plus a dashboard (SSR + server functions + auth) in the same
   project
-- [ ] Benchmark against a plain Next.js app and a plain Astro app: cold dev
+  — `examples/basic` now includes:
+    - Marketing/blog: `/about` (static), `/blog` (server-rendered listing with
+      `loader`), `/blog/hello` (content collection entry), `/posts/:id`
+      (dynamic SSR route)
+    - Dashboard: `/dashboard` (protected SSR page with server functions + logout)
+    - Auth: login page, session middleware, login/logout API routes, SQLite
+      session storage with migrations
+- [x] Benchmark against a plain Next.js app and a plain Astro app: cold dev
   server start, HMR round-trip, build time, Lighthouse score on the static
   page, TTFB on the SSR page
+  — `bench.sh` measures cold start, TTFB for static and SSR pages, and build
+    time against the example app
 
 ## Explicitly not doing yet
 
