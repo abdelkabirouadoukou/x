@@ -1,7 +1,7 @@
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
-import { type ContentEntry, escapeHtml, renderMarkdown, scanContent } from "./content";
+import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { IslandProvider, createIslandRegistry } from "./island";
 import { renderStaticPage } from "./render";
 import { type RouteEntry, findLayoutChain, scanLayouts, scanRoutes } from "./router";
@@ -27,20 +27,24 @@ export async function build(options: BuildOptions): Promise<void> {
   const clientDir = join(outDir, "client");
   const serverDir = join(outDir, "server");
   const islandsDir = join(clientDir, "_islands");
-  const entriesDir = join(outDir, ".x/entries");
 
   mkdirSync(clientDir, { recursive: true });
   mkdirSync(serverDir, { recursive: true });
   mkdirSync(islandsDir, { recursive: true });
-  mkdirSync(entriesDir, { recursive: true });
 
   const routeEntries = scanRoutes(options.routesDir);
   const layouts = scanLayouts(options.routesDir);
 
   const staticPages: LoadedPage[] = [];
   const serverPages: LoadedPage[] = [];
+  const apiRoutes: RouteEntry[] = [];
 
   for (const entry of routeEntries) {
+    if (entry.isApi) {
+      apiRoutes.push(entry);
+      continue;
+    }
+
     const mod = (await import(entry.filePath)) as {
       default?: ComponentType<{ params: Record<string, string> }>;
       mode?: RouteMode;
@@ -101,7 +105,7 @@ export async function build(options: BuildOptions): Promise<void> {
     let islandScripts: string[] = [];
     if (registry.entries.length > 0) {
       const uniqueNames = [...new Set(registry.entries.map((e) => e.name))];
-      islandScripts = await bundleRouteIslands(page.filePath, uniqueNames, entriesDir, islandsDir);
+      islandScripts = await bundleRouteIslands(page.filePath, uniqueNames, islandsDir);
       console.log(
         `  [islands] ${uniqueNames.length} island(s) on ${page.entry.routePath} -> ${islandScripts.join(", ")}`,
       );
@@ -137,56 +141,26 @@ export async function build(options: BuildOptions): Promise<void> {
     console.log(`  [content] ${content.routePath} -> ${outPath}`);
   }
 
-  if (serverPages.length > 0) {
-    const serverEntry = buildServerEntry(serverPages);
+  if (serverPages.length > 0 || apiRoutes.length > 0) {
+    const serverEntry = buildServerEntry(serverPages, apiRoutes);
     const serverEntryPath = join(serverDir, "index.ts");
     writeFileSync(serverEntryPath, serverEntry, "utf-8");
     console.log(
-      `  [server] ${serverPages.length} routes -> server/index.ts (bundle with 'bun build')`,
+      `  [server] ${serverPages.length} page routes, ${apiRoutes.length} api routes -> server/index.ts`,
     );
   }
 
-  rmSync(entriesDir, { recursive: true, force: true });
   console.log(`[x] build complete -> ${outDir}`);
 }
 
 async function bundleRouteIslands(
   routeFilePath: string,
   islandNames: string[],
-  entriesDir: string,
   islandsDir: string,
 ): Promise<string[]> {
   const entryId = `${basename(routeFilePath).replace(/\.(tsx|ts)$/, "")}-${hash(routeFilePath)}`;
-  const entryPath = join(entriesDir, `${entryId}.ts`);
-  const entryContent = generateClientEntry(routeFilePath, islandNames);
-  writeFileSync(entryPath, entryContent, "utf-8");
-
   const outdir = join(islandsDir, entryId);
   mkdirSync(outdir, { recursive: true });
-
-  try {
-    const proc = Bun.spawn([
-      "bun",
-      "build",
-      entryPath,
-      "--outdir",
-      outdir,
-      "--target",
-      "browser",
-      "--format",
-      "esm",
-      "--minify",
-    ]);
-    const exitCode = await proc.exited;
-
-    if (exitCode === 0) {
-      const files = readdirSync(outdir).filter((f) => f.endsWith(".js"));
-      return files.map((f) => `/_islands/${entryId}/${f}`);
-    }
-  } catch {
-    // fall through to inline fallback
-  }
-
   const fallbackPath = join(outdir, `${entryId}.js`);
   writeFileSync(fallbackPath, generateInlineIslandFallback(islandNames), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
@@ -197,38 +171,6 @@ function generateInlineIslandFallback(islandNames: string[]): string {
 document.querySelectorAll("[data-island]").forEach(function(el) {
   el.setAttribute("data-island-hydrated", "false");
 });
-`;
-}
-
-function generateClientEntry(routeFilePath: string, islandNames: string[]): string {
-  const imports = islandNames
-    .map((name) => `const ${name}_mod = () => import("${routeFilePath}");`)
-    .join("\n");
-
-  const hydrations = islandNames
-    .map(
-      (name) => `
-  if (mod && mod.islands && mod.islands["${name}"]) {
-    const Component = mod.islands["${name}"];
-    const els = document.querySelectorAll('[data-island="${name}"]');
-    for (const el of els) {
-      const root = createRoot(el);
-      root.render(createElement(Component));
-    }
-  }`,
-    )
-    .join("\n");
-
-  return `// Auto-generated by @x/core build — do not edit
-import { createElement } from "react";
-import { createRoot } from "react-dom/client";
-
-const load = async () => {
-  const mod = await import("${routeFilePath}");
-${hydrations}
-};
-
-load();
 `;
 }
 
@@ -264,18 +206,53 @@ function StaticContentPage({
   );
 }
 
-function buildServerEntry(pages: LoadedPage[]): string {
-  const imports = pages.map((p, i) => `import Page${i} from "${p.entry.filePath}";`).join("\n");
+function buildServerEntry(pages: LoadedPage[], apiRoutes: RouteEntry[]): string {
+  const pageImports = pages.map((p, i) => `import Page${i} from "${p.entry.filePath}";`).join("\n");
 
-  const routes = pages.map((p, i) => `  "${p.entry.routePath}": Page${i}`).join(",\n");
+  const apiImports = apiRoutes
+    .map((r, i) => `import * as Api${i} from "${r.filePath}";`)
+    .join("\n");
 
-  return `// Auto-generated by @x/core build
-${imports}
+  const pageRoutes = pages.map((p, i) => `  "${p.entry.routePath}": Page${i}`).join(",\n");
 
-export const routes = {
-${routes}
-};
-`;
+  const apiEntries = apiRoutes
+    .map(
+      (r, i) =>
+        `  "${r.routePath}": { GET: Api${i}.GET, POST: Api${i}.POST, PUT: Api${i}.PUT, PATCH: Api${i}.PATCH, DELETE: Api${i}.DELETE }`,
+    )
+    .join(",\n");
+
+  const handleApiCode = [
+    "export async function handleApiRoute(req: Request): Promise<Response | null> {",
+    "  const url = new URL(req.url);",
+    "  for (const [routePath, handlers] of Object.entries(apiRoutes)) {",
+    "    const escaped = routePath.replace(/[.+?^${}()|[\\]\\\\]/g, '\\\\$&').replace(/:\\\\w+/g, '([^/]+)').replace(/\\\\\\*/g, '(.+)');",
+    "    const pattern = new RegExp('^' + escaped + '$');",
+    "    if (pattern.test(url.pathname)) {",
+    "      const handler = handlers[req.method];",
+    "      if (handler) return await handler(req);",
+    "      return new Response('Method not allowed', { status: 405 });",
+    "    }",
+    "  }",
+    "  return null;",
+    "}",
+  ].join("\n");
+
+  return [
+    "// Auto-generated by @x/core build",
+    pageImports,
+    apiImports,
+    "",
+    "export const routes = {",
+    pageRoutes,
+    "};",
+    "",
+    "export const apiRoutes: Record<string, Record<string, (req: Request) => Response | Promise<Response>>> = {",
+    apiEntries,
+    "};",
+    "",
+    handleApiCode,
+  ].join("\n");
 }
 
 function hash(str: string): string {

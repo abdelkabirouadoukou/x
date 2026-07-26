@@ -1,21 +1,31 @@
-import { type FSWatcher, readFileSync, watch } from "node:fs";
+import { type FSWatcher, watch } from "node:fs";
 import { join } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
-import { renderPage } from "./render";
+import { type MiddlewareFn, composeMiddleware } from "./middleware";
+import type { LoaderArgs, LoaderReturn } from "./render";
+import { renderPage, renderStreamingPage } from "./render";
 import {
   type LayoutEntry,
   type RouteEntry,
   extractParams,
   findLayoutChain,
+  findMiddlewareChain,
   scanLayouts,
+  scanMiddleware,
   scanRoutes,
   writeManifest,
 } from "./router";
+import {
+  getServerFunctionHandler,
+  registerServerFunctions,
+  resetServerFunctions,
+} from "./server-functions";
 
 export interface RouteProps {
   params: Record<string, string>;
+  loaderData?: Record<string, unknown>;
 }
 
 export interface CreateAppOptions {
@@ -32,9 +42,19 @@ export interface AppServeOptions {
   fetch: (req: Request) => Response | Promise<Response>;
 }
 
+export interface RevalidateOptions {
+  revalidate?: number;
+}
+
+interface StaticCacheEntry {
+  html: string;
+  timestamp: number;
+}
+
 interface RouteHandler {
   entry: RouteEntry;
   mode: RouteMode;
+  revalidate: number | undefined;
   handler: (req: Request) => Promise<Response>;
 }
 
@@ -43,12 +63,15 @@ interface ContentHandler {
   handler: (req: Request) => Promise<Response>;
 }
 
+const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
+
 function wrapWithLayouts(
-  Component: ComponentType<{ params: Record<string, string> }>,
+  Component: ComponentType<RouteProps>,
   params: Record<string, string>,
+  loaderData: Record<string, unknown>,
   layoutModules: ComponentType<{ children: ReactNode }>[],
 ): ReactNode {
-  let content: ReactNode = createElement(Component, { params });
+  let content: ReactNode = createElement(Component, { params, loaderData });
   for (const Layout of layoutModules) {
     content = createElement(Layout, null, content);
   }
@@ -78,10 +101,14 @@ function renderContentPage(content: ContentEntry): string {
 export async function createApp(options: CreateAppOptions): Promise<AppServeOptions> {
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
+  const serverFnHandler = getServerFunctionHandler();
+  const staticCache = new Map<string, StaticCacheEntry>();
 
   async function buildHandlers(): Promise<void> {
+    resetServerFunctions();
     const found = scanRoutes(options.routesDir);
     const layouts = scanLayouts(options.routesDir);
+    const middlewareEntries = scanMiddleware(options.routesDir);
 
     if (options.development) {
       writeManifest(found, options.routesDir);
@@ -89,17 +116,62 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const loaded: RouteHandler[] = [];
     for (const route of found) {
-      const mod = (await import(route.filePath)) as {
-        default?: ComponentType<RouteProps>;
-        mode?: RouteMode;
-      };
-      const Component = mod.default;
+      const mod = (await import(route.filePath)) as Record<string, unknown>;
+
+      if (route.isApi) {
+        const methodHandlers: Record<string, (req: Request) => unknown> = {};
+        for (const method of HTTP_METHODS) {
+          if (typeof mod[method] === "function") {
+            methodHandlers[method] = mod[method] as (req: Request) => unknown;
+          }
+        }
+
+        const actions = mod.actions as
+          | Record<string, (...args: unknown[]) => Promise<unknown>>
+          | undefined;
+        if (actions) {
+          registerServerFunctions(route.routePath, route.paramNames, actions);
+        }
+
+        loaded.push({
+          entry: route,
+          mode: "server",
+          revalidate: undefined,
+          handler: async (req: Request) => {
+            const method = req.method;
+            const handlerFn = methodHandlers[method];
+            if (handlerFn) {
+              const result = await handlerFn(req);
+              if (result instanceof Response) return result;
+              if (result === undefined || result === null) {
+                return new Response("OK", { status: 200 });
+              }
+              return Response.json(result);
+            }
+            return new Response(`Method ${method} not allowed`, { status: 405 });
+          },
+        });
+        continue;
+      }
+
+      const Component = mod.default as ComponentType<RouteProps> | undefined;
       if (!Component) {
         console.warn(`[x] ${route.filePath} has no default export -- skipping`);
         continue;
       }
 
-      const mode = mod.mode ?? "server";
+      const mode = (mod.mode as RouteMode) ?? "server";
+      const loader = mod.loader as ((args: LoaderArgs) => Promise<LoaderReturn>) | undefined;
+      const routeMiddleware = mod.middleware as MiddlewareFn | undefined;
+      const revalidate = mod.revalidate as number | undefined;
+
+      const actions = mod.actions as
+        | Record<string, (...args: unknown[]) => Promise<unknown>>
+        | undefined;
+      if (actions) {
+        registerServerFunctions(route.routePath, route.paramNames, actions);
+      }
+
       const layoutChain = findLayoutChain(route.filePath, layouts, options.routesDir);
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
       for (const l of layoutChain) {
@@ -109,17 +181,84 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         if (layoutMod.default) layoutModules.push(layoutMod.default);
       }
 
+      const mwChain = findMiddlewareChain(route.filePath, middlewareEntries, options.routesDir);
+      const middlewareModules: MiddlewareFn[] = [];
+      for (const m of mwChain) {
+        const mwMod = (await import(m.filePath)) as {
+          middleware?: MiddlewareFn;
+        };
+        if (typeof mwMod.middleware === "function") {
+          middlewareModules.push(mwMod.middleware);
+        }
+      }
+      if (routeMiddleware) {
+        middlewareModules.push(routeMiddleware);
+      }
+
       loaded.push({
         entry: route,
         mode,
+        revalidate,
         handler: async (req: Request) => {
           const params =
             extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
-          const content = wrapWithLayouts(Component, params, layoutModules);
-          const html = renderPage(content);
-          return new Response(html, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
+
+          const baseHandler = async (ctx: {
+            params: Record<string, string>;
+            request: Request;
+          }) => {
+            let loaderData: Record<string, unknown> = {};
+            if (loader) {
+              const result = await loader(ctx);
+              if (result instanceof Response) return result;
+              loaderData = result;
+            }
+
+            if (mode === "server") {
+              const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
+              const stream = await renderStreamingPage(content);
+              return new Response(stream, {
+                headers: { "Content-Type": "text/html; charset=utf-8" },
+              });
+            }
+
+            const cached = staticCache.get(route.routePath);
+            const revalidateSeconds = revalidate ?? 0;
+
+            if (
+              revalidateSeconds > 0 &&
+              cached &&
+              Date.now() - cached.timestamp < revalidateSeconds * 1000
+            ) {
+              return new Response(cached.html, {
+                headers: { "Content-Type": "text/html; charset=utf-8", "X-Revalidated": "hit" },
+              });
+            }
+
+            const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
+            const html = renderPage(content);
+
+            if (revalidateSeconds > 0) {
+              staticCache.set(route.routePath, { html, timestamp: Date.now() });
+            }
+
+            return new Response(html, {
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "X-Revalidated": revalidateSeconds > 0 ? "miss" : "none",
+              },
+            });
+          };
+
+          if (middlewareModules.length > 0) {
+            const composed = composeMiddleware(middlewareModules, baseHandler);
+            return composed(
+              { params, request: req },
+              async () => new Response("Not found", { status: 404 }),
+            );
+          }
+
+          return baseHandler({ params, request: req });
         },
       });
     }
@@ -142,6 +281,19 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   }
 
   await buildHandlers();
+
+  async function handleRevalidation(req: Request): Promise<Response | null> {
+    if (new URL(req.url).pathname !== "/__x/revalidate") return null;
+    if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+    const body = (await req.json()) as { path?: string };
+    if (body.path) {
+      staticCache.delete(body.path);
+      return new Response(`Revalidated: ${body.path}`);
+    }
+    staticCache.clear();
+    return new Response("Revalidated all");
+  }
 
   if (options.development) {
     let rebuildTimeout: Timer | null = null;
@@ -185,8 +337,14 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       console.warn("[x] file watching not available on this platform");
     }
 
-    const devFetch = (req: Request) => {
+    const devFetch = async (req: Request) => {
       const url = new URL(req.url).pathname;
+
+      const revalidationResult = await handleRevalidation(req);
+      if (revalidationResult !== null) return revalidationResult;
+
+      const serverFnResult = await serverFnHandler(req);
+      if (serverFnResult !== null) return serverFnResult;
 
       for (const h of handlers) {
         const params = extractParams(h.entry.routePath, h.entry.paramNames, url);
@@ -221,6 +379,13 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     routes: routeMap,
     development: false,
     port: options.port ?? 3000,
-    fetch: () => new Response("Not found", { status: 404 }),
+    fetch: async (req: Request) => {
+      const revalidationResult = await handleRevalidation(req);
+      if (revalidationResult !== null) return revalidationResult;
+
+      const result = await serverFnHandler(req);
+      if (result !== null) return result;
+      return new Response("Not found", { status: 404 });
+    },
   };
 }

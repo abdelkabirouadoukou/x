@@ -5,6 +5,12 @@ export interface RouteEntry {
   filePath: string;
   routePath: string;
   paramNames: string[];
+  isApi: boolean;
+}
+
+export interface MiddlewareEntry {
+  filePath: string;
+  dirPath: string;
 }
 
 const ROUTE_FILE = /\.(tsx|ts)$/;
@@ -38,6 +44,7 @@ export function scanRoutes(rootDir: string): RouteEntry[] {
 function toRouteEntry(relPath: string, filePath: string): RouteEntry {
   const segments = relPath.split(sep);
   const paramNames: string[] = [];
+  const isApi = segments[0] === "api";
 
   const routeSegments = segments.map((segment) => {
     if (segment === "index") return "";
@@ -57,7 +64,7 @@ function toRouteEntry(relPath: string, filePath: string): RouteEntry {
   const joined = routeSegments.filter((s) => s.length > 0).join("/");
   const routePath = joined.length === 0 ? "/" : `/${joined}`;
 
-  return { filePath, routePath, paramNames };
+  return { filePath, routePath, paramNames, isApi };
 }
 
 export interface LayoutEntry {
@@ -98,6 +105,47 @@ export function findLayoutChain(
   while (current.startsWith(routesDir)) {
     const layout = layouts.find((l) => l.dirPath === current);
     if (layout) chain.unshift(layout);
+    const parent = join(current, "..");
+    if (parent === current) break;
+    current = parent;
+  }
+
+  return chain;
+}
+
+export function scanMiddleware(rootDir: string): MiddlewareEntry[] {
+  const entries: MiddlewareEntry[] = [];
+
+  function walk(dir: string) {
+    for (const name of readdirSync(dir)) {
+      if (name.startsWith(".")) continue;
+      const full = join(dir, name);
+      const stat = statSync(full);
+
+      if (stat.isDirectory()) {
+        walk(full);
+      } else if (name === "_middleware.ts" || name === "_middleware.tsx") {
+        entries.push({ filePath: full, dirPath: dir });
+      }
+    }
+  }
+
+  walk(rootDir);
+  return entries;
+}
+
+export function findMiddlewareChain(
+  routeFilePath: string,
+  middleware: MiddlewareEntry[],
+  routesDir: string,
+): MiddlewareEntry[] {
+  const routeDir = join(routeFilePath, "..");
+  const chain: MiddlewareEntry[] = [];
+
+  let current = routeDir;
+  while (current.startsWith(routesDir)) {
+    const mw = middleware.find((m) => m.dirPath === current);
+    if (mw) chain.unshift(mw);
     const parent = join(current, "..");
     if (parent === current) break;
     current = parent;
