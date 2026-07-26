@@ -1,13 +1,22 @@
 export {
   scanRoutes,
   scanLayouts,
+  scanMiddleware,
   findLayoutChain,
+  findMiddlewareChain,
   generateManifestSource,
   writeManifest,
   type RouteEntry,
   type LayoutEntry,
+  type MiddlewareEntry,
 } from "./router";
-export { renderPage, renderStaticPage } from "./render";
+export {
+  renderPage,
+  renderStaticPage,
+  renderStreamingPage,
+  type LoaderArgs,
+  type LoaderReturn,
+} from "./render";
 export { createApp, type CreateAppOptions, type RouteProps } from "./createApp";
 export { build, type BuildOptions, type RouteMode } from "./build";
 export {
@@ -18,3 +27,14 @@ export {
   type Frontmatter,
 } from "./content";
 export { Island, IslandProvider, type IslandMode, type IslandEntry } from "./island";
+export {
+  composeMiddleware,
+  type MiddlewareContext,
+  type MiddlewareFn,
+  type MiddlewareNext,
+} from "./middleware";
+export {
+  generateServerFunctionClient,
+  registerServerFunctions,
+  getServerFunctionHandler,
+} from "./server-functions";

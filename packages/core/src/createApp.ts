@@ -1,21 +1,27 @@
-import { type FSWatcher, readFileSync, watch } from "node:fs";
+import { type FSWatcher, watch } from "node:fs";
 import { join } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
-import { renderPage } from "./render";
+import { type MiddlewareFn, composeMiddleware } from "./middleware";
+import type { LoaderArgs, LoaderReturn } from "./render";
+import { renderPage, renderStreamingPage } from "./render";
 import {
   type LayoutEntry,
   type RouteEntry,
   extractParams,
   findLayoutChain,
+  findMiddlewareChain,
   scanLayouts,
+  scanMiddleware,
   scanRoutes,
   writeManifest,
 } from "./router";
+import { getServerFunctionHandler, registerServerFunctions } from "./server-functions";
 
 export interface RouteProps {
   params: Record<string, string>;
+  loaderData?: Record<string, unknown>;
 }
 
 export interface CreateAppOptions {
@@ -43,12 +49,20 @@ interface ContentHandler {
   handler: (req: Request) => Promise<Response>;
 }
 
+const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
+const RESERVED_EXPORTS = new Set(["default", "mode", "loader", "middleware"]);
+
+function isServerFunction(name: string): boolean {
+  return !RESERVED_EXPORTS.has(name) && !HTTP_METHODS.has(name);
+}
+
 function wrapWithLayouts(
-  Component: ComponentType<{ params: Record<string, string> }>,
+  Component: ComponentType<RouteProps>,
   params: Record<string, string>,
+  loaderData: Record<string, unknown>,
   layoutModules: ComponentType<{ children: ReactNode }>[],
 ): ReactNode {
-  let content: ReactNode = createElement(Component, { params });
+  let content: ReactNode = createElement(Component, { params, loaderData });
   for (const Layout of layoutModules) {
     content = createElement(Layout, null, content);
   }
@@ -78,10 +92,12 @@ function renderContentPage(content: ContentEntry): string {
 export async function createApp(options: CreateAppOptions): Promise<AppServeOptions> {
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
+  const serverFnHandler = getServerFunctionHandler();
 
   async function buildHandlers(): Promise<void> {
     const found = scanRoutes(options.routesDir);
     const layouts = scanLayouts(options.routesDir);
+    const middlewareEntries = scanMiddleware(options.routesDir);
 
     if (options.development) {
       writeManifest(found, options.routesDir);
@@ -89,17 +105,59 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const loaded: RouteHandler[] = [];
     for (const route of found) {
-      const mod = (await import(route.filePath)) as {
-        default?: ComponentType<RouteProps>;
-        mode?: RouteMode;
-      };
-      const Component = mod.default;
+      const mod = (await import(route.filePath)) as Record<string, unknown>;
+
+      if (route.isApi) {
+        const methodHandlers: Record<string, (req: Request) => unknown> = {};
+        for (const method of HTTP_METHODS) {
+          if (typeof mod[method] === "function") {
+            methodHandlers[method] = mod[method] as (req: Request) => unknown;
+          }
+        }
+
+        for (const [name, val] of Object.entries(mod)) {
+          if (isServerFunction(name) && typeof val === "function") {
+            registerServerFunctions(route.routePath, {
+              [name]: val as (...args: unknown[]) => Promise<unknown>,
+            });
+          }
+        }
+
+        loaded.push({
+          entry: route,
+          mode: "server",
+          handler: async (req: Request) => {
+            const method = req.method;
+            const handlerFn = methodHandlers[method];
+            if (handlerFn) {
+              const result = await handlerFn(req);
+              if (result instanceof Response) return result;
+              return Response.json(result);
+            }
+            return new Response(`Method ${method} not allowed`, { status: 405 });
+          },
+        });
+        continue;
+      }
+
+      const Component = mod.default as ComponentType<RouteProps> | undefined;
       if (!Component) {
         console.warn(`[x] ${route.filePath} has no default export -- skipping`);
         continue;
       }
 
-      const mode = mod.mode ?? "server";
+      const mode = (mod.mode as RouteMode) ?? "server";
+      const loader = mod.loader as ((args: LoaderArgs) => Promise<LoaderReturn>) | undefined;
+      const routeMiddleware = mod.middleware as MiddlewareFn | undefined;
+
+      for (const [name, val] of Object.entries(mod)) {
+        if (isServerFunction(name) && typeof val === "function") {
+          registerServerFunctions(route.routePath, {
+            [name]: val as (...args: unknown[]) => Promise<unknown>,
+          });
+        }
+      }
+
       const layoutChain = findLayoutChain(route.filePath, layouts, options.routesDir);
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
       for (const l of layoutChain) {
@@ -109,17 +167,62 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         if (layoutMod.default) layoutModules.push(layoutMod.default);
       }
 
+      const mwChain = findMiddlewareChain(route.filePath, middlewareEntries, options.routesDir);
+      const middlewareModules: MiddlewareFn[] = [];
+      for (const m of mwChain) {
+        const mwMod = (await import(m.filePath)) as {
+          middleware?: MiddlewareFn;
+        };
+        if (typeof mwMod.middleware === "function") {
+          middlewareModules.push(mwMod.middleware);
+        }
+      }
+      if (routeMiddleware) {
+        middlewareModules.push(routeMiddleware);
+      }
+
       loaded.push({
         entry: route,
         mode,
         handler: async (req: Request) => {
           const params =
             extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
-          const content = wrapWithLayouts(Component, params, layoutModules);
-          const html = renderPage(content);
-          return new Response(html, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
+
+          const baseHandler = async (ctx: {
+            params: Record<string, string>;
+            request: Request;
+          }) => {
+            let loaderData: Record<string, unknown> = {};
+            if (loader) {
+              const result = await loader(ctx);
+              if (result instanceof Response) return result;
+              loaderData = result;
+            }
+
+            if (mode === "server") {
+              const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
+              const stream = await renderStreamingPage(content);
+              return new Response(stream, {
+                headers: { "Content-Type": "text/html; charset=utf-8" },
+              });
+            }
+
+            const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
+            const html = renderPage(content);
+            return new Response(html, {
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            });
+          };
+
+          if (middlewareModules.length > 0) {
+            const composed = composeMiddleware(middlewareModules, baseHandler);
+            return composed(
+              { params, request: req },
+              async () => new Response("Not found", { status: 404 }),
+            );
+          }
+
+          return baseHandler({ params, request: req });
         },
       });
     }
@@ -185,8 +288,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       console.warn("[x] file watching not available on this platform");
     }
 
-    const devFetch = (req: Request) => {
+    const devFetch = async (req: Request) => {
       const url = new URL(req.url).pathname;
+
+      const serverFnResult = await serverFnHandler(req);
+      if (serverFnResult !== null) return serverFnResult;
 
       for (const h of handlers) {
         const params = extractParams(h.entry.routePath, h.entry.paramNames, url);
@@ -221,6 +327,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     routes: routeMap,
     development: false,
     port: options.port ?? 3000,
-    fetch: () => new Response("Not found", { status: 404 }),
+    fetch: async (req: Request) => {
+      const result = await serverFnHandler(req);
+      if (result !== null) return result;
+      return new Response("Not found", { status: 404 });
+    },
   };
 }

@@ -100,17 +100,21 @@ verified, not just written.
 
 ## Phase 3 — SSR + server functions (the Next.js half)
 
-- [ ] `export const mode = 'server'` — right now *every* route is always SSR'd,
-  there's no mode switch yet (Phase 2's `static` mode needs to exist first for
-  this to mean anything)
-- [ ] Swap `renderToString` for `renderToReadableStream`, streamed through the
-  `Bun.serve` fetch handler — current version blocks on full render
-- [ ] `loader()` convention: async function co-located with the route, runs
-  server-side before render
-- [ ] `src/routes/api/*.ts` → per-method handlers (`GET`/`POST`/`PATCH`/`DELETE`)
-- [ ] Typed server functions (`"use server"`-style, typed client call, no
-  hand-written `fetch` + route glue)
-- [ ] Middleware: composable, per-route or global
+- [x] `export const mode = 'server'` — dynamically rendered server-side (Phase 2
+  `static` mode exists alongside it)
+- [x] `renderToReadableStream` streaming through the `Bun.serve` fetch handler —
+  `renderStreamingPage()` in `render.ts`, server-mode routes stream HTML instead
+  of blocking on full render
+- [x] `loader()` convention: async function co-located with the route, runs
+  server-side before render, data passed as `loaderData: Record<string, unknown>`
+  in `RouteProps`
+- [x] `src/routes/api/*.ts` → per-method handlers (`GET`/`POST`/`PATCH`/`DELETE`),
+  scanned with `isApi` flag, dispatched by method
+- [x] Typed server functions — any async named export from a route module is
+  served as an RPC endpoint at `/__x/actions/<routePath>/<fnName>`;
+  `generateServerFunctionClient()` produces typed fetch wrappers
+- [x] Middleware: `_middleware.ts` files alongside routes, composed in onion
+  pattern with `composeMiddleware()`, supports short-circuit
 - [ ] Revalidation (ISR-equivalent) for pages that are mostly static but not quite
 
 ## Phase 4 — Dev server
