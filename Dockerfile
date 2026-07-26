@@ -7,11 +7,11 @@ COPY examples/basic/package.json examples/basic/package.json
 RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run --cwd packages/core typecheck
-RUN bun x build
+RUN bun packages/cli/src/index.ts build
 
 FROM oven/bun:1 AS production
 WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package.json ./
+COPY --from=build --chown=bun:bun /app/dist ./dist
+USER bun
 EXPOSE 3000
 CMD ["bun", "dist/server/index.js"]

@@ -27,9 +27,15 @@ async function detectOptions(): Promise<{
         default?: { routesDir?: string; contentDir?: string; port?: number };
       };
       const cfg = mod.default ?? {};
+      const contentDir =
+        cfg.contentDir !== undefined
+          ? cfg.contentDir
+          : existsSync(join(projectDir, "content"))
+            ? join(projectDir, "content")
+            : undefined;
       return {
         routesDir: cfg.routesDir ?? join(projectDir, "src", "routes"),
-        contentDir: cfg.contentDir ?? join(projectDir, "content"),
+        contentDir,
         port: cfg.port ?? 3000,
       };
     } catch (err) {
@@ -115,6 +121,7 @@ function generateServerFile(
     "",
     "const app = await createApp({",
     `  routesDir: ${JSON.stringify(opts.routesDir)}.replace(process.cwd() + "/", "").replace(process.cwd(), "."),`,
+    `  port: ${opts.port},`,
     "  development: true,",
     "});",
     "",

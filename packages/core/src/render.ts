@@ -110,14 +110,24 @@ export async function renderStreamingPage(
       controller.enqueue(encoder.encode(header));
       const reader = reactStream.getReader();
       async function pump(): Promise<void> {
-        const { done, value } = await reader.read();
-        if (done) {
-          controller.enqueue(encoder.encode(`</div>\n    ${footer}`));
+        try {
+          const { done, value } = await reader.read();
+          if (done) {
+            controller.enqueue(encoder.encode(`</div>\n    ${footer}`));
+            controller.close();
+            return;
+          }
+          controller.enqueue(value);
+          await pump();
+        } catch (err) {
+          console.error("[x] stream read error:", err);
+          controller.enqueue(
+            encoder.encode(
+              `</div><div style="color:red;padding:1em">Render error: ${err instanceof Error ? err.message : "Unknown"}</div>\n    ${footer}`,
+            ),
+          );
           controller.close();
-          return;
         }
-        controller.enqueue(value);
-        await pump();
       }
       await pump();
     },
