@@ -54,13 +54,20 @@ verified, not just written.
   (currently `node:fs` recursion — swap for `Bun.Glob` if it turns out cleaner)
 - [x] Map route tree → `Bun.serve()`'s `routes` object (exact paths, `:param`,
   `*` catch-all) — covered by `router.test.ts`
-- [ ] Generate a typed route manifest (params typed per route, not just
+- [x] Generate a typed route manifest (params typed per route, not just
   `Record<string, string>`)
-- [ ] Nested layouts: wrap a page in its ancestor `_layout.tsx` chain
+  — `createApp` writes `src/x-routes.ts` in dev mode with a `RouteMap` type
+    and a type-safe `href()` helper
+- [x] Nested layouts: wrap a page in its ancestor `_layout.tsx` chain
   (`_` prefix is already reserved and skipped by the scanner, just unused)
-- [ ] File watcher rebuilds the route tree on add/remove without a full
+  — `scanLayouts` discovers `_layout.tsx` files, `findLayoutChain` builds the
+    ancestor chain for each route, and `createApp` wraps the page component
+    from innermost to outermost layout
+- [x] File watcher rebuilds the route tree on add/remove without a full
   server restart (`--hot` reloads changed route *content* today, not new
   route *files*)
+  — `fs.watch` with `recursive: true` on the routes directory triggers a
+    route-tree rebuild (debounced 200 ms) and logs added/removed routes
 
 ## Phase 2 — Static rendering + islands (the Astro half)
 
