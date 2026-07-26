@@ -172,18 +172,24 @@ async function bundleRouteIslands(
   mkdirSync(outdir, { recursive: true });
 
   try {
-    const proc = Bun.spawn([
-      "bun",
-      "build",
-      entryPath,
-      "--outdir",
-      outdir,
-      "--target",
-      "browser",
-      "--format",
-      "esm",
-      "--minify",
-    ]);
+    const proc = Bun.spawn(
+      [
+        "bun",
+        "build",
+        entryPath,
+        "--outdir",
+        outdir,
+        "--target",
+        "browser",
+        "--format",
+        "esm",
+        "--minify",
+      ],
+      {
+        stdout: "ignore",
+        stderr: "ignore",
+      },
+    );
     const exitCode = await proc.exited;
 
     if (exitCode === 0) {
