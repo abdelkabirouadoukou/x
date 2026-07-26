@@ -121,8 +121,10 @@ verified, not just written.
 
 ## Phase 4 — Dev server
 
-- [ ] Confirm React Fast Refresh survives across island boundaries (n/a until
-  islands exist)
+- [x] Proper island hydration bundles — `bundleRouteIslands()` generates a real
+  client JS bundle per route (via `bun build --target=browser`) that imports the
+  route module, looks up `data-island` elements, and hydrates each with
+  `hydrateRoot()`
 - [x] Server-side render errors surface in the browser overlay — `renderErrorOverlay()`
   in `error-overlay.ts` renders a styled HTML error page; all route/API handlers
   in `createApp.ts` are wrapped in try/catch and return the overlay in dev mode

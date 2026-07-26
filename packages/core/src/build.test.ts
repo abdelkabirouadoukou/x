@@ -147,4 +147,25 @@ describe("island code-splitting", () => {
       }
     }
   });
+
+  test("island bundle contains hydration logic", async () => {
+    await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
+
+    const islandsDir = join(OUT_DIR, "client/_islands");
+    const entries = readdirSync(islandsDir);
+
+    expect(entries.length).toBeGreaterThan(0);
+
+    const entryDir = join(islandsDir, entries[0] as string);
+    const files = readdirSync(entryDir);
+    const jsFile = files.find((f: string) => f.endsWith(".js"));
+    expect(jsFile).toBeDefined();
+
+    const js = readFileSync(join(entryDir, jsFile as string), "utf-8");
+    expect(js).toMatch(/hydrateRoot|createRoot|innerHTML|hydrat/i);
+    expect(js.length).toBeGreaterThan(50);
+
+    // verify the hydrate entry was also generated
+    expect(files).toContain("hydrate.tsx");
+  });
 });

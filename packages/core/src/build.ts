@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { IslandProvider, createIslandRegistry } from "./island";
@@ -172,16 +172,49 @@ async function bundleRouteIslands(
   routeFilePath: string,
   islandNames: string[],
   islandsDir: string,
+  projectRoot?: string,
 ): Promise<string[]> {
   const entryId = `${basename(routeFilePath).replace(/\.(tsx|ts)$/, "")}-${hash(routeFilePath)}`;
   const outdir = join(islandsDir, entryId);
   mkdirSync(outdir, { recursive: true });
-  const fallbackPath = join(outdir, `${entryId}.js`);
-  writeFileSync(fallbackPath, generateInlineIslandFallback(islandNames), "utf-8");
+  const bundlePath = join(outdir, `${entryId}.js`);
+
+  const routeRel = join(relative(outdir, join(routeFilePath, "..")), basename(routeFilePath));
+  const hydrateEntry = generateHydrateEntry(routeRel, islandNames);
+  const entryPath = join(outdir, "hydrate.tsx");
+  writeFileSync(entryPath, hydrateEntry, "utf-8");
+
+  const result = Bun.spawnSync(["bun", "build", "--target=browser", "--outdir", outdir, entryPath]);
+
+  if (result.success) {
+    return [`/_islands/${entryId}/${entryId}.js`];
+  }
+
+  console.error(`  [error] island bundle failed for ${routeFilePath}:`);
+  console.error(result.stderr.toString());
+  writeFileSync(bundlePath, generateFallbackHydration(islandNames), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
 }
 
-function generateInlineIslandFallback(islandNames: string[]): string {
+function generateHydrateEntry(routeRelPath: string, islandNames: string[]): string {
+  return `import React from "react";
+import { hydrateRoot } from "react-dom/client";
+import * as Route from "${routeRelPath}";
+
+document.querySelectorAll("[data-island]").forEach((el) => {
+  const name = el.getAttribute("data-island");
+  if (!name) return;
+  const Component = Route.islands?.[name];
+  if (!Component) {
+    console.warn("[x] island not found:", name);
+    return;
+  }
+  const root = hydrateRoot(el, React.createElement(Component));
+});
+`;
+}
+
+function generateFallbackHydration(islandNames: string[]): string {
   return `// x island hydration fallback — ${islandNames.join(", ")}
 document.querySelectorAll("[data-island]").forEach(function(el) {
   el.setAttribute("data-island-hydrated", "false");
