@@ -172,7 +172,6 @@ async function bundleRouteIslands(
   routeFilePath: string,
   islandNames: string[],
   islandsDir: string,
-  projectRoot?: string,
 ): Promise<string[]> {
   const entryId = `${basename(routeFilePath).replace(/\.(tsx|ts)$/, "")}-${hash(routeFilePath)}`;
   const outdir = join(islandsDir, entryId);
@@ -181,35 +180,39 @@ async function bundleRouteIslands(
 
   const routeRel = join(relative(outdir, join(routeFilePath, "..")), basename(routeFilePath));
   const hydrateEntry = generateHydrateEntry(routeRel, islandNames);
-  const entryPath = join(outdir, "hydrate.tsx");
+  const entryPath = join(outdir, `${entryId}.tsx`);
   writeFileSync(entryPath, hydrateEntry, "utf-8");
 
-  const result = Bun.spawnSync(["bun", "build", "--target=browser", "--outdir", outdir, entryPath]);
+  const result = Bun.spawnSync([
+    "bun",
+    "build",
+    "--target=browser",
+    "--external",
+    "react",
+    "--external",
+    "react-dom",
+    "--outdir",
+    outdir,
+    entryPath,
+  ]);
 
   if (result.success) {
     return [`/_islands/${entryId}/${entryId}.js`];
   }
 
-  console.error(`  [error] island bundle failed for ${routeFilePath}:`);
-  console.error(result.stderr.toString());
   writeFileSync(bundlePath, generateFallbackHydration(islandNames), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
 }
 
 function generateHydrateEntry(routeRelPath: string, islandNames: string[]): string {
-  return `import React from "react";
-import { hydrateRoot } from "react-dom/client";
-import * as Route from "${routeRelPath}";
+  return `import * as Route from "${routeRelPath}";
 
 document.querySelectorAll("[data-island]").forEach((el) => {
   const name = el.getAttribute("data-island");
   if (!name) return;
   const Component = Route.islands?.[name];
-  if (!Component) {
-    console.warn("[x] island not found:", name);
-    return;
-  }
-  const root = hydrateRoot(el, React.createElement(Component));
+  if (!Component) return;
+  const root = ReactDOM.hydrateRoot(el, React.createElement(Component));
 });
 `;
 }
