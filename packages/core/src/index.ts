@@ -17,7 +17,12 @@ export {
   type LoaderArgs,
   type LoaderReturn,
 } from "./render";
-export { createApp, type CreateAppOptions, type RouteProps } from "./createApp";
+export {
+  createApp,
+  type CreateAppOptions,
+  type RouteProps,
+  type RevalidateOptions,
+} from "./createApp";
 export { build, type BuildOptions, type RouteMode } from "./build";
 export {
   scanContent,

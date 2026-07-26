@@ -38,9 +38,19 @@ export interface AppServeOptions {
   fetch: (req: Request) => Response | Promise<Response>;
 }
 
+export interface RevalidateOptions {
+  revalidate?: number;
+}
+
+interface StaticCacheEntry {
+  html: string;
+  timestamp: number;
+}
+
 interface RouteHandler {
   entry: RouteEntry;
   mode: RouteMode;
+  revalidate: number | undefined;
   handler: (req: Request) => Promise<Response>;
 }
 
@@ -50,7 +60,7 @@ interface ContentHandler {
 }
 
 const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
-const RESERVED_EXPORTS = new Set(["default", "mode", "loader", "middleware"]);
+const RESERVED_EXPORTS = new Set(["default", "mode", "loader", "middleware", "revalidate"]);
 
 function isServerFunction(name: string): boolean {
   return !RESERVED_EXPORTS.has(name) && !HTTP_METHODS.has(name);
@@ -93,6 +103,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
   const serverFnHandler = getServerFunctionHandler();
+  const staticCache = new Map<string, StaticCacheEntry>();
 
   async function buildHandlers(): Promise<void> {
     const found = scanRoutes(options.routesDir);
@@ -126,6 +137,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         loaded.push({
           entry: route,
           mode: "server",
+          revalidate: undefined,
           handler: async (req: Request) => {
             const method = req.method;
             const handlerFn = methodHandlers[method];
@@ -149,6 +161,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const mode = (mod.mode as RouteMode) ?? "server";
       const loader = mod.loader as ((args: LoaderArgs) => Promise<LoaderReturn>) | undefined;
       const routeMiddleware = mod.middleware as MiddlewareFn | undefined;
+      const revalidate = mod.revalidate as number | undefined;
 
       for (const [name, val] of Object.entries(mod)) {
         if (isServerFunction(name) && typeof val === "function") {
@@ -184,6 +197,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       loaded.push({
         entry: route,
         mode,
+        revalidate,
         handler: async (req: Request) => {
           const params =
             extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
@@ -207,10 +221,31 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               });
             }
 
+            const cached = staticCache.get(route.routePath);
+            const revalidateSeconds = revalidate ?? 0;
+
+            if (
+              revalidateSeconds > 0 &&
+              cached &&
+              Date.now() - cached.timestamp < revalidateSeconds * 1000
+            ) {
+              return new Response(cached.html, {
+                headers: { "Content-Type": "text/html; charset=utf-8", "X-Revalidated": "hit" },
+              });
+            }
+
             const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
             const html = renderPage(content);
+
+            if (revalidateSeconds > 0) {
+              staticCache.set(route.routePath, { html, timestamp: Date.now() });
+            }
+
             return new Response(html, {
-              headers: { "Content-Type": "text/html; charset=utf-8" },
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "X-Revalidated": revalidateSeconds > 0 ? "miss" : "none",
+              },
             });
           };
 
@@ -245,6 +280,19 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   }
 
   await buildHandlers();
+
+  async function handleRevalidation(req: Request): Promise<Response | null> {
+    if (new URL(req.url).pathname !== "/__x/revalidate") return null;
+    if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+    const body = (await req.json()) as { path?: string };
+    if (body.path) {
+      staticCache.delete(body.path);
+      return new Response(`Revalidated: ${body.path}`);
+    }
+    staticCache.clear();
+    return new Response("Revalidated all");
+  }
 
   if (options.development) {
     let rebuildTimeout: Timer | null = null;
@@ -291,6 +339,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const devFetch = async (req: Request) => {
       const url = new URL(req.url).pathname;
 
+      const revalidationResult = await handleRevalidation(req);
+      if (revalidationResult !== null) return revalidationResult;
+
       const serverFnResult = await serverFnHandler(req);
       if (serverFnResult !== null) return serverFnResult;
 
@@ -328,6 +379,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     development: false,
     port: options.port ?? 3000,
     fetch: async (req: Request) => {
+      const revalidationResult = await handleRevalidation(req);
+      if (revalidationResult !== null) return revalidationResult;
+
       const result = await serverFnHandler(req);
       if (result !== null) return result;
       return new Response("Not found", { status: 404 });

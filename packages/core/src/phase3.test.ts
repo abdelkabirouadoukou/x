@@ -2,17 +2,25 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
+import { createApp } from "./createApp";
 import { type MiddlewareFn, composeMiddleware } from "./middleware";
 import { renderStreamingPage } from "./render";
 import { findMiddlewareChain, scanMiddleware, scanRoutes } from "./router";
 import { generateServerFunctionClient } from "./server-functions";
 
 const FIXTURE_DIR = join(import.meta.dir, "__fixtures__/phase3");
+const ISR_DIR = join(import.meta.dir, "__fixtures__/isr");
 
 function touch(relPath: string, content?: string) {
   const full = join(FIXTURE_DIR, relPath);
   mkdirSync(join(full, ".."), { recursive: true });
   writeFileSync(full, content ?? "export default function Page() { return null; }\n");
+}
+
+function isrTouch(relPath: string, content: string) {
+  const full = join(ISR_DIR, relPath);
+  mkdirSync(join(full, ".."), { recursive: true });
+  writeFileSync(full, content);
 }
 
 beforeAll(() => {
@@ -25,10 +33,32 @@ beforeAll(() => {
     "export function middleware(ctx: any, next: any) { return next(); }",
   );
   touch("dashboard/settings.tsx");
+
+  isrTouch(
+    "isr-static.tsx",
+    `import { createElement } from "react";
+export const mode = "static";
+export const revalidate = 3600;
+export default function Page() {
+  return createElement("h1", null, "ISR Static Page");
+}
+`,
+  );
+  isrTouch(
+    "pure-static.tsx",
+    `import { createElement } from "react";
+export const mode = "static";
+export default function Page() {
+  return createElement("h1", null, "Pure Static");
+}
+`,
+  );
 });
 
 afterAll(() => {
   rmSync(join(import.meta.dir, "__fixtures__/phase3"), { recursive: true, force: true });
+  rmSync(join(import.meta.dir, "__fixtures__/isr"), { recursive: true, force: true });
+  rmSync(join(import.meta.dir, "__fixtures__/x-routes.ts"), { force: true });
 });
 
 async function streamToString(stream: ReadableStream<Uint8Array>): Promise<string> {
@@ -228,5 +258,88 @@ describe("generateServerFunctionClient", () => {
   test("includes file path comment", () => {
     const code = generateServerFunctionClient("/api/foo.ts", ["bar"], "/api/foo");
     expect(code).toContain("/api/foo.ts");
+  });
+});
+
+describe("ISR revalidation", () => {
+  test("static route with revalidate caches HTML (miss then hit)", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    const res1 = await app.fetch(new Request("http://localhost/isr-static"));
+    expect(res1.headers.get("X-Revalidated")).toBe("miss");
+
+    const res2 = await app.fetch(new Request("http://localhost/isr-static"));
+    expect(res2.headers.get("X-Revalidated")).toBe("hit");
+  });
+
+  test("/__x/revalidate busts the cache", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    await app.fetch(new Request("http://localhost/isr-static"));
+    const resHit = await app.fetch(new Request("http://localhost/isr-static"));
+    expect(resHit.headers.get("X-Revalidated")).toBe("hit");
+
+    const revalRes = await app.fetch(
+      new Request("http://localhost/__x/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "/isr-static" }),
+      }),
+    );
+    expect(revalRes.status).toBe(200);
+    expect(await revalRes.text()).toBe("Revalidated: /isr-static");
+
+    const resMiss = await app.fetch(new Request("http://localhost/isr-static"));
+    expect(resMiss.headers.get("X-Revalidated")).toBe("miss");
+  });
+
+  test("/__x/revalidate with no path clears all caches", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    await app.fetch(new Request("http://localhost/isr-static"));
+    await app.fetch(new Request("http://localhost/pure-static"));
+
+    const revalRes = await app.fetch(
+      new Request("http://localhost/__x/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }),
+    );
+    expect(await revalRes.text()).toBe("Revalidated all");
+  });
+
+  test("route without revalidate has header X-Revalidated: none", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    const res = await app.fetch(new Request("http://localhost/pure-static"));
+    expect(res.headers.get("X-Revalidated")).toBe("none");
+  });
+
+  test("revalidated page content stays the same (same HTML)", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    const res1 = await app.fetch(new Request("http://localhost/isr-static"));
+    const html1 = await res1.text();
+
+    const res2 = await app.fetch(new Request("http://localhost/isr-static"));
+    const html2 = await res2.text();
+
+    expect(html1).toBe(html2);
   });
 });

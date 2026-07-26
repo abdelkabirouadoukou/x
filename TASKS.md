@@ -115,7 +115,9 @@ verified, not just written.
   `generateServerFunctionClient()` produces typed fetch wrappers
 - [x] Middleware: `_middleware.ts` files alongside routes, composed in onion
   pattern with `composeMiddleware()`, supports short-circuit
-- [ ] Revalidation (ISR-equivalent) for pages that are mostly static but not quite
+- [x] Revalidation (ISR-equivalent): static routes with `export const revalidate = <seconds>` are
+  served from an in-memory cache that auto-expires after the TTL; `POST /__x/revalidate`
+  with `{ path: "/..." }` busts individual entries or clears all caches (no body path)
 
 ## Phase 4 — Dev server
 
