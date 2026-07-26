@@ -188,7 +188,7 @@ export function generateManifestSource(routes: RouteEntry[]): string {
   const routeEntries = routes.map((r) => {
     const paramsType =
       r.paramNames.length === 0
-        ? "{}"
+        ? "Record<string, never>"
         : `{ ${r.paramNames.map((n) => `${n}: string`).join("; ")} }`;
     return `  "${r.routePath}": ${paramsType};`;
   });
@@ -203,7 +203,7 @@ export function href<T extends keyof RouteMap & string>(
   ...[params]: RouteMap[T] extends Record<string, never> ? [] : [RouteMap[T]]
 ): string {
   if (!params) return path;
-  let result = path;
+  let result: string = path;
   for (const [key, value] of Object.entries(params)) {
     result = result.replace(new RegExp(\`:\${key}(?=/|$)\`), encodeURIComponent(String(value)));
   }

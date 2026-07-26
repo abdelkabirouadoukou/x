@@ -103,7 +103,7 @@ describe("generateManifestSource", () => {
     const source = generateManifestSource(routes);
 
     expect(source).toContain('"/"');
-    expect(source).toContain("{}");
+    expect(source).toContain("Record<string, never>");
     expect(source).toContain('"/posts/:id"');
     expect(source).toContain("id: string");
     expect(source).toContain('"/docs/*"');
