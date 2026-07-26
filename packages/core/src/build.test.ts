@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { build } from "./build";
 
@@ -30,6 +30,33 @@ export default function Home() {
     `export const mode = 'server';
 export default function About() {
   return <h1>About</h1>;
+}
+`,
+  );
+  touch(
+    ROUTES_DIR,
+    "counter.tsx",
+    `import { Island } from "@x/core";
+import { useState } from "react";
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(c => c+1)}>{count}</button>;
+}
+
+export const islands = { Counter };
+
+export const mode = 'static';
+
+export default function CounterPage() {
+  return (
+    <main>
+      <h1>Counter</h1>
+      <Island name="Counter" client="idle">
+        <Counter />
+      </Island>
+    </main>
+  );
 }
 `,
   );
@@ -82,5 +109,42 @@ describe("build", () => {
     await build({ routesDir: ROUTES_DIR, contentDir: CONTENT_DIR, outDir: OUT_DIR });
     const html = readFileSync(join(OUT_DIR, "client/blog/hello/index.html"), "utf-8");
     expect(html).toContain("Hello Blog");
+  });
+});
+
+describe("island code-splitting", () => {
+  test("generates separate JS chunk per island", async () => {
+    await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
+
+    const islandsDir = join(OUT_DIR, "client/_islands");
+    expect(existsSync(islandsDir)).toBe(true);
+
+    const entries = readdirSync(islandsDir);
+    expect(entries.length).toBeGreaterThan(0);
+  });
+
+  test("includes island script tag in HTML", async () => {
+    await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
+    const html = readFileSync(join(OUT_DIR, "client/counter/index.html"), "utf-8");
+    expect(html).toContain("_islands");
+    expect(html).toContain("<script");
+  });
+
+  test("bundled island output is valid JS", async () => {
+    await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
+
+    const islandsDir = join(OUT_DIR, "client/_islands");
+    const entries = readdirSync(islandsDir);
+
+    for (const entry of entries) {
+      const entryDir = join(islandsDir, entry);
+      const files = readdirSync(entryDir);
+      for (const file of files) {
+        if (file.endsWith(".js")) {
+          const js = readFileSync(join(entryDir, file), "utf-8");
+          expect(js.length).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });

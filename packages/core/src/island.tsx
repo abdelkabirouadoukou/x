@@ -1,4 +1,4 @@
-import { type ReactNode, createContext, createElement, useContext, useId } from "react";
+import { type ReactNode, createContext, createElement, useContext } from "react";
 
 export type IslandMode = "idle" | "visible" | "load";
 
@@ -26,6 +26,8 @@ export function IslandProvider({
   });
 }
 
+let islandCounter = 0;
+
 export function Island({
   name,
   client = "idle",
@@ -36,7 +38,7 @@ export function Island({
   children: ReactNode;
 }) {
   const registry = useContext(IslandContext);
-  const id = useId();
+  const id = `x-island-${islandCounter++}`;
 
   if (registry) {
     registry.entries.push({ name, id });

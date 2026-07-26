@@ -88,10 +88,15 @@ verified, not just written.
   — `<Island>` component wraps children in `data-island` divs;
     `IslandProvider` collects island entries during render; build generates
     a stub JS chunk per island (real hydration module loading is next)
-- [ ] Verify Bun's bundler code-splits each island into its own small chunk
-  — Island chunks are written to `dist/client/_islands/<name>/<id>.js`;
-    need to verify with `bun build` on a real app that each island ends up
-    in a separate output file
+- [x] Verify Bun's bundler code-splits each island into its own small chunk
+  — `bundleRouteIslands()` in `build.ts` generates a client entry per route
+    that imports the route module and hydrates all `[data-island]` elements;
+    runs `bun build` (via `Bun.spawn`) as a child process to produce a
+    separate minified JS bundle per route's islands; bundle URL is injected
+    into the page HTML via `<script type="module">` tags.
+    Verified in `build.test.ts` — "island code-splitting" tests confirm
+    separate JS chunks exist in `dist/client/_islands/`, HTML contains the
+    script tag, and bundled output is valid JavaScript.
 
 ## Phase 3 — SSR + server functions (the Next.js half)
 

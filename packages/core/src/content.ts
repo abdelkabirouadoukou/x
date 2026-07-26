@@ -92,3 +92,44 @@ function parseYamlLines(raw: string): Frontmatter {
   }
   return result;
 }
+
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function renderMarkdown(md: string): string {
+  const inlineCodes: string[] = [];
+  let html = md
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    .replace(
+      /`{3}(\w*)\n([\s\S]*?)`{3}/gm,
+      (_m, _lang, code) => `<pre><code>${escapeHtml(code.trim())}</code></pre>`,
+    )
+    .replace(/`([^`]+)`/g, (_m, code) => {
+      inlineCodes.push(code);
+      return `__X_CODE_${inlineCodes.length - 1}__`;
+    })
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    .replace(/__X_CODE_(\d+)__/g, (_m, i) => `<code>${inlineCodes[Number.parseInt(i)]}</code>`);
+
+  const blocks = html.split(/\n\n+/);
+  html = blocks
+    .map((b) => {
+      const t = b.trim();
+      if (!t) return "";
+      if (t.startsWith("<h") || t.startsWith("<pre") || t.startsWith("<ul") || t.startsWith("<ol"))
+        return t;
+      return `<p>${t}</p>`;
+    })
+    .join("\n");
+
+  return html;
+}

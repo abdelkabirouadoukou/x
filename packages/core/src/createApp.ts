@@ -2,7 +2,7 @@ import { type FSWatcher, readFileSync, watch } from "node:fs";
 import { join } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import type { RouteMode } from "./build";
-import { type ContentEntry, scanContent } from "./content";
+import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { renderPage } from "./render";
 import {
   type LayoutEntry,
@@ -57,6 +57,7 @@ function wrapWithLayouts(
 
 function renderContentPage(content: ContentEntry): string {
   const title = (content.frontmatter.title as string) ?? content.slug;
+  const bodyHtml = renderMarkdown(content.body);
   const body = renderPage(
     createElement(
       "article",
@@ -65,8 +66,8 @@ function renderContentPage(content: ContentEntry): string {
         ? createElement("h1", null, content.frontmatter.title as string)
         : null,
       createElement("div", {
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: content body is markdown rendered as HTML
-        dangerouslySetInnerHTML: { __html: content.body },
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: body is markdown rendered to HTML
+        dangerouslySetInnerHTML: { __html: bodyHtml },
       }),
     ),
     { title },

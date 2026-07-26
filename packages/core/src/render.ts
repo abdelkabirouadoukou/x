@@ -7,16 +7,30 @@ export interface RenderOptions {
   islandProps?: Record<string, string>;
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function escapeJsonForScript(s: string): string {
+  return s.replace(/<\//g, "<\\/");
+}
+
 export function renderPage(node: ReactNode, options: RenderOptions = {}): string {
-  const { title = "x app", islandScripts, islandProps } = options;
+  const { islandScripts, islandProps } = options;
+  const title = escapeHtml(options.title ?? "x app");
 
   const body = renderToString(node);
   const scripts = islandScripts
-    ?.map((src) => `<script type="module" data-island-script src="${src}"></script>`)
+    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
     .join("\n    ");
 
+  const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
   const propsScript = islandProps
-    ? `<script id="__X_ISLAND_PROPS" type="application/json">${JSON.stringify(islandProps)}</script>`
+    ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
 
   return `<!DOCTYPE html>
@@ -33,15 +47,17 @@ export function renderPage(node: ReactNode, options: RenderOptions = {}): string
 }
 
 export function renderStaticPage(node: ReactNode, options: RenderOptions = {}): string {
-  const { title = "x app", islandScripts, islandProps } = options;
+  const { islandScripts, islandProps } = options;
+  const title = escapeHtml(options.title ?? "x app");
 
   const body = renderToStaticMarkup(node);
   const scripts = islandScripts
-    ?.map((src) => `<script type="module" data-island-script src="${src}"></script>`)
+    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
     .join("\n    ");
 
+  const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
   const propsScript = islandProps
-    ? `<script id="__X_ISLAND_PROPS" type="application/json">${JSON.stringify(islandProps)}</script>`
+    ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
 
   return `<!DOCTYPE html>
