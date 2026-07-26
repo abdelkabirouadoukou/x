@@ -97,7 +97,11 @@ export async function renderStreamingPage(
     : "";
   const footer = `${propsScript ? `    ${propsScript}\n` : ""}${scripts ? `    ${scripts}\n` : ""}  </body>\n</html>`;
 
-  const reactStream = await renderToReadableStream(node);
+  const reactStream = await renderToReadableStream(node, {
+    onError(err) {
+      console.error("[x] render error:", err);
+    },
+  });
   const encoder = new TextEncoder();
   const header = `<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>${title}</title>\n  </head>\n  <body>\n    <div id="root">`;
 

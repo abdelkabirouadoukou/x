@@ -44,7 +44,7 @@ export function scanRoutes(rootDir: string): RouteEntry[] {
 function toRouteEntry(relPath: string, filePath: string): RouteEntry {
   const segments = relPath.split(sep);
   const paramNames: string[] = [];
-  const isApi = relPath.startsWith("api") || relPath.includes("/api/");
+  const isApi = segments[0] === "api";
 
   const routeSegments = segments.map((segment) => {
     if (segment === "index") return "";

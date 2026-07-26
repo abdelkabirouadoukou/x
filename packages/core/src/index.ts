@@ -41,5 +41,6 @@ export {
 export {
   generateServerFunctionClient,
   registerServerFunctions,
+  resetServerFunctions,
   getServerFunctionHandler,
 } from "./server-functions";

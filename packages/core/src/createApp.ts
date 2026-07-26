@@ -17,7 +17,7 @@ import {
   scanRoutes,
   writeManifest,
 } from "./router";
-import { getServerFunctionHandler, registerServerFunctions } from "./server-functions";
+import { getServerFunctionHandler, registerServerFunctions, resetServerFunctions } from "./server-functions";
 
 export interface RouteProps {
   params: Record<string, string>;
@@ -60,11 +60,6 @@ interface ContentHandler {
 }
 
 const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
-const RESERVED_EXPORTS = new Set(["default", "mode", "loader", "middleware", "revalidate"]);
-
-function isServerFunction(name: string): boolean {
-  return !RESERVED_EXPORTS.has(name) && !HTTP_METHODS.has(name);
-}
 
 function wrapWithLayouts(
   Component: ComponentType<RouteProps>,
@@ -106,6 +101,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   const staticCache = new Map<string, StaticCacheEntry>();
 
   async function buildHandlers(): Promise<void> {
+    resetServerFunctions();
     const found = scanRoutes(options.routesDir);
     const layouts = scanLayouts(options.routesDir);
     const middlewareEntries = scanMiddleware(options.routesDir);
@@ -126,12 +122,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           }
         }
 
-        for (const [name, val] of Object.entries(mod)) {
-          if (isServerFunction(name) && typeof val === "function") {
-            registerServerFunctions(route.routePath, {
-              [name]: val as (...args: unknown[]) => Promise<unknown>,
-            });
-          }
+        const actions = mod.actions as Record<string, (...args: unknown[]) => Promise<unknown>> | undefined;
+        if (actions) {
+          registerServerFunctions(route.routePath, route.paramNames, actions);
         }
 
         loaded.push({
@@ -144,6 +137,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
             if (handlerFn) {
               const result = await handlerFn(req);
               if (result instanceof Response) return result;
+              if (result === undefined || result === null) {
+                return new Response("OK", { status: 200 });
+              }
               return Response.json(result);
             }
             return new Response(`Method ${method} not allowed`, { status: 405 });
@@ -163,12 +159,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const routeMiddleware = mod.middleware as MiddlewareFn | undefined;
       const revalidate = mod.revalidate as number | undefined;
 
-      for (const [name, val] of Object.entries(mod)) {
-        if (isServerFunction(name) && typeof val === "function") {
-          registerServerFunctions(route.routePath, {
-            [name]: val as (...args: unknown[]) => Promise<unknown>,
-          });
-        }
+      const actions = mod.actions as Record<string, (...args: unknown[]) => Promise<unknown>> | undefined;
+      if (actions) {
+        registerServerFunctions(route.routePath, route.paramNames, actions);
       }
 
       const layoutChain = findLayoutChain(route.filePath, layouts, options.routesDir);
