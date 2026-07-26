@@ -209,7 +209,9 @@ function StaticContentPage({
 function buildServerEntry(pages: LoadedPage[], apiRoutes: RouteEntry[]): string {
   const pageImports = pages.map((p, i) => `import Page${i} from "${p.entry.filePath}";`).join("\n");
 
-  const apiImports = apiRoutes.map((r, i) => `import * as Api${i} from "${r.filePath}";`).join("\n");
+  const apiImports = apiRoutes
+    .map((r, i) => `import * as Api${i} from "${r.filePath}";`)
+    .join("\n");
 
   const pageRoutes = pages.map((p, i) => `  "${p.entry.routePath}": Page${i}`).join(",\n");
 
@@ -222,7 +224,7 @@ function buildServerEntry(pages: LoadedPage[], apiRoutes: RouteEntry[]): string 
 
   const handleApiCode = [
     "export async function handleApiRoute(req: Request): Promise<Response | null> {",
-    '  const url = new URL(req.url);',
+    "  const url = new URL(req.url);",
     "  for (const [routePath, handlers] of Object.entries(apiRoutes)) {",
     "    const escaped = routePath.replace(/[.+?^${}()|[\\]\\\\]/g, '\\\\$&').replace(/:\\\\w+/g, '([^/]+)').replace(/\\\\\\*/g, '(.+)');",
     "    const pattern = new RegExp('^' + escaped + '$');",

@@ -17,7 +17,11 @@ import {
   scanRoutes,
   writeManifest,
 } from "./router";
-import { getServerFunctionHandler, registerServerFunctions, resetServerFunctions } from "./server-functions";
+import {
+  getServerFunctionHandler,
+  registerServerFunctions,
+  resetServerFunctions,
+} from "./server-functions";
 
 export interface RouteProps {
   params: Record<string, string>;
@@ -122,7 +126,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           }
         }
 
-        const actions = mod.actions as Record<string, (...args: unknown[]) => Promise<unknown>> | undefined;
+        const actions = mod.actions as
+          | Record<string, (...args: unknown[]) => Promise<unknown>>
+          | undefined;
         if (actions) {
           registerServerFunctions(route.routePath, route.paramNames, actions);
         }
@@ -159,7 +165,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const routeMiddleware = mod.middleware as MiddlewareFn | undefined;
       const revalidate = mod.revalidate as number | undefined;
 
-      const actions = mod.actions as Record<string, (...args: unknown[]) => Promise<unknown>> | undefined;
+      const actions = mod.actions as
+        | Record<string, (...args: unknown[]) => Promise<unknown>>
+        | undefined;
       if (actions) {
         registerServerFunctions(route.routePath, route.paramNames, actions);
       }
