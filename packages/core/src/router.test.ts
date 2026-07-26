@@ -1,7 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { extractParams, findLayoutChain, generateManifestSource, scanLayouts, scanRoutes } from "./router";
+import {
+  extractParams,
+  findLayoutChain,
+  generateManifestSource,
+  scanLayouts,
+  scanRoutes,
+} from "./router";
 
 const FIXTURE_DIR = join(import.meta.dir, "__fixtures__/routes");
 

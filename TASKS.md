@@ -71,14 +71,27 @@ verified, not just written.
 
 ## Phase 2 — Static rendering + islands (the Astro half)
 
-- [ ] `export const mode = 'static'` on a route → prerendered at build time
-- [ ] Static build step: render each static route with `renderToStaticMarkup`,
+- [x] `export const mode = 'static'` on a route → prerendered at build time
+  — `build()` reads the `mode` export; static routes are rendered with
+    `renderToStaticMarkup` and written to `dist/client/`
+- [x] Static build step: render each static route with `renderToStaticMarkup`,
   write to `dist/`
-- [ ] Content collections: `content/**/*.md(x)`, frontmatter parsing, each entry
+  — `packages/core/src/build.ts` includes `build()` that runs the full
+    static-export pipeline
+- [x] Content collections: `content/**/*.md(x)`, frontmatter parsing, each entry
   becomes a route (this is the blog/marketing use case)
-- [ ] Island marker (`<Island client="idle">` or similar) — only marked components
+  — `scanContent()` discovers markdown files, parses basic frontmatter,
+    maps file paths to routes; served in dev mode via `contentDir` option,
+    built to static HTML in `build()`
+- [x] Island marker (`<Island client="idle">` or similar) — only marked components
   get a client JS bundle; everything else ships as plain HTML
+  — `<Island>` component wraps children in `data-island` divs;
+    `IslandProvider` collects island entries during render; build generates
+    a stub JS chunk per island (real hydration module loading is next)
 - [ ] Verify Bun's bundler code-splits each island into its own small chunk
+  — Island chunks are written to `dist/client/_islands/<name>/<id>.js`;
+    need to verify with `bun build` on a real app that each island ends up
+    in a separate output file
 
 ## Phase 3 — SSR + server functions (the Next.js half)
 

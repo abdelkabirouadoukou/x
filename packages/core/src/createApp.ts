@@ -1,6 +1,8 @@
-import { type FSWatcher, watch } from "node:fs";
+import { type FSWatcher, readFileSync, watch } from "node:fs";
 import { join } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
+import type { RouteMode } from "./build";
+import { type ContentEntry, scanContent } from "./content";
 import { renderPage } from "./render";
 import {
   type LayoutEntry,
@@ -18,6 +20,7 @@ export interface RouteProps {
 
 export interface CreateAppOptions {
   routesDir: string;
+  contentDir?: string;
   port?: number;
   development?: boolean;
 }
@@ -31,11 +34,49 @@ export interface AppServeOptions {
 
 interface RouteHandler {
   entry: RouteEntry;
+  mode: RouteMode;
   handler: (req: Request) => Promise<Response>;
+}
+
+interface ContentHandler {
+  entry: ContentEntry;
+  handler: (req: Request) => Promise<Response>;
+}
+
+function wrapWithLayouts(
+  Component: ComponentType<{ params: Record<string, string> }>,
+  params: Record<string, string>,
+  layoutModules: ComponentType<{ children: ReactNode }>[],
+): ReactNode {
+  let content: ReactNode = createElement(Component, { params });
+  for (const Layout of layoutModules) {
+    content = createElement(Layout, null, content);
+  }
+  return content;
+}
+
+function renderContentPage(content: ContentEntry): string {
+  const title = (content.frontmatter.title as string) ?? content.slug;
+  const body = renderPage(
+    createElement(
+      "article",
+      null,
+      content.frontmatter.title
+        ? createElement("h1", null, content.frontmatter.title as string)
+        : null,
+      createElement("div", {
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: content body is markdown rendered as HTML
+        dangerouslySetInnerHTML: { __html: content.body },
+      }),
+    ),
+    { title },
+  );
+  return body;
 }
 
 export async function createApp(options: CreateAppOptions): Promise<AppServeOptions> {
   let handlers: RouteHandler[] = [];
+  let contentHandlers: ContentHandler[] = [];
 
   async function buildHandlers(): Promise<void> {
     const found = scanRoutes(options.routesDir);
@@ -49,6 +90,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     for (const route of found) {
       const mod = (await import(route.filePath)) as {
         default?: ComponentType<RouteProps>;
+        mode?: RouteMode;
       };
       const Component = mod.default;
       if (!Component) {
@@ -56,6 +98,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         continue;
       }
 
+      const mode = mod.mode ?? "server";
       const layoutChain = findLayoutChain(route.filePath, layouts, options.routesDir);
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
       for (const l of layoutChain) {
@@ -67,13 +110,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
       loaded.push({
         entry: route,
+        mode,
         handler: async (req: Request) => {
           const params =
             extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
-          let content: ReactNode = createElement(Component, { params });
-          for (const Layout of layoutModules) {
-            content = createElement(Layout, null, content);
-          }
+          const content = wrapWithLayouts(Component, params, layoutModules);
           const html = renderPage(content);
           return new Response(html, {
             headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -83,12 +124,25 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     }
 
     handlers = loaded;
+
+    if (options.contentDir) {
+      const content = scanContent(options.contentDir);
+      const loadedContent: ContentHandler[] = content.map((entry) => ({
+        entry,
+        handler: async () => {
+          const html = renderContentPage(entry);
+          return new Response(html, {
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
+        },
+      }));
+      contentHandlers = loadedContent;
+    }
   }
 
   await buildHandlers();
 
   if (options.development) {
-    let watcher: FSWatcher | null = null;
     let rebuildTimeout: Timer | null = null;
 
     function scheduleRebuild() {
@@ -111,13 +165,15 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         }
 
         if (added.length > 0 || removed.length > 0) {
-          console.log(`[x] route tree rebuilt (${handlers.length} routes)`);
+          console.log(
+            `[x] route tree rebuilt (${handlers.length} routes, ${contentHandlers.length} content)`,
+          );
         }
       }, 200);
     }
 
     try {
-      watcher = watch(options.routesDir, { recursive: true }, (_eventType, filename) => {
+      const watcher = watch(options.routesDir, { recursive: true }, (_eventType, filename) => {
         if (!filename) return;
         const name = typeof filename === "string" ? filename : (filename as Buffer).toString();
         if (name.startsWith(".") || name.startsWith("_")) return;
@@ -130,12 +186,20 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const devFetch = (req: Request) => {
       const url = new URL(req.url).pathname;
+
       for (const h of handlers) {
         const params = extractParams(h.entry.routePath, h.entry.paramNames, url);
         if (params !== null) {
           return h.handler(req);
         }
       }
+
+      for (const h of contentHandlers) {
+        if (h.entry.routePath === url) {
+          return h.handler(req);
+        }
+      }
+
       return new Response("Not found", { status: 404 });
     };
 
