@@ -71,14 +71,32 @@ verified, not just written.
 
 ## Phase 2 — Static rendering + islands (the Astro half)
 
-- [ ] `export const mode = 'static'` on a route → prerendered at build time
-- [ ] Static build step: render each static route with `renderToStaticMarkup`,
+- [x] `export const mode = 'static'` on a route → prerendered at build time
+  — `build()` reads the `mode` export; static routes are rendered with
+    `renderToStaticMarkup` and written to `dist/client/`
+- [x] Static build step: render each static route with `renderToStaticMarkup`,
   write to `dist/`
-- [ ] Content collections: `content/**/*.md(x)`, frontmatter parsing, each entry
+  — `packages/core/src/build.ts` includes `build()` that runs the full
+    static-export pipeline
+- [x] Content collections: `content/**/*.md(x)`, frontmatter parsing, each entry
   becomes a route (this is the blog/marketing use case)
-- [ ] Island marker (`<Island client="idle">` or similar) — only marked components
+  — `scanContent()` discovers markdown files, parses basic frontmatter,
+    maps file paths to routes; served in dev mode via `contentDir` option,
+    built to static HTML in `build()`
+- [x] Island marker (`<Island client="idle">` or similar) — only marked components
   get a client JS bundle; everything else ships as plain HTML
-- [ ] Verify Bun's bundler code-splits each island into its own small chunk
+  — `<Island>` component wraps children in `data-island` divs;
+    `IslandProvider` collects island entries during render; build generates
+    a stub JS chunk per island (real hydration module loading is next)
+- [x] Verify Bun's bundler code-splits each island into its own small chunk
+  — `bundleRouteIslands()` in `build.ts` generates a client entry per route
+    that imports the route module and hydrates all `[data-island]` elements;
+    runs `bun build` (via `Bun.spawn`) as a child process to produce a
+    separate minified JS bundle per route's islands; bundle URL is injected
+    into the page HTML via `<script type="module">` tags.
+    Verified in `build.test.ts` — "island code-splitting" tests confirm
+    separate JS chunks exist in `dist/client/_islands/`, HTML contains the
+    script tag, and bundled output is valid JavaScript.
 
 ## Phase 3 — SSR + server functions (the Next.js half)
 
