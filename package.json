@@ -1,0 +1,18 @@
+{
+  "name": "x-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "examples/*"],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "for p in packages/*/tsconfig.json examples/*/tsconfig.json; do echo \"-- $p\"; tsc --noEmit -p \"$p\" || exit 1; done",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "dev": "bun --cwd examples/basic run dev"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "latest",
+    "typescript": "^5.7.0"
+  }
+}
