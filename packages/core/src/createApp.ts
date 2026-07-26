@@ -324,26 +324,32 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     function scheduleRebuild() {
       if (rebuildTimeout) clearTimeout(rebuildTimeout);
       rebuildTimeout = setTimeout(async () => {
-        const oldPaths = new Set(handlers.map((h) => h.entry.filePath));
-        await buildHandlers();
-        const newPaths = new Set(handlers.map((h) => h.entry.filePath));
+        try {
+          const oldPaths = new Set(handlers.map((h) => h.entry.filePath));
+          await buildHandlers();
+          const newPaths = new Set(handlers.map((h) => h.entry.filePath));
 
-        const added = [...newPaths].filter((p) => !oldPaths.has(p));
-        const removed = [...oldPaths].filter((p) => !newPaths.has(p));
+          const added = [...newPaths].filter((p) => !oldPaths.has(p));
+          const removed = [...oldPaths].filter((p) => !newPaths.has(p));
 
-        if (added.length > 0) {
-          for (const p of added)
-            console.log(`[x] route added: ${p.replace(options.routesDir, "")}`);
-        }
-        if (removed.length > 0) {
-          for (const p of removed)
-            console.log(`[x] route removed: ${p.replace(options.routesDir, "")}`);
-        }
+          if (added.length > 0) {
+            for (const p of added)
+              console.log(`[x] route added: ${p.replace(options.routesDir, "")}`);
+          }
+          if (removed.length > 0) {
+            for (const p of removed)
+              console.log(`[x] route removed: ${p.replace(options.routesDir, "")}`);
+          }
 
-        if (added.length > 0 || removed.length > 0) {
-          console.log(
-            `[x] route tree rebuilt (${handlers.length} routes, ${contentHandlers.length} content)`,
-          );
+          if (added.length > 0 || removed.length > 0) {
+            console.log(
+              `[x] route tree rebuilt (${handlers.length} routes, ${contentHandlers.length} content)`,
+            );
+          }
+        } catch {
+          if (options.development) {
+            console.warn("[x] rebuild skipped: routes directory may have changed");
+          }
         }
       }, 200);
     }
