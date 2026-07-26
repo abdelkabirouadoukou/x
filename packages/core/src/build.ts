@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { IslandProvider, createIslandRegistry } from "./island";
@@ -148,6 +148,20 @@ export async function build(options: BuildOptions): Promise<void> {
     console.log(
       `  [server] ${serverPages.length} page routes, ${apiRoutes.length} api routes -> server/index.ts`,
     );
+
+    const bundleResult = Bun.spawnSync([
+      "bun",
+      "build",
+      "--target=bun",
+      "--outdir",
+      serverDir,
+      serverEntryPath,
+    ]);
+    if (bundleResult.success) {
+      console.log("  [server] bundled -> server/index.js");
+    } else {
+      console.error("  [error] server bundle failed — the .ts entry is still available");
+    }
   }
 
   console.log(`[x] build complete -> ${outDir}`);
@@ -161,12 +175,48 @@ async function bundleRouteIslands(
   const entryId = `${basename(routeFilePath).replace(/\.(tsx|ts)$/, "")}-${hash(routeFilePath)}`;
   const outdir = join(islandsDir, entryId);
   mkdirSync(outdir, { recursive: true });
-  const fallbackPath = join(outdir, `${entryId}.js`);
-  writeFileSync(fallbackPath, generateInlineIslandFallback(islandNames), "utf-8");
+  const bundlePath = join(outdir, `${entryId}.js`);
+
+  const routeRel = join(relative(outdir, join(routeFilePath, "..")), basename(routeFilePath));
+  const hydrateEntry = generateHydrateEntry(routeRel, islandNames);
+  const entryPath = join(outdir, `${entryId}.tsx`);
+  writeFileSync(entryPath, hydrateEntry, "utf-8");
+
+  const result = Bun.spawnSync([
+    "bun",
+    "build",
+    "--target=browser",
+    "--external",
+    "react",
+    "--external",
+    "react-dom",
+    "--outdir",
+    outdir,
+    entryPath,
+  ]);
+
+  if (result.success) {
+    return [`/_islands/${entryId}/${entryId}.js`];
+  }
+
+  writeFileSync(bundlePath, generateFallbackHydration(islandNames), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
 }
 
-function generateInlineIslandFallback(islandNames: string[]): string {
+function generateHydrateEntry(routeRelPath: string, islandNames: string[]): string {
+  return `import * as Route from "${routeRelPath}";
+
+document.querySelectorAll("[data-island]").forEach((el) => {
+  const name = el.getAttribute("data-island");
+  if (!name) return;
+  const Component = Route.islands?.[name];
+  if (!Component) return;
+  const root = ReactDOM.hydrateRoot(el, React.createElement(Component));
+});
+`;
+}
+
+function generateFallbackHydration(islandNames: string[]): string {
   return `// x island hydration fallback — ${islandNames.join(", ")}
 document.querySelectorAll("[data-island]").forEach(function(el) {
   el.setAttribute("data-island-hydrated", "false");
@@ -213,7 +263,11 @@ function buildServerEntry(pages: LoadedPage[], apiRoutes: RouteEntry[]): string 
     .map((r, i) => `import * as Api${i} from "${r.filePath}";`)
     .join("\n");
 
-  const pageRoutes = pages.map((p, i) => `  "${p.entry.routePath}": Page${i}`).join(",\n");
+  const pageRoutes: string[] = [];
+  for (let i = 0; i < pages.length; i++) {
+    const p = pages[i] as LoadedPage;
+    pageRoutes.push(`  "${p.entry.routePath}": Page${i}`);
+  }
 
   const apiEntries = apiRoutes
     .map(
@@ -223,7 +277,7 @@ function buildServerEntry(pages: LoadedPage[], apiRoutes: RouteEntry[]): string 
     .join(",\n");
 
   const handleApiCode = [
-    "export async function handleApiRoute(req: Request): Promise<Response | null> {",
+    "async function handleApiRoute(req: Request): Promise<Response | null> {",
     "  const url = new URL(req.url);",
     "  for (const [routePath, handlers] of Object.entries(apiRoutes)) {",
     "    const escaped = routePath.replace(/[.+?^${}()|[\\]\\\\]/g, '\\\\$&').replace(/:\\\\w+/g, '([^/]+)').replace(/\\\\\\*/g, '(.+)');",
@@ -238,20 +292,68 @@ function buildServerEntry(pages: LoadedPage[], apiRoutes: RouteEntry[]): string 
     "}",
   ].join("\n");
 
+  const hasServerPages = pages.length > 0;
+
+  const fetchHandler = hasServerPages
+    ? [
+        "  async fetch(req) {",
+        "    const url = new URL(req.url);",
+        "    const pathname = url.pathname;",
+        "",
+        "    const apiResult = await handleApiRoute(req);",
+        "    if (apiResult) return apiResult;",
+        "",
+        "    const Component = routes[pathname];",
+        "    if (Component) {",
+        '      const { renderToString } = await import("react-dom/server");',
+        '      const { createElement } = await import("react");',
+        "      const html = renderToString(createElement(Component, { params: {} }));",
+        "      return new Response('<!DOCTYPE html>' + html, {",
+        "        headers: { 'Content-Type': 'text/html; charset=utf-8' },",
+        "      });",
+        "    }",
+        "",
+        '    const filePath = pathname === "/" ? "/index.html" : pathname;',
+        "    const file = Bun.file(import.meta.dir + '/../client' + filePath);",
+        "    if (await file.exists()) return new Response(file);",
+        "",
+        "    return new Response('Not found', { status: 404 });",
+        "  },",
+        "});",
+      ]
+    : [
+        "  async fetch(req) {",
+        "    const url = new URL(req.url);",
+        "    const apiResult = await handleApiRoute(req);",
+        "    if (apiResult) return apiResult;",
+        "",
+        '    const filePath = url.pathname === "/" ? "/index.html" : url.pathname;',
+        "    const file = Bun.file(import.meta.dir + '/../client' + filePath);",
+        "    if (await file.exists()) return new Response(file);",
+        "",
+        "    return new Response('Not found', { status: 404 });",
+        "  },",
+        "});",
+      ];
+
   return [
     "// Auto-generated by @x/core build",
     pageImports,
     apiImports,
     "",
-    "export const routes = {",
-    pageRoutes,
+    "const routes: Record<string, any> = {",
+    ...pageRoutes,
     "};",
     "",
-    "export const apiRoutes: Record<string, Record<string, (req: Request) => Response | Promise<Response>>> = {",
+    "const apiRoutes: Record<string, Record<string, (req: Request) => Response | Promise<Response>>> = {",
     apiEntries,
     "};",
     "",
     handleApiCode,
+    "",
+    "const server = Bun.serve({",
+    "  port: parseInt(process.env.PORT || '3000', 10),",
+    ...fetchHandler,
   ].join("\n");
 }
 

@@ -5,5 +5,8 @@
   "type": "module",
   "bin": {
     "x": "./src/index.ts"
+  },
+  "dependencies": {
+    "@x/core": "workspace:*"
   }
 }

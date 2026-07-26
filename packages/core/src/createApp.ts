@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
+import { renderErrorOverlay } from "./error-overlay";
 import { type MiddlewareFn, composeMiddleware } from "./middleware";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
@@ -138,17 +139,28 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           mode: "server",
           revalidate: undefined,
           handler: async (req: Request) => {
-            const method = req.method;
-            const handlerFn = methodHandlers[method];
-            if (handlerFn) {
-              const result = await handlerFn(req);
-              if (result instanceof Response) return result;
-              if (result === undefined || result === null) {
-                return new Response("OK", { status: 200 });
+            try {
+              const method = req.method;
+              const handlerFn = methodHandlers[method];
+              if (handlerFn) {
+                const result = await handlerFn(req);
+                if (result instanceof Response) return result;
+                if (result === undefined || result === null) {
+                  return new Response("OK", { status: 200 });
+                }
+                return Response.json(result);
               }
-              return Response.json(result);
+              return new Response(`Method ${method} not allowed`, { status: 405 });
+            } catch (err) {
+              console.error("[x] API handler error:", err);
+              if (options.development) {
+                return new Response(renderErrorOverlay(err), {
+                  status: 500,
+                  headers: { "Content-Type": "text/html; charset=utf-8" },
+                });
+              }
+              return new Response("Internal server error", { status: 500 });
             }
-            return new Response(`Method ${method} not allowed`, { status: 405 });
           },
         });
         continue;
@@ -200,65 +212,76 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         mode,
         revalidate,
         handler: async (req: Request) => {
-          const params =
-            extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
+          try {
+            const params =
+              extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
 
-          const baseHandler = async (ctx: {
-            params: Record<string, string>;
-            request: Request;
-          }) => {
-            let loaderData: Record<string, unknown> = {};
-            if (loader) {
-              const result = await loader(ctx);
-              if (result instanceof Response) return result;
-              loaderData = result;
+            const baseHandler = async (ctx: {
+              params: Record<string, string>;
+              request: Request;
+            }) => {
+              let loaderData: Record<string, unknown> = {};
+              if (loader) {
+                const result = await loader(ctx);
+                if (result instanceof Response) return result;
+                loaderData = result;
+              }
+
+              if (mode === "server") {
+                const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
+                const stream = await renderStreamingPage(content);
+                return new Response(stream, {
+                  headers: { "Content-Type": "text/html; charset=utf-8" },
+                });
+              }
+
+              const cached = staticCache.get(route.routePath);
+              const revalidateSeconds = revalidate ?? 0;
+
+              if (
+                revalidateSeconds > 0 &&
+                cached &&
+                Date.now() - cached.timestamp < revalidateSeconds * 1000
+              ) {
+                return new Response(cached.html, {
+                  headers: { "Content-Type": "text/html; charset=utf-8", "X-Revalidated": "hit" },
+                });
+              }
+
+              const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
+              const html = renderPage(content);
+
+              if (revalidateSeconds > 0) {
+                staticCache.set(route.routePath, { html, timestamp: Date.now() });
+              }
+
+              return new Response(html, {
+                headers: {
+                  "Content-Type": "text/html; charset=utf-8",
+                  "X-Revalidated": revalidateSeconds > 0 ? "miss" : "none",
+                },
+              });
+            };
+
+            if (middlewareModules.length > 0) {
+              const composed = composeMiddleware(middlewareModules, baseHandler);
+              return composed(
+                { params, request: req },
+                async () => new Response("Not found", { status: 404 }),
+              );
             }
 
-            if (mode === "server") {
-              const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
-              const stream = await renderStreamingPage(content);
-              return new Response(stream, {
+            return baseHandler({ params, request: req });
+          } catch (err) {
+            console.error("[x] route handler error:", err);
+            if (options.development) {
+              return new Response(renderErrorOverlay(err), {
+                status: 500,
                 headers: { "Content-Type": "text/html; charset=utf-8" },
               });
             }
-
-            const cached = staticCache.get(route.routePath);
-            const revalidateSeconds = revalidate ?? 0;
-
-            if (
-              revalidateSeconds > 0 &&
-              cached &&
-              Date.now() - cached.timestamp < revalidateSeconds * 1000
-            ) {
-              return new Response(cached.html, {
-                headers: { "Content-Type": "text/html; charset=utf-8", "X-Revalidated": "hit" },
-              });
-            }
-
-            const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
-            const html = renderPage(content);
-
-            if (revalidateSeconds > 0) {
-              staticCache.set(route.routePath, { html, timestamp: Date.now() });
-            }
-
-            return new Response(html, {
-              headers: {
-                "Content-Type": "text/html; charset=utf-8",
-                "X-Revalidated": revalidateSeconds > 0 ? "miss" : "none",
-              },
-            });
-          };
-
-          if (middlewareModules.length > 0) {
-            const composed = composeMiddleware(middlewareModules, baseHandler);
-            return composed(
-              { params, request: req },
-              async () => new Response("Not found", { status: 404 }),
-            );
+            return new Response("Internal server error", { status: 500 });
           }
-
-          return baseHandler({ params, request: req });
         },
       });
     }
@@ -301,26 +324,32 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     function scheduleRebuild() {
       if (rebuildTimeout) clearTimeout(rebuildTimeout);
       rebuildTimeout = setTimeout(async () => {
-        const oldPaths = new Set(handlers.map((h) => h.entry.filePath));
-        await buildHandlers();
-        const newPaths = new Set(handlers.map((h) => h.entry.filePath));
+        try {
+          const oldPaths = new Set(handlers.map((h) => h.entry.filePath));
+          await buildHandlers();
+          const newPaths = new Set(handlers.map((h) => h.entry.filePath));
 
-        const added = [...newPaths].filter((p) => !oldPaths.has(p));
-        const removed = [...oldPaths].filter((p) => !newPaths.has(p));
+          const added = [...newPaths].filter((p) => !oldPaths.has(p));
+          const removed = [...oldPaths].filter((p) => !newPaths.has(p));
 
-        if (added.length > 0) {
-          for (const p of added)
-            console.log(`[x] route added: ${p.replace(options.routesDir, "")}`);
-        }
-        if (removed.length > 0) {
-          for (const p of removed)
-            console.log(`[x] route removed: ${p.replace(options.routesDir, "")}`);
-        }
+          if (added.length > 0) {
+            for (const p of added)
+              console.log(`[x] route added: ${p.replace(options.routesDir, "")}`);
+          }
+          if (removed.length > 0) {
+            for (const p of removed)
+              console.log(`[x] route removed: ${p.replace(options.routesDir, "")}`);
+          }
 
-        if (added.length > 0 || removed.length > 0) {
-          console.log(
-            `[x] route tree rebuilt (${handlers.length} routes, ${contentHandlers.length} content)`,
-          );
+          if (added.length > 0 || removed.length > 0) {
+            console.log(
+              `[x] route tree rebuilt (${handlers.length} routes, ${contentHandlers.length} content)`,
+            );
+          }
+        } catch {
+          if (options.development) {
+            console.warn("[x] rebuild skipped: routes directory may have changed");
+          }
         }
       }, 200);
     }

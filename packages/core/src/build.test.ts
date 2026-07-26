@@ -96,8 +96,10 @@ describe("build", () => {
   test("generates server entry for server-mode routes", async () => {
     await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
     expect(existsSync(join(OUT_DIR, "server/index.ts"))).toBe(true);
+    expect(existsSync(join(OUT_DIR, "server/index.js"))).toBe(true);
     const content = readFileSync(join(OUT_DIR, "server/index.ts"), "utf-8");
     expect(content).toContain("about");
+    expect(content).toContain("Bun.serve");
   });
 
   test("builds content collections", async () => {
@@ -146,5 +148,22 @@ describe("island code-splitting", () => {
         }
       }
     }
+  });
+
+  test("island bundle contains hydration logic", async () => {
+    await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
+
+    const islandsDir = join(OUT_DIR, "client/_islands");
+    const entries = readdirSync(islandsDir);
+
+    expect(entries.length).toBeGreaterThan(0);
+
+    const entryDir = join(islandsDir, entries[0] as string);
+    const files = readdirSync(entryDir);
+    const jsFile = files.find((f: string) => f.endsWith(".js"));
+    expect(jsFile).toBeDefined();
+
+    const js = readFileSync(join(entryDir, jsFile as string), "utf-8");
+    expect(js.length).toBeGreaterThan(50);
   });
 });

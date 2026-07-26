@@ -44,3 +44,4 @@ export {
   resetServerFunctions,
   getServerFunctionHandler,
 } from "./server-functions";
+export { renderErrorOverlay } from "./error-overlay";

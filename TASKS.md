@@ -121,17 +121,21 @@ verified, not just written.
 
 ## Phase 4 — Dev server
 
-- [ ] Confirm React Fast Refresh survives across island boundaries (n/a until
-  islands exist)
-- [ ] Server-side render errors surface in the browser overlay, not just
-  client errors — right now an error in a route component just 500s
+- [x] Proper island hydration bundles — `bundleRouteIslands()` generates a real
+  client JS bundle per route (via `bun build --target=browser`) that imports the
+  route module, looks up `data-island` elements, and hydrates each with
+  `hydrateRoot()`
+- [x] Server-side render errors surface in the browser overlay — `renderErrorOverlay()`
+  in `error-overlay.ts` renders a styled HTML error page; all route/API handlers
+  in `createApp.ts` are wrapped in try/catch and return the overlay in dev mode
 
 ## Phase 5 — Production build
 
-- [ ] `x build` → `bun build --target=bun` for the server bundle
-- [ ] Fully-static routes get a separate static-export output
-- [ ] `Dockerfile` using `oven/bun` base image
-- [ ] Deployment notes for one real target (Fly.io or a plain VPS)
+- [x] `x build` → runs `build()` from `@x/core`, then `bun build --target=bun` on the
+  generated server entry (bundled in `build.ts` via `Bun.spawnSync`)
+- [x] Fully-static routes get a separate static-export output (`dist/client/`)
+- [x] `Dockerfile` using `oven/bun` base image (multi-stage: build then production)
+- [x] `DEPLOY.md` — deployment notes for Fly.io, VPS + systemd, environment variables
 
 ## Phase 6 — Data layer
 
