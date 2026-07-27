@@ -12,15 +12,23 @@ what's explicitly deferred.
 
 ```
 packages/core   the framework runtime: file-based router, SSR renderer
-packages/cli    x dev / x build / x start (not implemented yet)
+packages/cli    x dev / x build / x start
 examples/basic  a small app that exercises whatever's currently built
 ```
 
-## Running the example
+## Quick start
 
 ```bash
-bun install
-bun --hot examples/basic/server.ts
+bun install                    # installs deps + links the `x` CLI
+cd examples/basic
+x dev                          # start dev server with hot reload
+```
+
+The `x` CLI is registered via `bun link` during `postinstall`. If you prefer
+not to rely on that, invoke it directly:
+
+```bash
+bun packages/cli/src/index.ts dev
 ```
 
 ## Development
@@ -29,6 +37,13 @@ bun --hot examples/basic/server.ts
 bun test        # run the test suite
 bun run typecheck
 bun run lint
+```
+
+## Production build
+
+```bash
+x build          # static export + server bundle -> .x/
+x start          # start the production server from .x/
 ```
 
 ## Route conventions

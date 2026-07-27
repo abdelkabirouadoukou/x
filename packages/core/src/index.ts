@@ -2,6 +2,7 @@ export {
   scanRoutes,
   scanLayouts,
   scanMiddleware,
+  scanNotFound,
   findLayoutChain,
   findMiddlewareChain,
   generateManifestSource,
@@ -9,7 +10,9 @@ export {
   type RouteEntry,
   type LayoutEntry,
   type MiddlewareEntry,
+  type NotFoundEntry,
 } from "./router";
+export { default as DefaultNotFound } from "./not-found";
 export {
   renderPage,
   renderStaticPage,
@@ -17,6 +20,7 @@ export {
   type LoaderArgs,
   type LoaderReturn,
 } from "./render";
+export { CLIENT_NAV_SCRIPT } from "./client-nav";
 export {
   createApp,
   type CreateAppOptions,

@@ -113,6 +113,25 @@ export function findLayoutChain(
   return chain;
 }
 
+export interface NotFoundEntry {
+  filePath: string;
+}
+
+const NOT_FOUND_CANDIDATES = ["_404.tsx", "_404.ts"];
+
+export function scanNotFound(rootDir: string): NotFoundEntry | null {
+  for (const name of NOT_FOUND_CANDIDATES) {
+    const full = join(rootDir, name);
+    try {
+      statSync(full);
+      return { filePath: full };
+    } catch {
+      // doesn't exist
+    }
+  }
+  return null;
+}
+
 export function scanMiddleware(rootDir: string): MiddlewareEntry[] {
   const entries: MiddlewareEntry[] = [];
 

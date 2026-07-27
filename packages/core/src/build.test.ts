@@ -98,8 +98,9 @@ describe("build", () => {
     expect(existsSync(join(OUT_DIR, "server/index.ts"))).toBe(true);
     expect(existsSync(join(OUT_DIR, "server/index.js"))).toBe(true);
     const content = readFileSync(join(OUT_DIR, "server/index.ts"), "utf-8");
-    expect(content).toContain("about");
+    expect(content).toContain("createApp");
     expect(content).toContain("Bun.serve");
+    expect(content).toContain("routesDir");
   });
 
   test("builds content collections", async () => {

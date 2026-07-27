@@ -8,7 +8,8 @@
     "typecheck": "for p in packages/*/tsconfig.json examples/*/tsconfig.json; do echo \"-- $p\"; tsc --noEmit -p \"$p\" || exit 1; done",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "dev": "bun --cwd examples/basic run dev"
+    "dev": "bun --cwd examples/basic run dev",
+    "postinstall": "cd packages/cli && bun link --force 2>/dev/null; echo '[x] cli linked as \"x\" -- run \"x dev\" from any example app'"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

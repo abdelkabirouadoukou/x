@@ -1,10 +1,34 @@
 #!/usr/bin/env bun
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
-const [command, ...args] = Bun.argv.slice(2);
-const projectDir = process.cwd();
+// Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
+// (common muscle memory from `npm run` / `bun run`).
+function parseArgv(argv: string[]): { command: string | undefined; cwd: string | undefined } {
+  const rest: string[] = [];
+  let cwd: string | undefined;
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string;
+    if (arg === "--cwd") {
+      cwd = argv[++i];
+      continue;
+    }
+    if (arg.startsWith("--cwd=")) {
+      cwd = arg.slice("--cwd=".length);
+      continue;
+    }
+    rest.push(arg);
+  }
+
+  if (rest[0] === "run") rest.shift();
+
+  return { command: rest[0], cwd };
+}
+
+const { command, cwd } = parseArgv(Bun.argv.slice(2));
+const projectDir = cwd ? resolve(process.cwd(), cwd) : process.cwd();
 
 function findConfig(): string | null {
   const candidates = ["x.config.ts", "x.config.js", "x.config.mjs"];
@@ -77,9 +101,10 @@ async function cmdBuild(): Promise<void> {
   const opts = await detectOptions();
 
   console.log("[x] build starting...");
+  const start = performance.now();
 
   const { build } = await import("@x/core");
-  const outDir = join(projectDir, "dist");
+  const outDir = join(projectDir, ".x");
 
   const buildOpts: { routesDir: string; contentDir?: string; outDir: string } = {
     routesDir: opts.routesDir,
@@ -89,11 +114,12 @@ async function cmdBuild(): Promise<void> {
 
   await build(buildOpts);
 
-  console.log("[x] build complete");
+  const ms = Math.round(performance.now() - start);
+  console.log(`[x] build complete in ${ms}ms -> ${relative(projectDir, outDir)}`);
 }
 
 async function cmdStart(): Promise<void> {
-  const outDir = join(projectDir, "dist");
+  const outDir = join(projectDir, ".x");
   const serverBundle = join(outDir, "server", "index.js");
 
   if (!existsSync(serverBundle)) {
@@ -141,7 +167,41 @@ function generateServerFile(
   writeFileSync(serverPath, content.join("\n"), "utf-8");
 }
 
+function printVersion(): void {
+  try {
+    const pkgPath = join(import.meta.dir, "..", "package.json");
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as { version?: string };
+    console.log(pkg.version ?? "0.0.1");
+  } catch {
+    console.log("0.0.1");
+  }
+}
+
+function printHelp(): void {
+  console.log(`x — full-stack React framework on Bun
+
+Usage:
+  x <command> [options]
+
+Commands:
+  dev     Start the development server with hot reload
+  build   Build for production (static export + server bundle -> .x/)
+  start   Start the production server (run "x build" first)
+
+Options:
+  --cwd <dir>    Run as if started inside <dir> (default: current directory)
+  -h, --help     Show this help message
+  -v, --version  Print the CLI version
+
+Tip: "x run dev" also works, as an alias for "x dev".`);
+}
+
 async function main(): Promise<void> {
+  if (command === "--version" || command === "-v") {
+    printVersion();
+    return;
+  }
+
   switch (command) {
     case "dev":
       await cmdDev();
@@ -152,11 +212,15 @@ async function main(): Promise<void> {
     case "start":
       await cmdStart();
       break;
+    case "--help":
+    case "-h":
+    case undefined:
+      printHelp();
+      if (command === undefined) process.exitCode = 1;
+      break;
     default:
-      console.log("[x] usage: x <dev|build|start>");
-      console.log("  dev   - Start development server with HMR");
-      console.log("  build - Build for production (static export + server bundle)");
-      console.log("  start - Start production server");
+      console.error(`[x] unknown command "${command}"`);
+      printHelp();
       process.exit(1);
   }
 }

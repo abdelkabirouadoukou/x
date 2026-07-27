@@ -1,5 +1,5 @@
-import { type FSWatcher, watch } from "node:fs";
-import { join } from "node:path";
+import { type FSWatcher, existsSync, watch } from "node:fs";
+import { join, resolve, sep } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
@@ -9,12 +9,14 @@ import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
 import {
   type LayoutEntry,
+  type NotFoundEntry,
   type RouteEntry,
   extractParams,
   findLayoutChain,
   findMiddlewareChain,
   scanLayouts,
   scanMiddleware,
+  scanNotFound,
   scanRoutes,
   writeManifest,
 } from "./router";
@@ -23,6 +25,7 @@ import {
   registerServerFunctions,
   resetServerFunctions,
 } from "./server-functions";
+import DefaultNotFound from "./not-found";
 
 export interface RouteProps {
   params: Record<string, string>;
@@ -66,6 +69,35 @@ interface ContentHandler {
 
 const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
 
+function projectRootFromRoutesDir(routesDir: string): string {
+  return join(routesDir, "..", "..");
+}
+
+function resolvePublicAsset(publicDir: string, pathname: string): string | null {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+  const target = resolve(join(publicDir, decoded));
+  const root = resolve(publicDir);
+  if (target !== root && !target.startsWith(root + sep)) return null;
+  return target;
+}
+
+async function serveStaticAsset(publicDir: string | null, req: Request): Promise<Response | null> {
+  if (!publicDir) return null;
+  if (req.method !== "GET" && req.method !== "HEAD") return null;
+  const pathname = new URL(req.url).pathname;
+  if (pathname === "/" || pathname.endsWith("/")) return null;
+  const filePath = resolvePublicAsset(publicDir, pathname);
+  if (!filePath) return null;
+  const file = Bun.file(filePath);
+  if (!(await file.exists())) return null;
+  return new Response(file);
+}
+
 function wrapWithLayouts(
   Component: ComponentType<RouteProps>,
   params: Record<string, string>,
@@ -79,7 +111,7 @@ function wrapWithLayouts(
   return content;
 }
 
-function renderContentPage(content: ContentEntry): string {
+function renderContentPage(content: ContentEntry, stylesheet: string | undefined): string {
   const title = (content.frontmatter.title as string) ?? content.slug;
   const bodyHtml = renderMarkdown(content.body);
   const body = renderPage(
@@ -94,7 +126,7 @@ function renderContentPage(content: ContentEntry): string {
         dangerouslySetInnerHTML: { __html: bodyHtml },
       }),
     ),
-    { title },
+    { title, stylesheet },
   );
   return body;
 }
@@ -102,14 +134,54 @@ function renderContentPage(content: ContentEntry): string {
 export async function createApp(options: CreateAppOptions): Promise<AppServeOptions> {
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
+  let publicDir: string | null = null;
+  let stylesheetHref: string | undefined;
+  let notFoundComponent: ComponentType<RouteProps> = DefaultNotFound;
+  let notFoundLayout: ComponentType<{ children: ReactNode }> | undefined;
   const serverFnHandler = getServerFunctionHandler();
   const staticCache = new Map<string, StaticCacheEntry>();
+
+  async function renderNotFound(req?: Request): Promise<Response> {
+    const content = notFoundLayout
+      ? createElement(notFoundLayout, null, createElement(notFoundComponent, { params: {} }))
+      : createElement(notFoundComponent, { params: {} });
+    const html = renderPage(content, { title: "404 — Not Found", stylesheet: stylesheetHref });
+    return new Response(html, {
+      status: 404,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  }
 
   async function buildHandlers(): Promise<void> {
     resetServerFunctions();
     const found = scanRoutes(options.routesDir);
     const layouts = scanLayouts(options.routesDir);
     const middlewareEntries = scanMiddleware(options.routesDir);
+
+    const projectRoot = projectRootFromRoutesDir(options.routesDir);
+    const candidatePublicDir = join(projectRoot, "public");
+    publicDir = existsSync(candidatePublicDir) ? candidatePublicDir : null;
+    stylesheetHref =
+      publicDir && existsSync(join(publicDir, "styles.css")) ? "/styles.css" : undefined;
+
+    const notFoundEntry = scanNotFound(options.routesDir);
+    if (notFoundEntry) {
+      const mod = (await import(notFoundEntry.filePath)) as {
+        default?: ComponentType<RouteProps>;
+      };
+      notFoundComponent = mod.default ?? DefaultNotFound;
+    } else {
+      notFoundComponent = DefaultNotFound;
+    }
+    const rootLayout = layouts.find((l) => l.dirPath === options.routesDir);
+    if (rootLayout) {
+      const layoutMod = (await import(rootLayout.filePath)) as {
+        default?: ComponentType<{ children: ReactNode }>;
+      };
+      notFoundLayout = layoutMod.default;
+    } else {
+      notFoundLayout = undefined;
+    }
 
     if (options.development) {
       writeManifest(found, options.routesDir);
@@ -166,9 +238,22 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         continue;
       }
 
+      // Register server functions BEFORE the no-default-export check so that
+      // action-only files (e.g. greet.ts with `export const actions = {...}`)
+      // still work even though they have no page component.
+      const actions = mod.actions as
+        | Record<string, (...args: unknown[]) => Promise<unknown>>
+        | undefined;
+      if (actions) {
+        registerServerFunctions(route.routePath, route.paramNames, actions);
+      }
+
       const Component = mod.default as ComponentType<RouteProps> | undefined;
       if (!Component) {
-        console.warn(`[x] ${route.filePath} has no default export -- skipping`);
+        // Only warn for non-API, non-action files. Action-only files are fine.
+        if (!actions) {
+          console.warn(`[x] ${route.filePath} has no default export -- skipping`);
+        }
         continue;
       }
 
@@ -176,13 +261,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const loader = mod.loader as ((args: LoaderArgs) => Promise<LoaderReturn>) | undefined;
       const routeMiddleware = mod.middleware as MiddlewareFn | undefined;
       const revalidate = mod.revalidate as number | undefined;
-
-      const actions = mod.actions as
-        | Record<string, (...args: unknown[]) => Promise<unknown>>
-        | undefined;
-      if (actions) {
-        registerServerFunctions(route.routePath, route.paramNames, actions);
-      }
 
       const layoutChain = findLayoutChain(route.filePath, layouts, options.routesDir);
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
@@ -229,7 +307,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
               if (mode === "server") {
                 const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
-                const stream = await renderStreamingPage(content);
+                const stream = await renderStreamingPage(content, { stylesheet: stylesheetHref });
                 return new Response(stream, {
                   headers: { "Content-Type": "text/html; charset=utf-8" },
                 });
@@ -249,7 +327,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               }
 
               const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
-              const html = renderPage(content);
+              const html = renderPage(content, { stylesheet: stylesheetHref });
 
               if (revalidateSeconds > 0) {
                 staticCache.set(route.routePath, { html, timestamp: Date.now() });
@@ -293,7 +371,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const loadedContent: ContentHandler[] = content.map((entry) => ({
         entry,
         handler: async () => {
-          const html = renderContentPage(entry);
+          const html = renderContentPage(entry, stylesheetHref);
           return new Response(html, {
             headers: { "Content-Type": "text/html; charset=utf-8" },
           });
@@ -375,6 +453,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const serverFnResult = await serverFnHandler(req);
       if (serverFnResult !== null) return serverFnResult;
 
+      const staticAsset = await serveStaticAsset(publicDir, req);
+      if (staticAsset !== null) return staticAsset;
+
       for (const h of handlers) {
         const params = extractParams(h.entry.routePath, h.entry.paramNames, url);
         if (params !== null) {
@@ -388,7 +469,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         }
       }
 
-      return new Response("Not found", { status: 404 });
+      return renderNotFound(req);
     };
 
     return {
@@ -399,22 +480,40 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     };
   }
 
-  const routeMap: Record<string, (req: Request) => Promise<Response> | Response> = {};
-  for (const h of handlers) {
-    routeMap[h.entry.routePath] = h.handler;
-  }
+  // Production -- same iteration logic as dev, so dynamic routes, layouts,
+  // middleware, static assets and 404 page all work identically.
+  const prodFetch = async (req: Request) => {
+    const url = new URL(req.url).pathname;
+
+    const revalidationResult = await handleRevalidation(req);
+    if (revalidationResult !== null) return revalidationResult;
+
+    const serverFnResult = await serverFnHandler(req);
+    if (serverFnResult !== null) return serverFnResult;
+
+    const staticAsset = await serveStaticAsset(publicDir, req);
+    if (staticAsset !== null) return staticAsset;
+
+    for (const h of handlers) {
+      const params = extractParams(h.entry.routePath, h.entry.paramNames, url);
+      if (params !== null) {
+        return h.handler(req);
+      }
+    }
+
+    for (const h of contentHandlers) {
+      if (h.entry.routePath === url) {
+        return h.handler(req);
+      }
+    }
+
+    return renderNotFound(req);
+  };
 
   return {
-    routes: routeMap,
+    routes: {},
     development: false,
     port: options.port ?? 3000,
-    fetch: async (req: Request) => {
-      const revalidationResult = await handleRevalidation(req);
-      if (revalidationResult !== null) return revalidationResult;
-
-      const result = await serverFnHandler(req);
-      if (result !== null) return result;
-      return new Response("Not found", { status: 404 });
-    },
+    fetch: prodFetch,
   };
 }

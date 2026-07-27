@@ -1,4 +1,4 @@
-import { type ReactNode, createContext, createElement, useContext } from "react";
+import { type ReactNode, createContext, useContext } from "react";
 
 export type IslandMode = "idle" | "visible" | "load";
 
@@ -20,10 +20,7 @@ export function IslandProvider({
   registry: { entries: IslandEntry[] };
   children?: ReactNode;
 }) {
-  return createElement(IslandContext.Provider, {
-    value: registry,
-    children,
-  });
+  return <IslandContext.Provider value={registry}>{children}</IslandContext.Provider>;
 }
 
 let islandCounter = 0;
@@ -44,13 +41,9 @@ export function Island({
     registry.entries.push({ name, id });
   }
 
-  return createElement(
-    "div",
-    {
-      "data-island": name,
-      "data-island-id": id,
-      "data-island-client": client,
-    },
-    children,
+  return (
+    <div data-island={name} data-island-id={id} data-island-client={client}>
+      {children}
+    </div>
   );
 }
