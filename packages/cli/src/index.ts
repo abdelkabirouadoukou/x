@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 
 // Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
 // (common muscle memory from `npm run` / `bun run`).
@@ -39,62 +39,94 @@ function findConfig(): string | null {
   return null;
 }
 
-async function detectOptions(): Promise<{
-  routesDir: string;
-  contentDir: string | undefined;
+interface DetectedOptions {
+  routesDir?: string;
+  pagesDir?: string;
+  apiDir?: string;
+  layoutsDir?: string;
+  actionsDir?: string;
+  contentDir?: string;
   port: number;
-}> {
+}
+
+function dropUndefined<T extends Record<string, unknown>>(obj: T): T {
+  const out = {} as Record<string, unknown>;
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out as T;
+}
+
+function detectOptionsFromConfig(
+  cfg: Record<string, unknown>,
+): DetectedOptions {
+  const resolveDir = (dir: unknown) =>
+    typeof dir === "string" ? join(projectDir, dir) : undefined;
+  const contentDir =
+    typeof cfg.contentDir === "string"
+      ? resolveDir(cfg.contentDir)
+      : existsSync(join(projectDir, "content"))
+        ? join(projectDir, "content")
+        : undefined;
+  return dropUndefined({
+    routesDir: resolveDir(cfg.routesDir) || undefined,
+    pagesDir: resolveDir(cfg.pagesDir) || undefined,
+    apiDir: resolveDir(cfg.apiDir) || undefined,
+    layoutsDir: resolveDir(cfg.layoutsDir) || undefined,
+    actionsDir: resolveDir(cfg.actionsDir) || undefined,
+    contentDir,
+    port: (cfg.port as number) ?? 3000,
+  }) as unknown as DetectedOptions;
+}
+
+function detectDefaultOptions(): DetectedOptions {
+  const guessPages = join(projectDir, "src", "pages");
+  const guessRoutes = join(projectDir, "src", "routes");
+  const pagesDir = existsSync(guessPages) ? guessPages : guessRoutes;
+  const contentDir = existsSync(join(projectDir, "content"))
+    ? join(projectDir, "content")
+    : undefined;
+  return dropUndefined({
+    pagesDir,
+    contentDir,
+    port: 3000,
+  }) as unknown as DetectedOptions;
+}
+
+async function detectOptions(): Promise<DetectedOptions> {
   const configPath = findConfig();
   if (configPath) {
     try {
-      const mod = (await import(configPath)) as {
-        default?: { routesDir?: string; contentDir?: string; port?: number };
-      };
-      const cfg = mod.default ?? {};
-      const contentDir =
-        cfg.contentDir !== undefined
-          ? cfg.contentDir
-          : existsSync(join(projectDir, "content"))
-            ? join(projectDir, "content")
-            : undefined;
-      return {
-        routesDir: cfg.routesDir ?? join(projectDir, "src", "routes"),
-        contentDir,
-        port: cfg.port ?? 3000,
-      };
+      const mod = (await import(configPath)) as { default?: Record<string, unknown> };
+      return detectOptionsFromConfig(mod.default ?? {});
     } catch (err) {
       console.warn(`[x] failed to load config: ${err}`);
     }
   }
 
-  return {
-    routesDir: join(projectDir, "src", "routes"),
-    contentDir: existsSync(join(projectDir, "content")) ? join(projectDir, "content") : undefined,
-    port: 3000,
-  };
+  return detectDefaultOptions();
 }
 
 async function cmdDev(): Promise<void> {
-  const serverPath = join(projectDir, "server.ts");
-  if (!existsSync(serverPath)) {
-    const opts = await detectOptions();
-    const genOpts: { routesDir: string; contentDir?: string; port: number } = {
-      routesDir: opts.routesDir,
-      port: opts.port,
-    };
-    if (opts.contentDir) genOpts.contentDir = opts.contentDir;
-    generateServerFile(serverPath, genOpts);
-    console.log("[x] generated default server.ts");
+  const opts = await detectOptions();
+  const { createApp } = await import("@x/core");
+  const { port: _port, ...dirs } = opts;
+
+  // Auto-compile Tailwind if a source entry exists
+  const twInput = join(projectDir, "src/styles/globals.css");
+  const twOutput = join(projectDir, "public/styles.css");
+  if (existsSync(twInput)) {
+    console.log("[x] compiling Tailwind CSS...");
+    const { writeFileSync } = await import("node:fs");
+    const { spawnSync } = await import("node:child_process");
+    const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], { cwd: projectDir });
+    if (r.status !== 0) console.warn("[x] Tailwind compilation failed, serving raw CSS.");
   }
 
   console.log("[x] dev server starting...");
-  const proc = spawn("bun", ["--hot", serverPath], {
-    stdio: "inherit",
-    cwd: projectDir,
-    env: { ...process.env, NODE_ENV: "development" },
-  });
-
-  proc.on("exit", (code) => process.exit(code ?? 1));
+  const app = await createApp({ ...dirs, development: true });
+  const server = Bun.serve({ ...app, port: opts.port });
+  console.log(`[x] dev server running at http://localhost:${opts.port}`);
 }
 
 async function cmdBuild(): Promise<void> {
@@ -103,16 +135,20 @@ async function cmdBuild(): Promise<void> {
   console.log("[x] build starting...");
   const start = performance.now();
 
+  // Compile Tailwind for production
+  const twInput = join(projectDir, "src/styles/globals.css");
+  const twOutput = join(projectDir, "public/styles.css");
+  if (existsSync(twInput)) {
+    console.log("[x] compiling Tailwind CSS (production)...");
+    const { spawnSync } = await import("node:child_process");
+    const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput, "--minify"], { cwd: projectDir });
+    if (r.status !== 0) console.warn("[x] Tailwind compilation failed.");
+  }
+
   const { build } = await import("@x/core");
   const outDir = join(projectDir, ".x");
-
-  const buildOpts: { routesDir: string; contentDir?: string; outDir: string } = {
-    routesDir: opts.routesDir,
-    outDir,
-  };
-  if (opts.contentDir) buildOpts.contentDir = opts.contentDir;
-
-  await build(buildOpts);
+  const { port: _port, ...rest } = opts;
+  await build({ ...rest, outDir });
 
   const ms = Math.round(performance.now() - start);
   console.log(`[x] build complete in ${ms}ms -> ${relative(projectDir, outDir)}`);
@@ -136,35 +172,6 @@ async function cmdStart(): Promise<void> {
   });
 
   proc.on("exit", (code) => process.exit(code ?? 1));
-}
-
-function generateServerFile(
-  serverPath: string,
-  opts: { routesDir: string; contentDir?: string; port: number },
-): void {
-  const content: string[] = [
-    `import { createApp } from "@x/core";`,
-    "",
-    "const app = await createApp({",
-    `  routesDir: ${JSON.stringify(opts.routesDir)}.replace(process.cwd() + "/", "").replace(process.cwd(), "."),`,
-    `  port: ${opts.port},`,
-    "  development: true,",
-    "});",
-    "",
-    "const server = Bun.serve(app);",
-    "",
-    "console.log(`[x] dev server running at ${server.url}`);",
-  ];
-
-  if (opts.contentDir) {
-    content.splice(
-      4,
-      0,
-      `  contentDir: ${JSON.stringify(opts.contentDir)}.replace(process.cwd() + "/", "").replace(process.cwd(), "."),`,
-    );
-  }
-
-  writeFileSync(serverPath, content.join("\n"), "utf-8");
 }
 
 function printVersion(): void {

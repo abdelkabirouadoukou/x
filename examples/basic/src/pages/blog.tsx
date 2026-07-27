@@ -13,22 +13,22 @@ export async function loader(_args: LoaderArgs) {
 export default function BlogPage({ loaderData }: RouteProps) {
   const entries = (loaderData?.entries ?? []) as { routePath: string; title: string }[];
   return (
-    <main>
-      <h1>Blog</h1>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Blog</h1>
       {entries.length === 0 ? (
-        <p>No posts yet.</p>
+        <p className="text-muted-foreground">No posts yet.</p>
       ) : (
-        <ul>
+        <ul className="space-y-2">
           {entries.map((entry) => (
             <li key={entry.routePath}>
-              <a href={entry.routePath}>{entry.title}</a>
+              <a href={entry.routePath} className="text-primary hover:underline">{entry.title}</a>
             </li>
           ))}
         </ul>
       )}
-      <p style={{ marginTop: "2rem" }}>
-        <a href="/">Back home</a>
+      <p className="pt-4">
+        <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">&larr; Back home</a>
       </p>
-    </main>
+    </div>
   );
 }

@@ -3,6 +3,7 @@ export {
   scanPages,
   scanApiDir,
   scanLayouts,
+  scanLayoutsDir,
   scanMiddleware,
   scanNotFound,
   findLayoutChain,

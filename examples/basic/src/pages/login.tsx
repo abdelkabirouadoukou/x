@@ -1,7 +1,28 @@
 import { useState } from "react";
+import { createSession, setSessionCookie } from "../lib/auth";
+import type { LoaderArgs, RouteProps } from "@x/core";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 
-export default function LoginPage() {
-  const [error, setError] = useState("");
+export async function loader({ request }: LoaderArgs) {
+  if (request.method === "POST") {
+    const formData = await request.formData();
+    const username = formData.get("username") as string | null;
+    const password = formData.get("password") as string | null;
+    if (username === "admin" && password === "admin") {
+      const session = createSession(username);
+      return new Response(null, {
+        status: 302,
+        headers: { Location: "/dashboard", "Set-Cookie": setSessionCookie(session.token) },
+      });
+    }
+    return { error: "Invalid credentials" };
+  }
+  return {};
+}
+
+export default function LoginPage({ loaderData }: RouteProps) {
+  const [error, setError] = useState((loaderData?.error as string) ?? "");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -30,26 +51,28 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 400, margin: "4rem auto" }}>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Username
-          <input name="username" defaultValue="admin" required />
-        </label>
-        <label>
-          Password
-          <input name="password" type="password" defaultValue="admin" required />
-        </label>
-        {error && <p style={{ color: "var(--danger, #e74c3c)", fontSize: "0.875rem" }}>{error}</p>}
-        <button type="submit" disabled={loading}>
+    <div className="mx-auto max-w-sm mt-16 space-y-6">
+      <h1 className="text-2xl font-bold text-center">Login</h1>
+      <form method="POST" action="/login" onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Username</label>
+          <Input name="username" defaultValue="admin" required />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Password</label>
+          <Input name="password" type="password" defaultValue="admin" required />
+        </div>
+        {error && (
+          <p id="login-error" className="text-sm text-destructive">{error}</p>
+        )}
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Signing in..." : "Sign in"}
-        </button>
+        </Button>
       </form>
-      <p style={{ fontSize: "0.875rem", color: "var(--text-muted, #666)", marginTop: "1rem" }}>
-        Demo credentials: admin / admin
+      <p className="text-xs text-muted-foreground text-center">Demo credentials: admin / admin</p>
+      <p className="text-center">
+        <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">&larr; Back home</a>
       </p>
-      <p><a href="/">Back home</a></p>
-    </main>
+    </div>
   );
 }

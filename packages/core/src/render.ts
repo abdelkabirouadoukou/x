@@ -48,6 +48,7 @@ function htmlShell(
   navScriptTag: string,
 ): string {
   const finalScripts = scripts ?? "";
+  const inside = `${bodySlot}${propsScript ? `\n    ${propsScript}` : ""}${finalScripts ? `\n    ${finalScripts}` : ""}`;
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -56,8 +57,8 @@ function htmlShell(
     <title>${escapeHtml(title)}</title>${headExtras}
   </head>
   <body>
-    <div id="root">${bodySlot}</div>
-    ${propsScript ? `    ${propsScript}\n` : ""}${finalScripts ? `    ${finalScripts}\n` : ""}${navScriptTag ? `    ${navScriptTag}\n` : ""}  </body>
+    <div id="root">${inside}</div>
+    ${navScriptTag ? `    ${navScriptTag}\n` : ""}  </body>
 </html>`;
 }
 

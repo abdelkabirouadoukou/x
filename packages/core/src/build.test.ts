@@ -100,7 +100,7 @@ describe("build", () => {
     const content = readFileSync(join(OUT_DIR, "server/index.ts"), "utf-8");
     expect(content).toContain("createApp");
     expect(content).toContain("Bun.serve");
-    expect(content).toContain("routesDir");
+    expect(content).toContain("pagesDir");
   });
 
   test("builds content collections", async () => {

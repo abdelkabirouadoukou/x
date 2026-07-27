@@ -20,9 +20,14 @@ export function scanPages(rootDir: string): RouteEntry[] {
   return scanRoutes(rootDir).map((r) => ({ ...r, isApi: false }));
 }
 
-/** Scan API routes from a separate directory (not nested under pages/routes). */
+/** Scan API routes from a separate directory (not nested under pages/routes).
+ *  Route paths are prefixed with /api so they match requests to /api/…. */
 export function scanApiDir(rootDir: string): RouteEntry[] {
-  return scanRoutes(rootDir).map((r) => ({ ...r, isApi: true }));
+  return scanRoutes(rootDir).map((r) => ({
+    ...r,
+    routePath: r.routePath === "/" ? "/api" : `/api${r.routePath}`,
+    isApi: true,
+  }));
 }
 
 export function scanRoutes(rootDir: string): RouteEntry[] {
@@ -107,6 +112,29 @@ export function scanLayouts(rootDir: string): LayoutEntry[] {
   }
 
   walk(rootDir);
+  return entries;
+}
+
+/**
+ * Scan a dedicated layouts directory. Every layout file found is registered
+ * as a root-level layout. The file name becomes the layout key (e.g.
+ * main.tsx -> "main"), and it covers the root path "/" so it wraps every page.
+ * Nested _layout.tsx files inside pages/ still work for directory-level
+ * nesting — this is additive, not exclusive.
+ */
+export function scanLayoutsDir(layoutsDir: string): LayoutEntry[] {
+  const entries: LayoutEntry[] = [];
+  try { statSync(layoutsDir); } catch { return entries; }
+
+  for (const name of readdirSync(layoutsDir)) {
+    if (name.startsWith(".")) continue;
+    const full = join(layoutsDir, name);
+    const stat = statSync(full);
+    if (stat.isFile() && (name.endsWith(".tsx") || name.endsWith(".ts"))) {
+      entries.push({ filePath: full, dirPath: layoutsDir });
+    }
+  }
+
   return entries;
 }
 

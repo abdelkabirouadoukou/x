@@ -5,9 +5,14 @@ export type RouteMap = {
   "/login": Record<string, never>;
   "/dashboard": Record<string, never>;
   "/blog": Record<string, never>;
+  "/placeholder": Record<string, never>;
   "/about": Record<string, never>;
-  "/auth/login": Record<string, never>;
-  "/auth/logout": Record<string, never>;
+  "/api/auth/login": Record<string, never>;
+  "/api/auth/logout": Record<string, never>;
+  "/api/placeholder/comments": Record<string, never>;
+  "/api/placeholder/posts": Record<string, never>;
+  "/api/placeholder/todos": Record<string, never>;
+  "/api/placeholder/users": Record<string, never>;
 };
 
 export function href<T extends keyof RouteMap & string>(

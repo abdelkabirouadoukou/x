@@ -16,6 +16,7 @@ import {
   findMiddlewareChain,
   scanApiDir,
   scanLayouts,
+  scanLayoutsDir,
   scanMiddleware,
   scanNotFound,
   scanPages,
@@ -186,7 +187,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     found = found.filter((r) => !r.isApi);
     found.push(...apiFound);
 
-    const layouts = scanLayouts(layoutsDir);
+    // Layouts: dedicated layouts dir (any .tsx/.ts file) + nested _layout.tsx
+    // inside pages/ for directory-level nesting.
+    const dedicatedLayouts = options.layoutsDir ? scanLayoutsDir(options.layoutsDir) : [];
+    const nestedLayouts = scanLayouts(pagesDir);
+    const layouts = [...dedicatedLayouts, ...nestedLayouts];
     const middlewareEntries = scanMiddleware(pagesDir);
 
     // Scan action files from a separate actionsDir if provided
@@ -194,16 +199,29 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const actionFiles = scanRoutes(options.actionsDir);
       for (const actionFile of actionFiles) {
         const mod = (await import(actionFile.filePath)) as Record<string, unknown>;
+
+        // Derive parent-level route path: strip the file-name segment so that a
+        // file named greet.ts exposes actions under the parent directory's path.
+        // e.g. src/actions/dashboard/greet.ts -> routePath /dashboard
+        // For index.ts the routePath is already the directory path.
+        const segments = actionFile.routePath.split("/").filter(Boolean);
+        const fileName = segments[segments.length - 1] ?? "";
+        const parentPath =
+          fileName === "index" || !fileName
+            ? actionFile.routePath
+            : "/" + segments.slice(0, -1).join("/");
+
+        // `export const actions = { greet }` — batched registration
         const actions = mod.actions as
           | Record<string, (...args: unknown[]) => Promise<unknown>>
           | undefined;
         if (actions) {
-          registerServerFunctions(actionFile.routePath, actionFile.paramNames, actions);
+          registerServerFunctions(parentPath, actionFile.paramNames, actions);
         }
-        // Also support individual named async exports as actions
+        // Individual named exports — each function is an action under parent path
         for (const [key, value] of Object.entries(mod)) {
           if (key === "default" || key === "actions" || typeof value !== "function") continue;
-          registerServerFunctions(actionFile.routePath, actionFile.paramNames, {
+          registerServerFunctions(parentPath, actionFile.paramNames, {
             [key]: value as (...args: unknown[]) => Promise<unknown>,
           });
         }
@@ -314,7 +332,13 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const routeMiddleware = mod.middleware as MiddlewareFn | undefined;
       const revalidate = mod.revalidate as number | undefined;
 
-      const layoutChain = findLayoutChain(route.filePath, layouts, layoutsDir);
+      const layoutChain = findLayoutChain(route.filePath, layouts, pagesDir);
+      // Prepend root layouts from the dedicated layouts dir
+      for (const rootLayout of dedicatedLayouts) {
+        if (!layoutChain.some((l) => l.filePath === rootLayout.filePath)) {
+          layoutChain.unshift(rootLayout);
+        }
+      }
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
       for (const l of layoutChain) {
         const layoutMod = (await import(l.filePath)) as {
@@ -485,13 +509,16 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     }
 
     try {
-      const watcher = watch(primaryDir, { recursive: true }, (_eventType, filename) => {
-        if (!filename) return;
-        const name = typeof filename === "string" ? filename : (filename as Buffer).toString();
-        if (name.startsWith(".") || name.startsWith("_")) return;
-        if (!/\.(tsx|ts)$/.test(name)) return;
-        scheduleRebuild();
-      });
+      const watchDirs = [primaryDir, options.apiDir, options.layoutsDir, options.actionsDir].filter(Boolean) as string[];
+      for (const dir of [...new Set(watchDirs)]) {
+        watch(dir, { recursive: true }, (_eventType: unknown, filename: unknown) => {
+          if (!filename) return;
+          const name = typeof filename === "string" ? filename : (filename as Buffer).toString();
+          if (name.startsWith(".") || name.startsWith("_")) return;
+          if (!/\.(tsx|ts)$/.test(name)) return;
+          scheduleRebuild();
+        });
+      }
     } catch {
       console.warn("[x] file watching not available on this platform");
     }
