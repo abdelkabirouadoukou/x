@@ -34,6 +34,8 @@ const features = [
   },
 ];
 
+export const mode = "static";
+
 export default function HomePage() {
   return (
     <div className="pb-32">

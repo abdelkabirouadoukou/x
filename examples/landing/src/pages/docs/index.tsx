@@ -82,6 +82,8 @@ const sections = [
   },
 ];
 
+export const mode = "static";
+
 export default function DocsHubPage() {
   return (
     <div className="py-12">

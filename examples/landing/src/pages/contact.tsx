@@ -1,5 +1,7 @@
 import { Mail, MapPin, Send } from "lucide-react";
 
+export const mode = "static";
+
 export default function ContactPage() {
   return (
     <div className="mx-auto max-w-4xl px-6 py-20">

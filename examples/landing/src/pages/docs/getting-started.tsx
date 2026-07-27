@@ -2,6 +2,8 @@ import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
+export const mode = "static";
+
 export default function DocPage({}: RouteProps) {
   return (
     <div>
