@@ -1,5 +1,5 @@
-import { BarChart3, TrendingUp, PieChart } from "lucide-react";
 import type { LoaderArgs, RouteProps } from "@x/core";
+import { BarChart3, PieChart, TrendingUp } from "lucide-react";
 
 export async function loader({ request }: LoaderArgs) {
   const { parseSessionCookie, getSession } = await import("../../lib/auth");

@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { createSession, setSessionCookie } from "../lib/auth";
 import type { LoaderArgs, RouteProps } from "@x/core";
+import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { createSession, setSessionCookie } from "../lib/auth";
 
 export async function loader({ request }: LoaderArgs) {
   if (request.method === "POST") {
@@ -63,7 +63,9 @@ export default function LoginPage({ loaderData }: RouteProps) {
           <Input name="password" type="password" defaultValue="admin" required />
         </div>
         {error && (
-          <p id="login-error" className="text-sm text-destructive">{error}</p>
+          <p id="login-error" className="text-sm text-destructive">
+            {error}
+          </p>
         )}
         <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Signing in..." : "Sign in"}
@@ -71,7 +73,12 @@ export default function LoginPage({ loaderData }: RouteProps) {
       </form>
       <p className="text-xs text-muted-foreground text-center">Demo credentials: admin / admin</p>
       <p className="text-center">
-        <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">&larr; Back home</a>
+        <a
+          href="/"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          &larr; Back home
+        </a>
       </p>
     </div>
   );

@@ -1,11 +1,27 @@
+import { ArrowRight, BarChart3, Globe, Lock, Shield, Users, Zap } from "lucide-react";
 import { cn } from "../lib/utils";
-import { Zap, Shield, BarChart3, Users, Globe, Lock, ArrowRight } from "lucide-react";
 
 const features = [
-  { icon: Zap, title: "Lightning Fast", description: "Blazing performance with edge-ready infrastructure." },
-  { icon: Shield, title: "Enterprise Security", description: "Bank-grade encryption and compliance built-in." },
-  { icon: BarChart3, title: "Advanced Analytics", description: "Real-time insights with customizable dashboards." },
-  { icon: Users, title: "Team Collaboration", description: "Work together seamlessly in real-time." },
+  {
+    icon: Zap,
+    title: "Lightning Fast",
+    description: "Blazing performance with edge-ready infrastructure.",
+  },
+  {
+    icon: Shield,
+    title: "Enterprise Security",
+    description: "Bank-grade encryption and compliance built-in.",
+  },
+  {
+    icon: BarChart3,
+    title: "Advanced Analytics",
+    description: "Real-time insights with customizable dashboards.",
+  },
+  {
+    icon: Users,
+    title: "Team Collaboration",
+    description: "Work together seamlessly in real-time.",
+  },
   { icon: Globe, title: "Global Scale", description: "Deploy to 30+ regions worldwide." },
   { icon: Lock, title: "Access Control", description: "Granular permissions and SSO integration." },
 ];
@@ -19,7 +35,8 @@ export default function HomePage() {
             Your All-in-One Platform
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Build, deploy, and scale your SaaS application with modern tools, real-time analytics, and enterprise-grade security.
+            Build, deploy, and scale your SaaS application with modern tools, real-time analytics,
+            and enterprise-grade security.
           </p>
           <div className="mt-10 flex items-center justify-center gap-4">
             <a
@@ -60,7 +77,9 @@ export default function HomePage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                     <Icon className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-card-foreground">{feature.title}</h3>
+                  <h3 className="mt-4 text-lg font-semibold text-card-foreground">
+                    {feature.title}
+                  </h3>
                   <p className="mt-2 text-sm text-muted-foreground">{feature.description}</p>
                 </div>
               );

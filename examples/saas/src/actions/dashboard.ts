@@ -1,1 +1,3 @@
-export function greet(name: string) { return `Hello, ${name}! Welcome to your dashboard.`; }
+export function greet(name: string) {
+  return `Hello, ${name}! Welcome to your dashboard.`;
+}

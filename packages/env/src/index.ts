@@ -15,10 +15,15 @@ type InferServer<T> = {
 };
 
 type InferClient<T, P extends string> = {
-  [K in keyof T as K extends `${P}${string}` ? K : never]: T[K] extends EnvValidator<infer V> ? V : never;
+  [K in keyof T as K extends `${P}${string}` ? K : never]: T[K] extends EnvValidator<infer V>
+    ? V
+    : never;
 };
 
-export function createEnv<T extends EnvSchemaInput>(schema: T): InferServer<T["server"]> & InferClient<T["client"], T["clientPrefix"] extends string ? T["clientPrefix"] : ""> {
+export function createEnv<T extends EnvSchemaInput>(
+  schema: T,
+): InferServer<T["server"]> &
+  InferClient<T["client"], T["clientPrefix"] extends string ? T["clientPrefix"] : ""> {
   const errors: string[] = [];
   const result: Record<string, unknown> = {};
 

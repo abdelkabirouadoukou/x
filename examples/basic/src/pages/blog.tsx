@@ -21,13 +21,20 @@ export default function BlogPage({ loaderData }: RouteProps) {
         <ul className="space-y-2">
           {entries.map((entry) => (
             <li key={entry.routePath}>
-              <a href={entry.routePath} className="text-primary hover:underline">{entry.title}</a>
+              <a href={entry.routePath} className="text-primary hover:underline">
+                {entry.title}
+              </a>
             </li>
           ))}
         </ul>
       )}
       <p className="pt-4">
-        <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">&larr; Back home</a>
+        <a
+          href="/"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          &larr; Back home
+        </a>
       </p>
     </div>
   );

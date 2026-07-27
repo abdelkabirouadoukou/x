@@ -1,11 +1,13 @@
-import { ArrowRight } from "lucide-react";
 import type { RouteProps } from "@x/core";
+import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
 export default function DocPage({}: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Getting Started</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+        Getting Started
+      </p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Get started with x</h1>
       <p className="mt-4 text-lg text-muted-foreground">
         Create a new x project, learn the project structure, and build your first page.
@@ -14,11 +16,18 @@ export default function DocPage({}: RouteProps) {
       <h2 className="mt-12 text-xl font-bold tracking-tight">Installation</h2>
       <p className="mt-3 text-muted-foreground">
         The fastest way to start is with the create-x CLI. Make sure you have{" "}
-        <a href="https://bun.sh" className="text-primary underline underline-offset-2">Bun</a> installed, then run:
+        <a href="https://bun.sh" className="text-primary underline underline-offset-2">
+          Bun
+        </a>{" "}
+        installed, then run:
       </p>
-      <CodeBlock label="terminal" lang="bash" code={`bun create x my-app
+      <CodeBlock
+        label="terminal"
+        lang="bash"
+        code={`bun create x my-app
 cd my-app
-x dev`} />
+x dev`}
+      />
       <p className="mt-4 text-muted-foreground">
         Your app will be running at <span className="text-foreground">http://localhost:3000</span>.
       </p>
@@ -27,7 +36,10 @@ x dev`} />
       <p className="mt-3 text-muted-foreground">
         If you prefer to set up manually, create a directory and add x:
       </p>
-      <CodeBlock label="terminal" lang="bash" code={`mkdir my-app && cd my-app
+      <CodeBlock
+        label="terminal"
+        lang="bash"
+        code={`mkdir my-app && cd my-app
 bun init -y
 bun add @x/core
 cat << EOF > x.config.ts
@@ -35,13 +47,15 @@ import { defineConfig } from "@x/core";
 export default defineConfig({
   pagesDir: "src/pages",
 });
-EOF`} />
+EOF`}
+      />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Project structure</h2>
-      <p className="mt-3 text-muted-foreground">
-        A typical x project looks like this:
-      </p>
-      <CodeBlock label="file tree" lang="tree" code={`my-app/
+      <p className="mt-3 text-muted-foreground">A typical x project looks like this:</p>
+      <CodeBlock
+        label="file tree"
+        lang="tree"
+        code={`my-app/
   x.config.ts
   src/
     pages/  // File-based routes
@@ -58,35 +72,45 @@ EOF`} />
       greet.ts
   content/  // Markdown content
     posts/
-      hello-world.md`} />
+      hello-world.md`}
+      />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Your first page</h2>
       <p className="mt-3 text-muted-foreground">
         Create <span className="text-foreground">src/pages/index.tsx</span> with a simple component:
       </p>
-      <CodeBlock label="src/pages/index.tsx" code={`export default function Home() {
+      <CodeBlock
+        label="src/pages/index.tsx"
+        code={`export default function Home() {
   return (
     <div>
       <h1 className="text-4xl font-bold">Hello x!</h1>
       <p className="text-muted-foreground">Welcome to your new app.</p>
     </div>
   );
-}`} />
+}`}
+      />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Running the dev server</h2>
-      <p className="mt-3 text-muted-foreground">
-        Start the development server with hot reload:
-      </p>
-      <CodeBlock label="terminal" lang="bash" code={`x dev
+      <p className="mt-3 text-muted-foreground">Start the development server with hot reload:</p>
+      <CodeBlock
+        label="terminal"
+        lang="bash"
+        code={`x dev
   [x] resolving routes...
   [x] found 3 routes in 12ms
-  [x] dev server running at http://localhost:3000`} />
+  [x] dev server running at http://localhost:3000`}
+      />
       <p className="mt-4 text-muted-foreground">
-        The dev server watches your <span className="text-foreground">src/</span> directory and automatically reloads when files change.
+        The dev server watches your <span className="text-foreground">src/</span> directory and
+        automatically reloads when files change.
       </p>
 
       <div className="mt-16 border-t border-border pt-8">
-        <a href="/docs" className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <a
+          href="/docs"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
           <ArrowRight className="h-3.5 w-3.5 rotate-180" /> Back to docs
         </a>
       </div>

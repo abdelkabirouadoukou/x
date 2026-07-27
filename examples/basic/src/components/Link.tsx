@@ -9,11 +9,7 @@ interface LinkProps {
 
 export default function Link({ href, children, className, prefetch = true }: LinkProps) {
   return (
-    <a
-      href={href}
-      className={className}
-      data-no-nav={prefetch ? undefined : ""}
-    >
+    <a href={href} className={className} data-no-nav={prefetch ? undefined : ""}>
       {children}
     </a>
   );

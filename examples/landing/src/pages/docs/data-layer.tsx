@@ -1,6 +1,6 @@
-import { CodeBlock } from "../../components/code-block";
-import { ArrowRight } from "lucide-react";
 import type { RouteProps } from "@x/core";
+import { ArrowRight } from "lucide-react";
+import { CodeBlock } from "../../components/code-block";
 
 export default function DocPage({}: RouteProps) {
   return (
@@ -8,14 +8,19 @@ export default function DocPage({}: RouteProps) {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Data Layer</p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Data layer</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        x provides built-in SQLite and PostgreSQL integrations. Connect to a database, run migrations, and query data directly from loaders and server functions.
+        x provides built-in SQLite and PostgreSQL integrations. Connect to a database, run
+        migrations, and query data directly from loaders and server functions.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">SQLite</h2>
       <p className="mt-3 text-muted-foreground">
-        Use <span className="text-foreground">connectSQLite</span> to connect to a local SQLite database file. SQLite requires zero configuration and is perfect for development and single-server deployments.
+        Use <span className="text-foreground">connectSQLite</span> to connect to a local SQLite
+        database file. SQLite requires zero configuration and is perfect for development and
+        single-server deployments.
       </p>
-      <CodeBlock label="src/lib/db.ts" code={`import { connectSQLite, runSQLiteMigrations } from "@x/core";
+      <CodeBlock
+        label="src/lib/db.ts"
+        code={`import { connectSQLite, runSQLiteMigrations } from "@x/core";
 
 const db = connectSQLite("data/app.db");
 
@@ -45,13 +50,18 @@ await runSQLiteMigrations(db, [
   },
 ]);
 
-export { db };`} />
+export { db };`}
+      />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Querying SQLite</h2>
       <p className="mt-3 text-muted-foreground">
-        The database object supports prepared statements with <span className="text-foreground">query</span> and <span className="text-foreground">execute</span> methods.
+        The database object supports prepared statements with{" "}
+        <span className="text-foreground">query</span> and{" "}
+        <span className="text-foreground">execute</span> methods.
       </p>
-      <CodeBlock label="src/pages/users.tsx" code={`import type { RouteProps, LoaderArgs } from "@x/core";
+      <CodeBlock
+        label="src/pages/users.tsx"
+        code={`import type { RouteProps, LoaderArgs } from "@x/core";
 import { db } from "../lib/db";
 
 export async function loader({}: LoaderArgs) {
@@ -75,13 +85,18 @@ export default function Users({ loaderData }: RouteProps<typeof loader>) {
       </ul>
     </div>
   );
-}`} />
+}`}
+      />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">PostgreSQL</h2>
       <p className="mt-3 text-muted-foreground">
-        For production deployments, use <span className="text-foreground">connectPostgres</span> with a connection string. PostgreSQL provides concurrent access, connection pooling, and is suitable for multi-server deployments.
+        For production deployments, use <span className="text-foreground">connectPostgres</span>{" "}
+        with a connection string. PostgreSQL provides concurrent access, connection pooling, and is
+        suitable for multi-server deployments.
       </p>
-      <CodeBlock label="src/lib/db.ts" code={`import { connectPostgres, runPostgresMigrations } from "@x/core";
+      <CodeBlock
+        label="src/lib/db.ts"
+        code={`import { connectPostgres, runPostgresMigrations } from "@x/core";
 
 const db = connectPostgres({
   connectionString: process.env.DATABASE_URL,
@@ -102,15 +117,23 @@ await runPostgresMigrations(db, [
   },
 ]);
 
-export { db };`} />
+export { db };`}
+      />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Migration API</h2>
       <p className="mt-3 text-muted-foreground">
-        Both <span className="text-foreground">runSQLiteMigrations</span> and <span className="text-foreground">runPostgresMigrations</span> take an array of migration objects. Each migration has a <span className="text-foreground">version</span> number (incrementing) and <span className="text-foreground">sql</span> string. Migrations are tracked and only run once.
+        Both <span className="text-foreground">runSQLiteMigrations</span> and{" "}
+        <span className="text-foreground">runPostgresMigrations</span> take an array of migration
+        objects. Each migration has a <span className="text-foreground">version</span> number
+        (incrementing) and <span className="text-foreground">sql</span> string. Migrations are
+        tracked and only run once.
       </p>
 
       <div className="mt-16 border-t border-border pt-8">
-        <a href="/docs" className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <a
+          href="/docs"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
           <ArrowRight className="h-3.5 w-3.5 rotate-180" /> Back to docs
         </a>
       </div>

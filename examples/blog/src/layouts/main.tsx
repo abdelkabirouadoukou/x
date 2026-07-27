@@ -9,9 +9,15 @@ export default function MainLayout({ children }: { children: ReactNode }) {
             Blog
           </a>
           <nav className="flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <a href="/" className="transition-colors hover:text-foreground">Home</a>
-            <a href="/blog" className="transition-colors hover:text-foreground">Blog</a>
-            <a href="/about" className="transition-colors hover:text-foreground">About</a>
+            <a href="/" className="transition-colors hover:text-foreground">
+              Home
+            </a>
+            <a href="/blog" className="transition-colors hover:text-foreground">
+              Blog
+            </a>
+            <a href="/about" className="transition-colors hover:text-foreground">
+              About
+            </a>
           </nav>
         </div>
       </header>

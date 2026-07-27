@@ -133,7 +133,7 @@ const comments: Comment[] = Array.from({ length: 500 }, (_, i) => ({
   id: i + 1,
   name: `comment ${i + 1}`,
   email: pick(emails, i),
-  body: `laudantium enim quasi est quidem magnam voluptate ipsam eos tempora quo necessitatibus dolor quam autem quasi reiciendis et nam sapiente accusantium`,
+  body: "laudantium enim quasi est quidem magnam voluptate ipsam eos tempora quo necessitatibus dolor quam autem quasi reiciendis et nam sapiente accusantium",
 }));
 
 const todos: Todo[] = Array.from({ length: 200 }, (_, i) => ({
@@ -145,9 +145,9 @@ const todos: Todo[] = Array.from({ length: 200 }, (_, i) => ({
 
 const users: User[] = Array.from({ length: 10 }, (_, i) => ({
   id: i + 1,
-  name: `${firstNames[i]!} ${lastNames[i]!}`,
-  username: lastNames[i]!.toLowerCase(),
-  email: emails[i]!,
+  name: `${pick(firstNames, i)} ${pick(lastNames, i)}`,
+  username: pick(lastNames, i).toLowerCase(),
+  email: pick(emails, i),
   address: {
     street: `Street ${i + 1}`,
     suite: `Suite ${i + 1}`,
@@ -155,7 +155,7 @@ const users: User[] = Array.from({ length: 10 }, (_, i) => ({
     zipcode: `${10000 + i * 100}`,
   },
   phone: `1-770-736-8031 x564${i}`,
-  website: `${lastNames[i]!.toLowerCase()}.org`,
+  website: `${pick(lastNames, i).toLowerCase()}.org`,
   company: { name: `Company ${i + 1}`, catchPhrase: `Catchphrase ${i + 1}`, bs: `BS ${i + 1}` },
 }));
 

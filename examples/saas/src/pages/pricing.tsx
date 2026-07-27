@@ -1,5 +1,5 @@
+import { ArrowRight, Check } from "lucide-react";
 import { cn } from "../lib/utils";
-import { Check, ArrowRight } from "lucide-react";
 
 const tiers = [
   {
@@ -7,7 +7,13 @@ const tiers = [
     price: "$0",
     period: "/month",
     description: "Perfect for getting started.",
-    features: ["1 project", "1,000 API calls/mo", "7-day history", "Community support", "Basic analytics"],
+    features: [
+      "1 project",
+      "1,000 API calls/mo",
+      "7-day history",
+      "Community support",
+      "Basic analytics",
+    ],
     cta: "Get Started",
     popular: false,
   },
@@ -16,7 +22,14 @@ const tiers = [
     price: "$29",
     period: "/month",
     description: "For growing teams.",
-    features: ["Unlimited projects", "100,000 API calls/mo", "90-day history", "Priority support", "Advanced analytics", "Team members"],
+    features: [
+      "Unlimited projects",
+      "100,000 API calls/mo",
+      "90-day history",
+      "Priority support",
+      "Advanced analytics",
+      "Team members",
+    ],
     cta: "Start Free Trial",
     popular: true,
   },
@@ -25,7 +38,14 @@ const tiers = [
     price: "$99",
     period: "/month",
     description: "For large organizations.",
-    features: ["Everything in Pro", "Unlimited API calls", "Unlimited history", "24/7 support", "Custom integrations", "SSO & audit logs"],
+    features: [
+      "Everything in Pro",
+      "Unlimited API calls",
+      "Unlimited history",
+      "24/7 support",
+      "Custom integrations",
+      "SSO & audit logs",
+    ],
     cta: "Contact Sales",
     popular: false,
   },
@@ -51,7 +71,7 @@ export default function PricingPage() {
                 "relative rounded-2xl border p-8 transition-all",
                 tier.popular
                   ? "border-primary bg-card shadow-xl shadow-primary/10 scale-105"
-                  : "border-border bg-card hover:border-primary/50 hover:shadow-lg"
+                  : "border-border bg-card hover:border-primary/50 hover:shadow-lg",
               )}
             >
               {tier.popular && (
@@ -64,12 +84,17 @@ export default function PricingPage() {
               <h3 className="text-xl font-bold text-card-foreground">{tier.name}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{tier.description}</p>
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-bold tracking-tight text-card-foreground">{tier.price}</span>
+                <span className="text-4xl font-bold tracking-tight text-card-foreground">
+                  {tier.price}
+                </span>
                 <span className="text-sm text-muted-foreground">{tier.period}</span>
               </div>
               <ul className="mt-8 space-y-3">
                 {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-3 text-sm text-card-foreground">
+                  <li
+                    key={feature}
+                    className="flex items-center gap-3 text-sm text-card-foreground"
+                  >
                     <Check className="h-4 w-4 text-primary flex-shrink-0" />
                     {feature}
                   </li>
@@ -81,7 +106,7 @@ export default function PricingPage() {
                   "mt-8 flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all",
                   tier.popular
                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30"
-                    : "border border-border bg-background text-foreground hover:bg-muted"
+                    : "border border-border bg-background text-foreground hover:bg-muted",
                 )}
               >
                 {tier.cta}

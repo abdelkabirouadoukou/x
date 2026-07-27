@@ -1,7 +1,23 @@
 const featuredPosts = [
-  { slug: "hello-world", title: "Hello World", description: "Welcome to our blog — a space for thoughts on web development, design, and technology.", date: "Jul 27, 2026" },
-  { slug: "getting-started", title: "Getting Started with x Framework", description: "Learn how to build your first fullstack application with x framework.", date: "Jul 26, 2026" },
-  { slug: "tailwind-v4", title: "Tailwind CSS v4 — What's New", description: "A comprehensive look at the changes in Tailwind CSS v4.", date: "Jul 25, 2026" },
+  {
+    slug: "hello-world",
+    title: "Hello World",
+    description:
+      "Welcome to our blog — a space for thoughts on web development, design, and technology.",
+    date: "Jul 27, 2026",
+  },
+  {
+    slug: "getting-started",
+    title: "Getting Started with x Framework",
+    description: "Learn how to build your first fullstack application with x framework.",
+    date: "Jul 26, 2026",
+  },
+  {
+    slug: "tailwind-v4",
+    title: "Tailwind CSS v4 — What's New",
+    description: "A comprehensive look at the changes in Tailwind CSS v4.",
+    date: "Jul 25, 2026",
+  },
 ];
 
 export default function HomePage() {

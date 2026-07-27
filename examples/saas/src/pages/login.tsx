@@ -1,5 +1,5 @@
-import { cn } from "../lib/utils";
 import { LogIn } from "lucide-react";
+import { cn } from "../lib/utils";
 
 export default function LoginPage() {
   return (
@@ -10,12 +10,17 @@ export default function LoginPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <LogIn className="h-6 w-6" />
             </div>
-            <h1 className="mt-4 text-2xl font-bold tracking-tight text-card-foreground">Welcome back</h1>
+            <h1 className="mt-4 text-2xl font-bold tracking-tight text-card-foreground">
+              Welcome back
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
           </div>
           <form className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-card-foreground mb-1.5">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-card-foreground mb-1.5"
+              >
                 Email
               </label>
               <input
@@ -26,7 +31,10 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-card-foreground mb-1.5">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-card-foreground mb-1.5"
+              >
                 Password
               </label>
               <input
@@ -45,7 +53,10 @@ export default function LoginPage() {
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <a href="/login" className="font-medium text-foreground underline underline-offset-4 hover:text-primary transition-colors">
+            <a
+              href="/login"
+              className="font-medium text-foreground underline underline-offset-4 hover:text-primary transition-colors"
+            >
               Register
             </a>
           </p>

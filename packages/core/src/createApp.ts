@@ -5,6 +5,7 @@ import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { renderErrorOverlay } from "./error-overlay";
 import { type MiddlewareFn, composeMiddleware } from "./middleware";
+import DefaultNotFound from "./not-found";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
 import {
@@ -28,7 +29,6 @@ import {
   registerServerFunctions,
   resetServerFunctions,
 } from "./server-functions";
-import DefaultNotFound from "./not-found";
 
 export interface RouteProps {
   params: Record<string, string>;
@@ -116,14 +116,17 @@ function wrapWithLayouts(
   layoutModules: ComponentType<{ children: ReactNode }>[],
 ): ReactNode {
   let content: ReactNode = createElement(Component, { params, loaderData });
-  for (let i = layoutModules.length - 1; i >= 0; i--) {
-    const Layout = layoutModules[i]!;
+  for (const Layout of [...layoutModules].reverse()) {
     content = createElement(Layout, null, content);
   }
   return content;
 }
 
-function renderContentPage(content: ContentEntry, stylesheet: string | undefined, dev = false): string {
+function renderContentPage(
+  content: ContentEntry,
+  stylesheet: string | undefined,
+  dev = false,
+): string {
   const title = (content.frontmatter.title as string) ?? content.slug;
   const bodyHtml = renderMarkdown(content.body);
   const body = renderPage(
@@ -167,7 +170,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const content = notFoundLayout
       ? createElement(notFoundLayout, null, createElement(notFoundComponent, { params: {} }))
       : createElement(notFoundComponent, { params: {} });
-    const html = renderPage(content, { title: "404 — Not Found", stylesheet: stylesheetHref, liveReload: dev });
+    const html = renderPage(content, {
+      title: "404 — Not Found",
+      stylesheet: stylesheetHref,
+      liveReload: dev,
+    });
     return new Response(html, {
       status: 404,
       headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -215,7 +222,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         const parentPath =
           fileName === "index" || !fileName
             ? actionFile.routePath
-            : "/" + segments.slice(0, -1).join("/");
+            : `/${segments.slice(0, -1).join("/")}`;
 
         // `export const actions = { greet }` — batched registration
         const actions = mod.actions as
@@ -389,7 +396,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
               if (mode === "server") {
                 const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
-                const stream = await renderStreamingPage(content, { stylesheet: stylesheetHref, liveReload: dev });
+                const stream = await renderStreamingPage(content, {
+                  stylesheet: stylesheetHref,
+                  liveReload: dev,
+                });
                 return new Response(stream, {
                   headers: { "Content-Type": "text/html; charset=utf-8" },
                 });
@@ -484,7 +494,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     function notifyClients() {
       for (const send of sseClients) {
-        try { send("reload", ""); } catch { sseClients.delete(send); }
+        try {
+          send("reload", "");
+        } catch {
+          sseClients.delete(send);
+        }
       }
     }
 
@@ -500,12 +514,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           const removed = [...oldPaths].filter((p) => !newPaths.has(p));
 
           if (added.length > 0) {
-            for (const p of added)
-              console.log(`[x] route added: ${p.replace(primaryDir, "")}`);
+            for (const p of added) console.log(`[x] route added: ${p.replace(primaryDir, "")}`);
           }
           if (removed.length > 0) {
-            for (const p of removed)
-              console.log(`[x] route removed: ${p.replace(primaryDir, "")}`);
+            for (const p of removed) console.log(`[x] route removed: ${p.replace(primaryDir, "")}`);
           }
 
           if (added.length > 0 || removed.length > 0) {
@@ -525,13 +537,13 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     try {
       const srcDir = join(primaryDir, "..", "..", "src");
-      const watchDirs = [...new Set([
-        primaryDir,
-        options.apiDir,
-        options.layoutsDir,
-        options.actionsDir,
-        srcDir,
-      ].filter(Boolean))] as string[];
+      const watchDirs = [
+        ...new Set(
+          [primaryDir, options.apiDir, options.layoutsDir, options.actionsDir, srcDir].filter(
+            Boolean,
+          ),
+        ),
+      ] as string[];
       for (const dir of watchDirs) {
         watch(dir, { recursive: true }, (_eventType: unknown, filename: unknown) => {
           if (!filename) return;
@@ -562,7 +574,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           },
         });
         return new Response(body, {
-          headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
         });
       }
 

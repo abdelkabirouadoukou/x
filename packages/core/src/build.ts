@@ -67,19 +67,25 @@ export async function build(options: BuildOptions): Promise<void> {
     for (const actionFile of scanRoutes(actionsDir)) {
       const mod = (await import(actionFile.filePath)) as Record<string, unknown>;
       const segments = actionFile.routePath.split("/").filter(Boolean);
-      const parentPath = "/" + segments.slice(0, -1).join("/");
-      const actions = mod.actions as Record<string, (...args: unknown[]) => Promise<unknown>> | undefined;
+      const parentPath = `/${segments.slice(0, -1).join("/")}`;
+      const actions = mod.actions as
+        | Record<string, (...args: unknown[]) => Promise<unknown>>
+        | undefined;
       if (actions) registerServerFunctions(parentPath, actionFile.paramNames, actions);
       for (const [key, value] of Object.entries(mod)) {
         if (key === "default" || key === "actions" || typeof value !== "function") continue;
-        registerServerFunctions(parentPath, actionFile.paramNames, { [key]: value as (...args: unknown[]) => Promise<unknown> });
+        registerServerFunctions(parentPath, actionFile.paramNames, {
+          [key]: value as (...args: unknown[]) => Promise<unknown>,
+        });
       }
     }
   }
 
   // Layouts: dedicated dir + nested _layout.tsx
-  const dedicatedLayouts = layoutsDir && layoutsDir !== pagesDir && existsSync(layoutsDir)
-    ? scanLayoutsDir(layoutsDir) : [];
+  const dedicatedLayouts =
+    layoutsDir && layoutsDir !== pagesDir && existsSync(layoutsDir)
+      ? scanLayoutsDir(layoutsDir)
+      : [];
   const nestedLayouts = pagesDir && existsSync(pagesDir) ? scanLayouts(pagesDir) : [];
   const layouts = [...dedicatedLayouts, ...nestedLayouts];
 
@@ -195,12 +201,22 @@ export async function build(options: BuildOptions): Promise<void> {
   }
 
   if (serverPages.length > 0 || apiRoutes.length > 0) {
-    const srvOpts: Record<string, string | undefined> = { pagesDir: pagesDir || options.routesDir || "" };
+    const srvOpts: Record<string, string | undefined> = {
+      pagesDir: pagesDir || options.routesDir || "",
+    };
     if (options.apiDir) srvOpts.apiDir = options.apiDir;
     if (options.layoutsDir) srvOpts.layoutsDir = options.layoutsDir;
     if (options.actionsDir) srvOpts.actionsDir = options.actionsDir;
     if (options.contentDir) srvOpts.contentDir = options.contentDir;
-    const serverEntry = buildServerEntry(srvOpts as { pagesDir: string; apiDir?: string; layoutsDir?: string; actionsDir?: string; contentDir?: string });
+    const serverEntry = buildServerEntry(
+      srvOpts as {
+        pagesDir: string;
+        apiDir?: string;
+        layoutsDir?: string;
+        actionsDir?: string;
+        contentDir?: string;
+      },
+    );
     const serverEntryPath = join(serverDir, "index.ts");
     writeFileSync(serverEntryPath, serverEntry, "utf-8");
     console.log(
@@ -319,7 +335,7 @@ function buildServerEntry(opts: Record<string, string>): string {
     "",
     "const server = Bun.serve(app);",
     "",
-    'console.log(`[x] production server running at ${server.url}`);',
+    "console.log(`[x] production server running at ${server.url}`);",
   );
   return lines.join("\n");
 }

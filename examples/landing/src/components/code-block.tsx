@@ -17,9 +17,7 @@ export function CodeBlock({ label, code, lang = "tsx" }: CodeBlockProps) {
         <span className="ml-2 text-xs text-[#8b949e]">{label}</span>
       </div>
       <pre className="overflow-x-auto p-5 text-sm leading-relaxed">
-        <code className="font-mono text-[#e6edf3]">
-          {highlight(code, lang)}
-        </code>
+        <code className="font-mono text-[#e6edf3]">{highlight(code, lang)}</code>
       </pre>
     </div>
   );

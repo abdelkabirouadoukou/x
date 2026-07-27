@@ -36,7 +36,7 @@ export function bool(): EnvValidator<boolean> {
 export function oneOf<T extends string>(values: readonly T[]): EnvValidator<T> {
   return {
     parse(input) {
-      if (input === undefined) throw new Error("Expected one of " + values.join(", "));
+      if (input === undefined) throw new Error(`Expected one of ${values.join(", ")}`);
       if (!values.includes(input as T)) {
         throw new Error(`Expected one of ${values.join(", ")}, got "${input}"`);
       }

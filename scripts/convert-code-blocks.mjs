@@ -1,21 +1,30 @@
-import { readFileSync, writeFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const docsDir = join(__dirname, '..', 'examples', 'landing', 'src', 'pages', 'docs');
+const docsDir = join(__dirname, "..", "examples", "landing", "src", "pages", "docs");
 
 const files = [
-  'getting-started.tsx', 'routing.tsx', 'pages.tsx', 'layouts.tsx',
-  'api-routes.tsx', 'server-functions.tsx', 'content-collections.tsx',
-  'middleware.tsx', 'data-layer.tsx', 'build-deploy.tsx', 'configuration.tsx'
+  "getting-started.tsx",
+  "routing.tsx",
+  "pages.tsx",
+  "layouts.tsx",
+  "api-routes.tsx",
+  "server-functions.tsx",
+  "content-collections.tsx",
+  "middleware.tsx",
+  "data-layer.tsx",
+  "build-deploy.tsx",
+  "configuration.tsx",
 ];
 
 // Manual code block replacements for each file
 const replacements = {
-  'getting-started.tsx': [
+  "getting-started.tsx": [
     // terminal 1
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -32,9 +41,11 @@ const replacements = {
       </div>`,
       `<CodeBlock label="terminal" lang="bash" code={\`bun create x my-app
 cd my-app
-x dev\`} />`],
+x dev\`} />`,
+    ],
     // terminal 2 (manual setup)
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -63,9 +74,11 @@ import { defineConfig } from "@x/core";
 export default defineConfig({
   pagesDir: "src/pages",
 });
-EOF\`} />`],
+EOF\`} />`,
+    ],
     // file tree
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -112,9 +125,11 @@ EOF\`} />`],
       greet.ts
   content/  // Markdown content
     posts/
-      hello-world.md\`} />`],
+      hello-world.md\`} />`,
+    ],
     // first page code
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -141,9 +156,11 @@ EOF\`} />`],
       <p className="text-muted-foreground">Welcome to your new app.</p>
     </div>
   );
-}\`} />`],
+}\`} />`,
+    ],
     // dev server terminal
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -162,12 +179,14 @@ EOF\`} />`],
       `<CodeBlock label="terminal" lang="bash" code={\`x dev
   [x] resolving routes...
   [x] found 3 routes in 12ms
-  [x] dev server running at http://localhost:3000\`} />`],
+  [x] dev server running at http://localhost:3000\`} />`,
+    ],
   ],
 
-  'routing.tsx': [
+  "routing.tsx": [
     // routing table
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -196,9 +215,11 @@ pages/blog/[slug].tsx  -> /blog/:slug
 pages/dashboard/
   settings.tsx         -> /dashboard/settings
   profile.tsx          -> /dashboard/profile
-pages/_404.tsx          -> catch-all 404\`} />`],
+pages/_404.tsx          -> catch-all 404\`} />`,
+    ],
     // static route
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -215,9 +236,11 @@ pages/_404.tsx          -> catch-all 404\`} />`],
       </div>`,
       `<CodeBlock label="src/pages/about.tsx" code={\`export default function About() {
   return <h1 className="text-3xl font-bold">About us</h1>;
-}\`} />`],
+}\`} />`,
+    ],
     // dynamic segment
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -256,9 +279,11 @@ export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
       <div>{loaderData.content}</div>
     </article>
   );
-}\`} />`],
+}\`} />`,
+    ],
     // nested routes file tree
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -283,9 +308,11 @@ export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
   profile.tsx         -> /dashboard/profile
   billing/
     index.tsx         -> /dashboard/billing
-    history.tsx       -> /dashboard/billing/history\`} />`],
+    history.tsx       -> /dashboard/billing/history\`} />`,
+    ],
     // 404 page
-    [`<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
+    [
+      `<div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
           <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
@@ -318,49 +345,53 @@ export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
       </a>
     </div>
   );
-}\`} />`],
+}\`} />`,
+    ],
   ],
 };
 
 for (const file of files) {
   const filePath = join(docsDir, file);
-  let content = readFileSync(filePath, 'utf-8');
+  let content = readFileSync(filePath, "utf-8");
   const fileReplacements = replacements[file];
   if (!fileReplacements) continue;
-  
+
   for (const [oldStr, newStr] of fileReplacements) {
     // Normalize both strings - remove extra indentation for matching
-    const normalizedOld = oldStr.replace(/\n\s+/g, '\n').trim();
-    const normalizedContent = content.replace(/\n\s+/g, '\n')
+    const normalizedOld = oldStr.replace(/\n\s+/g, "\n").trim();
+    const normalizedContent = content.replace(/\n\s+/g, "\n");
     const idx = normalizedContent.indexOf(normalizedOld);
-    
+
     if (idx === -1) {
       console.log(`  MISSED in ${file}:`, normalizedOld.substring(0, 60));
       continue;
     }
-    
+
     // Find the actual content by aligning line counts
-    const oldLines = normalizedOld.split('\n').length;
-    const contentLines = content.split('\n');
+    const oldLines = normalizedOld.split("\n").length;
+    const contentLines = content.split("\n");
     let matchFound = false;
-    
+
     // Try to find the actual match in original content
     for (let i = 0; i < contentLines.length; i++) {
-      const startIdx = content.indexOf(oldStr.replace(/\n\s+/g, '\n').trim().split('\n')[0].trim(), i);
+      const startIdx = content.indexOf(
+        oldStr.replace(/\n\s+/g, "\n").trim().split("\n")[0].trim(),
+        i,
+      );
       if (startIdx >= 0) {
         content = content.slice(0, startIdx) + newStr + content.slice(startIdx + oldStr.length);
         matchFound = true;
         break;
       }
     }
-    
+
     if (!matchFound) {
       console.log(`  FAILED in ${file}`);
     }
   }
-  
-  writeFileSync(filePath, content, 'utf-8');
+
+  writeFileSync(filePath, content, "utf-8");
   console.log(`  Updated ${file}`);
 }
 
-console.log('Done!');
+console.log("Done!");

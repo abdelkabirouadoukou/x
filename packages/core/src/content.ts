@@ -85,7 +85,11 @@ function parseYamlLines(raw: string): Frontmatter {
       try {
         value = JSON.parse(value);
       } catch {
-        value = (value as string).slice(1, -1).split(",").map((s) => s.trim()).filter(Boolean);
+        value = (value as string)
+          .slice(1, -1)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
       }
     }
     result[key] = value;

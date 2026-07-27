@@ -35,8 +35,6 @@ export function createSession(username: string): Session {
   return { id, token, user_id: userId, username };
 }
 
-
-
 export function getSession(token: string | undefined): Session | null {
   if (!token) return null;
   const db = getDb();

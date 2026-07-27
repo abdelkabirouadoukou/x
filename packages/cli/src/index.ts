@@ -164,7 +164,7 @@ async function cmdDev(): Promise<void> {
     }
   }
   if (!server) {
-    console.error(`[x] could not find an available port after 20 attempts`);
+    console.error("[x] could not find an available port after 20 attempts");
     process.exit(1);
   }
   console.log(`[x] dev server running at http://localhost:${port}`);

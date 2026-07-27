@@ -1,7 +1,7 @@
-import { getSession, parseSessionCookie } from "../../lib/auth";
 import type { LoaderArgs, RouteProps } from "@x/core";
 import Head from "../../components/Head";
 import { Button } from "../../components/ui/button";
+import { getSession, parseSessionCookie } from "../../lib/auth";
 
 export async function loader({ request }: LoaderArgs) {
   const token = parseSessionCookie(request.headers.get("Cookie"));
@@ -25,14 +25,23 @@ export default function DashboardPage({ loaderData }: RouteProps) {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Server Functions Demo</h2>
           <div className="flex items-center gap-3">
-            <Button type="button" data-test-id="greet-btn" variant="outline">Greet</Button>
+            <Button type="button" data-test-id="greet-btn" variant="outline">
+              Greet
+            </Button>
             <span id="greeting-result" className="italic text-muted-foreground" />
           </div>
         </div>
         <hr className="border-border" />
         <div className="flex items-center gap-3">
-          <Button type="button" variant="destructive" id="logout-btn">Logout</Button>
-          <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">&larr; Back home</a>
+          <Button type="button" variant="destructive" id="logout-btn">
+            Logout
+          </Button>
+          <a
+            href="/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            &larr; Back home
+          </a>
         </div>
       </div>
       <script

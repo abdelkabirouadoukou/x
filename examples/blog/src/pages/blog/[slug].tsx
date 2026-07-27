@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { scanContent, renderMarkdown } from "@x/core";
+import { renderMarkdown, scanContent } from "@x/core";
 import type { LoaderArgs, RouteProps } from "@x/core";
 
 interface PostLoaderData {
@@ -28,7 +28,7 @@ export default function BlogPostPage({ loaderData }: RouteProps) {
   const html = data.html as string;
   const title = data.title as string;
   const date = data.date as string;
-  const tags = Array.isArray(data.tags) ? data.tags as string[] : [];
+  const tags = Array.isArray(data.tags) ? (data.tags as string[]) : [];
   return (
     <article className="max-w-prose">
       <h1 className="text-4xl font-bold tracking-tight">{title}</h1>

@@ -1,5 +1,5 @@
-import { Users, DollarSign, Activity, TrendingUp } from "lucide-react";
 import type { LoaderArgs, RouteProps } from "@x/core";
+import { Activity, DollarSign, TrendingUp, Users } from "lucide-react";
 
 export async function loader({ request }: LoaderArgs) {
   const { parseSessionCookie, getSession } = await import("../../lib/auth");
@@ -28,7 +28,9 @@ export default function DashboardPage({ loaderData }: RouteProps) {
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Welcome back, {loaderData?.username as string}!</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Welcome back, {loaderData?.username as string}!
+        </p>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -45,7 +47,9 @@ export default function DashboardPage({ loaderData }: RouteProps) {
                   <Icon className="h-5 w-5" />
                 </div>
               </div>
-              <p className="mt-4 text-3xl font-bold tracking-tight text-card-foreground">{stat.value}</p>
+              <p className="mt-4 text-3xl font-bold tracking-tight text-card-foreground">
+                {stat.value}
+              </p>
               <p className="mt-1 text-sm text-emerald-400">{stat.change} this month</p>
             </div>
           );
@@ -58,7 +62,10 @@ export default function DashboardPage({ loaderData }: RouteProps) {
         </div>
         <div className="divide-y divide-border">
           {recentActivity.map((item) => (
-            <div key={item.user + item.time} className="flex items-center justify-between px-6 py-4">
+            <div
+              key={item.user + item.time}
+              className="flex items-center justify-between px-6 py-4"
+            >
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                   {item.user.charAt(0)}

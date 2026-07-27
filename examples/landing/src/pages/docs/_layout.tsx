@@ -21,6 +21,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl px-6">
       <button
         id="sidebar-btn"
+        type="button"
         className="fixed left-4 top-20 z-50 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground lg:hidden"
         aria-label="Toggle sidebar"
       >
@@ -35,7 +36,9 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         className="fixed left-0 top-16 z-50 hidden h-[calc(100vh-4rem)] w-56 overflow-y-auto border-r border-border/40 bg-background lg:hidden"
       >
         <nav className="px-4 pb-4 pt-0">
-          <p className="mb-3 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">Docs</p>
+          <p className="mb-3 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+            Docs
+          </p>
           <ul className="space-y-1">
             {sidebarLinks.map((link) => (
               <li key={link.href}>
@@ -53,11 +56,18 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
       <aside className="hidden w-56 shrink-0 border-r border-border/40 lg:block">
         <nav className="sticky top-16 px-4 pb-4 pt-0">
-          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">Docs</p>
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+            Docs
+          </p>
           <ul className="space-y-1">
             {sidebarLinks.map((link) => (
               <li key={link.href}>
-                <a href={link.href} className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">{link.label}</a>
+                <a
+                  href={link.href}
+                  className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {link.label}
+                </a>
               </li>
             ))}
           </ul>
@@ -67,8 +77,9 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10">{children}</div>
       </div>
 
-      <script dangerouslySetInnerHTML={{
-        __html: `
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
 (function(){
   var btn=document.getElementById("sidebar-btn");
   var panel=document.getElementById("sidebar-panel");
@@ -81,15 +92,18 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
   panel.querySelectorAll("a").forEach(function(a){a.addEventListener("click",close)});
 })();
         `.trim(),
-      }} />
-      <style dangerouslySetInnerHTML={{
-        __html: `
+        }}
+      />
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
 @media (max-width:1023px){
   #sidebar-btn.open .btn-icon-open{display:none}
   #sidebar-btn.open .btn-icon-close{display:block}
 }
         `.trim(),
-      }} />
+        }}
+      />
     </div>
   );
 }

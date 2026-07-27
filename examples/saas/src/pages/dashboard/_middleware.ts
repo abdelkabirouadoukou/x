@@ -1,5 +1,5 @@
-import { parseSessionCookie, getSession } from "../../lib/auth";
 import type { MiddlewareContext, MiddlewareNext } from "@x/core";
+import { getSession, parseSessionCookie } from "../../lib/auth";
 
 export default async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
   const token = parseSessionCookie(ctx.request.headers.get("Cookie"));
