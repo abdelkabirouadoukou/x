@@ -1,14 +1,15 @@
 {
-  "name": "@thexjs/cli",
+  "name": "create-thexjs-app",
   "version": "0.1.0",
-  "description": "Dev/build/start CLI for x framework apps. Requires Bun to run (https://bun.sh).",
+  "description": "Scaffold a new x framework app (npm create thexjs-app@latest).",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "x": "./dist/index.js"
+    "create-thexjs-app": "./dist/index.js"
   },
   "files": [
     "dist",
+    "templates",
     "README.md",
     "LICENSE"
   ],
@@ -20,12 +21,10 @@
     "prepublishOnly": "bun run build"
   },
   "engines": {
-    "bun": ">=1.3.0"
-  },
-  "dependencies": {
-    "@thexjs/core": "^0.1.0"
+    "node": ">=18"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "tsup": "^8.3.0"
   }
 }

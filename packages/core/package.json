@@ -23,7 +23,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --target node18",
+    "build": "tsup src/index.ts --format esm --dts --clean --target node18 --external bun:sqlite",
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {

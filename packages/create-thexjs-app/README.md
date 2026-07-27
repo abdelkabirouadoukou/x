@@ -51,7 +51,7 @@ Create a new x project, learn the project structure, and build your first page.
 The fastest way to start is with the create-x CLI. Make sure you have [Bun](https://bun.sh) installed, then run:
 
 ```bash
-bun create thexjs-app@latest my-app
+bun create x-app@latest my-app
 cd my-app
 x dev
 ```
