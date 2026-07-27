@@ -23,7 +23,7 @@ export async function loader(_args: LoaderArgs) {
       title: e.frontmatter.title ?? e.slug,
       description: (e.frontmatter.description as string) ?? "",
       date: (e.frontmatter.date as string) ?? "",
-      tags: (e.frontmatter.tags as string[]) ?? [],
+      tags: Array.isArray(e.frontmatter.tags) ? e.frontmatter.tags as string[] : [],
     })),
   };
 }
@@ -52,7 +52,7 @@ export default function BlogPage({ loaderData }: RouteProps) {
             {entry.description && (
               <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{entry.description}</p>
             )}
-            {entry.tags.length > 0 && (
+            {Array.isArray(entry.tags) && entry.tags.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {entry.tags.map((tag: string) => (
                   <span

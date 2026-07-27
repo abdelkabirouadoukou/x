@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { renderToReadableStream, renderToStaticMarkup, renderToString } from "react-dom/server";
 import { CLIENT_NAV_SCRIPT } from "./client-nav";
+import { LIVE_RELOAD_SCRIPT } from "./live-reload";
 
 export interface RenderOptions {
   title?: string;
@@ -10,6 +11,8 @@ export interface RenderOptions {
   stylesheet?: string | undefined;
   /** Set to false to omit the client-side navigation script. Defaults to true. */
   clientNav?: boolean;
+  /** Inject live-reload script (development mode). */
+  liveReload?: boolean;
 }
 
 export interface LoaderArgs {
@@ -39,6 +42,10 @@ function buildNavScriptTag(clientNav: boolean | undefined): string {
   return clientNav === false ? "" : `\n    <script>${CLIENT_NAV_SCRIPT}</script>`;
 }
 
+function buildLiveReloadTag(liveReload: boolean | undefined): string {
+  return liveReload ? `\n    <script>${LIVE_RELOAD_SCRIPT}</script>` : "";
+}
+
 function htmlShell(
   title: string,
   headExtras: string,
@@ -46,6 +53,7 @@ function htmlShell(
   scripts: string | undefined,
   bodySlot: string,
   navScriptTag: string,
+  liveReloadTag: string,
 ): string {
   const finalScripts = scripts ?? "";
   const inside = `${bodySlot}${propsScript ? `\n    ${propsScript}` : ""}${finalScripts ? `\n    ${finalScripts}` : ""}`;
@@ -58,7 +66,7 @@ function htmlShell(
   </head>
   <body>
     <div id="root">${inside}</div>
-    ${navScriptTag ? `    ${navScriptTag}\n` : ""}  </body>
+    ${navScriptTag ? `    ${navScriptTag}\n` : ""}${liveReloadTag}  </body>
 </html>`;
 }
 
@@ -82,6 +90,7 @@ export function renderPage(node: ReactNode, options: RenderOptions = {}): string
     islandScriptsHtml,
     body,
     buildNavScriptTag(options.clientNav),
+    buildLiveReloadTag(options.liveReload),
   );
 }
 
@@ -105,6 +114,7 @@ export function renderStaticPage(node: ReactNode, options: RenderOptions = {}): 
     islandScriptsHtml,
     body,
     buildNavScriptTag(options.clientNav),
+    buildLiveReloadTag(options.liveReload),
   );
 }
 
@@ -123,9 +133,10 @@ export async function renderStreamingPage(
     ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
     .join("\n    ");
   const navScriptTag = buildNavScriptTag(options.clientNav);
+  const liveReloadTag = buildLiveReloadTag(options.liveReload);
   const headExtras = buildHeadExtras(options.stylesheet);
   const rootFooter = `${propsScript ? `    ${propsScript}\n` : ""}${islandScriptsHtml ? `    ${islandScriptsHtml}\n` : ""}`;
-  const footer = `</div>${navScriptTag}\n  </body>\n</html>`;
+  const footer = `</div>${navScriptTag}\n${liveReloadTag}  </body>\n</html>`;
 
   const reactStream = await renderToReadableStream(node, {
     onError(err) {

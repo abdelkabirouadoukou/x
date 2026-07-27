@@ -122,7 +122,7 @@ function wrapWithLayouts(
   return content;
 }
 
-function renderContentPage(content: ContentEntry, stylesheet: string | undefined): string {
+function renderContentPage(content: ContentEntry, stylesheet: string | undefined, dev = false): string {
   const title = (content.frontmatter.title as string) ?? content.slug;
   const bodyHtml = renderMarkdown(content.body);
   const body = renderPage(
@@ -137,7 +137,7 @@ function renderContentPage(content: ContentEntry, stylesheet: string | undefined
         dangerouslySetInnerHTML: { __html: bodyHtml },
       }),
     ),
-    { title, stylesheet },
+    { title, stylesheet, liveReload: dev },
   );
   return body;
 }
@@ -146,7 +146,12 @@ export function defineConfig(config: CreateAppOptions): CreateAppOptions {
   return config;
 }
 
+function importDev(path: string, dev: boolean): Promise<Record<string, unknown>> {
+  return import(dev ? `${path}?t=${Date.now()}` : path);
+}
+
 export async function createApp(options: CreateAppOptions): Promise<AppServeOptions> {
+  const dev = options.development ?? false;
   const primaryDir: string = options.pagesDir || options.routesDir || "src/pages";
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
@@ -161,7 +166,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const content = notFoundLayout
       ? createElement(notFoundLayout, null, createElement(notFoundComponent, { params: {} }))
       : createElement(notFoundComponent, { params: {} });
-    const html = renderPage(content, { title: "404 — Not Found", stylesheet: stylesheetHref });
+    const html = renderPage(content, { title: "404 — Not Found", stylesheet: stylesheetHref, liveReload: dev });
     return new Response(html, {
       status: 404,
       headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -198,7 +203,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     if (options.actionsDir) {
       const actionFiles = scanRoutes(options.actionsDir);
       for (const actionFile of actionFiles) {
-        const mod = (await import(actionFile.filePath)) as Record<string, unknown>;
+        const mod = (await importDev(actionFile.filePath, dev)) as Record<string, unknown>;
 
         // Derive parent-level route path: strip the file-name segment so that a
         // file named greet.ts exposes actions under the parent directory's path.
@@ -236,7 +241,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const notFoundEntry = scanNotFound(pagesDir);
     if (notFoundEntry) {
-      const mod = (await import(notFoundEntry.filePath)) as {
+      const mod = (await importDev(notFoundEntry.filePath, dev)) as {
         default?: ComponentType<RouteProps>;
       };
       notFoundComponent = mod.default ?? DefaultNotFound;
@@ -245,7 +250,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     }
     const rootLayout = layouts.find((l) => l.dirPath === pagesDir);
     if (rootLayout) {
-      const layoutMod = (await import(rootLayout.filePath)) as {
+      const layoutMod = (await importDev(rootLayout.filePath, dev)) as {
         default?: ComponentType<{ children: ReactNode }>;
       };
       notFoundLayout = layoutMod.default;
@@ -259,7 +264,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const loaded: RouteHandler[] = [];
     for (const route of found) {
-      const mod = (await import(route.filePath)) as Record<string, unknown>;
+      const mod = (await importDev(route.filePath, dev)) as Record<string, unknown>;
 
       if (route.isApi) {
         const methodHandlers: Record<string, (req: Request) => unknown> = {};
@@ -341,7 +346,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       }
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
       for (const l of layoutChain) {
-        const layoutMod = (await import(l.filePath)) as {
+        const layoutMod = (await importDev(l.filePath, dev)) as {
           default?: ComponentType<{ children: ReactNode }>;
         };
         if (layoutMod.default) layoutModules.push(layoutMod.default);
@@ -350,7 +355,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const mwChain = findMiddlewareChain(route.filePath, middlewareEntries, pagesDir);
       const middlewareModules: MiddlewareFn[] = [];
       for (const m of mwChain) {
-        const mwMod = (await import(m.filePath)) as {
+        const mwMod = (await importDev(m.filePath, dev)) as {
           middleware?: MiddlewareFn;
         };
         if (typeof mwMod.middleware === "function") {
@@ -383,7 +388,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
               if (mode === "server") {
                 const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
-                const stream = await renderStreamingPage(content, { stylesheet: stylesheetHref });
+                const stream = await renderStreamingPage(content, { stylesheet: stylesheetHref, liveReload: dev });
                 return new Response(stream, {
                   headers: { "Content-Type": "text/html; charset=utf-8" },
                 });
@@ -403,7 +408,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               }
 
               const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
-              const html = renderPage(content, { stylesheet: stylesheetHref });
+              const html = renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
 
               if (revalidateSeconds > 0) {
                 staticCache.set(route.routePath, { html, timestamp: Date.now() });
@@ -447,7 +452,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const loadedContent: ContentHandler[] = content.map((entry) => ({
         entry,
         handler: async () => {
-          const html = renderContentPage(entry, stylesheetHref);
+          const html = renderContentPage(entry, stylesheetHref, dev);
           return new Response(html, {
             headers: { "Content-Type": "text/html; charset=utf-8" },
           });
@@ -474,6 +479,13 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
   if (options.development) {
     let rebuildTimeout: Timer | null = null;
+    const sseClients = new Set<(event: string, data: string) => void>();
+
+    function notifyClients() {
+      for (const send of sseClients) {
+        try { send("reload", ""); } catch { sseClients.delete(send); }
+      }
+    }
 
     function scheduleRebuild() {
       if (rebuildTimeout) clearTimeout(rebuildTimeout);
@@ -500,6 +512,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               `[x] route tree rebuilt (${handlers.length} routes, ${contentHandlers.length} content)`,
             );
           }
+
+          notifyClients();
         } catch {
           if (options.development) {
             console.warn("[x] rebuild skipped: routes directory may have changed");
@@ -509,13 +523,21 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     }
 
     try {
-      const watchDirs = [primaryDir, options.apiDir, options.layoutsDir, options.actionsDir].filter(Boolean) as string[];
-      for (const dir of [...new Set(watchDirs)]) {
+      const srcDir = join(primaryDir, "..", "..", "src");
+      const watchDirs = [...new Set([
+        primaryDir,
+        options.apiDir,
+        options.layoutsDir,
+        options.actionsDir,
+        srcDir,
+      ].filter(Boolean))] as string[];
+      for (const dir of watchDirs) {
         watch(dir, { recursive: true }, (_eventType: unknown, filename: unknown) => {
           if (!filename) return;
           const name = typeof filename === "string" ? filename : (filename as Buffer).toString();
           if (name.startsWith(".") || name.startsWith("_")) return;
-          if (!/\.(tsx|ts)$/.test(name)) return;
+          if (name === "x-routes.ts") return;
+          if (!/\.(tsx|ts|css)$/.test(name)) return;
           scheduleRebuild();
         });
       }
@@ -525,6 +547,23 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const devFetch = async (req: Request) => {
       const url = new URL(req.url).pathname;
+
+      if (url === "/__x/reload") {
+        const body = new ReadableStream({
+          start(controller) {
+            const encoder = new TextEncoder();
+            controller.enqueue(encoder.encode("event: hb\ndata: \n\n"));
+            const send = (event: string, data: string) => {
+              controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
+            };
+            sseClients.add(send);
+            req.signal.addEventListener("abort", () => sseClients.delete(send));
+          },
+        });
+        return new Response(body, {
+          headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+        });
+      }
 
       const revalidationResult = await handleRevalidation(req);
       if (revalidationResult !== null) return revalidationResult;

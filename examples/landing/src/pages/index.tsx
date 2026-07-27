@@ -1,205 +1,112 @@
-import { Zap, Shield, BarChart3, Layers, Globe, Code2, ChevronDown, Check } from "lucide-react";
+import { ArrowRight, BookOpen, Code2, Zap, Layers, Globe, Shield, FileJson } from "lucide-react";
+import { CodeBlock } from "../components/code-block";
 
 const features = [
-  { icon: Zap, title: "Blazing Fast", description: "Built on Bun for instant startup and lightning-fast execution. No compilation step needed for development." },
-  { icon: Shield, title: "Type Safe", description: "End-to-end type safety with TypeScript. Catch errors at compile time, not runtime." },
-  { icon: BarChart3, title: "Built-in Analytics", description: "First-party analytics integration. Track page views, API calls, and performance metrics out of the box." },
-  { icon: Layers, title: "SSR + Static", description: "Choose between server-side rendering and static generation per page. Hybrid mode supported." },
-  { icon: Globe, title: "Edge Ready", description: "Deploy anywhere — Vercel, Cloudflare, or your own servers. Zero-config deployment." },
-  { icon: Code2, title: "Developer Experience", description: "Hot module replacement, file-based routing, and intuitive APIs for maximum productivity." },
+  { icon: Zap, title: "One process", desc: "Static sites, SSR, API routes, and server functions — no microservices, no orchestration." },
+  { icon: FileJson, title: "File-based routing", desc: "Drop a file in src/pages, get a route. Nested folders, dynamic segments, API routes — automatic." },
+  { icon: Layers, title: "Static + dynamic", desc: "Mix static generation with SSR on the same route. Prerender marketing pages, SSR dashboards and admin." },
+  { icon: Globe, title: "API routes", desc: "Build REST endpoints alongside your pages. Shared types, same process, no separate server needed." },
+  { icon: Shield, title: "Type safe", desc: "End-to-end TypeScript. Loaders, params, server functions — all typed from the framework to your components." },
+  { icon: Code2, title: "Island architecture", desc: "Interactive components hydrate in place. Minimal client JS — only what you mark as an island loads." },
 ];
-
-const testimonials = [
-  { quote: "x framework completely changed how our team builds web apps. The developer experience is unmatched.", name: "Sarah Chen", role: "Lead Engineer", company: "TechCorp" },
-  { quote: "We migrated our entire platform to x in two weeks. The performance improvements were immediate and significant.", name: "Marcus Johnson", role: "CTO", company: "StartupX" },
-  { quote: "The simplicity of x combined with its power is what sold us. Our deployment pipeline has never been smoother.", name: "Emily Rodriguez", role: "VP of Engineering", company: "ScaleUp" },
-];
-
-const pricingPlans = [
-  { name: "Starter", price: "Free", description: "Perfect for side projects and learning.", popular: false, cta: "Get Started", features: ["Up to 3 projects", "Static site generation", "Community support", "Basic analytics"] },
-  { name: "Pro", price: "$29", period: "/mo", description: "For professional developers and teams.", popular: true, cta: "Start Free Trial", features: ["Unlimited projects", "SSR + Static hybrid", "Priority support", "Advanced analytics", "API routes", "Team collaboration"] },
-  { name: "Enterprise", price: "Custom", description: "For large-scale applications.", popular: false, cta: "Contact Sales", features: ["Everything in Pro", "Dedicated support", "SLA guarantee", "Custom integrations", "On-premise deployment", "Audit logging"] },
-];
-
-const faqItems = [
-  { q: "What is x framework?", a: "x is a modern fullstack framework built on Bun. It combines static site generation, server-side rendering, and API routes in a single, unified process with zero configuration." },
-  { q: "How does x compare to Next.js?", a: "x is designed specifically for Bun, offering faster startup times, simpler configuration, and a more integrated development experience. It's ideal for teams that want to move fast without sacrificing quality." },
-  { q: "Can I use x with my existing project?", a: "Yes! x can be gradually adopted. You can start with a single page or route and expand from there. We provide migration guides for Next.js, Remix, and other frameworks." },
-  { q: "Is x production-ready?", a: "Absolutely. x is used in production by companies of all sizes. We follow semantic versioning and maintain a comprehensive changelog." },
-  { q: "What hosting platforms does x support?", a: "x supports deployment to Vercel, Cloudflare Pages, Netlify, Docker, and any Node.js-compatible hosting environment with zero configuration." },
-];
-
-function AccordionItem({ q, a, index }: { q: string; a: string; index: number }) {
-  return (
-    <details className="group border-b border-border last:border-0">
-      <summary className="flex cursor-pointer items-center justify-between py-5 text-sm font-medium hover:text-muted-foreground transition-colors [&::-webkit-details-marker]:hidden">
-        {q}
-        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180" />
-      </summary>
-      <div className="pb-5 text-sm text-muted-foreground leading-relaxed">{a}</div>
-    </details>
-  );
-}
 
 export default function HomePage() {
   return (
-    <>
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
-        <div className="absolute top-0 right-0 -z-10 h-[600px] w-[600px] translate-x-1/3 -translate-y-1/3 rounded-full bg-primary/5 blur-3xl" />
-        <div className="relative mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:py-40">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
-              Build Faster. Scale Smarter.
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-muted-foreground max-w-xl mx-auto">
-              The modern fullstack framework for Bun. Static sites, SSR, APIs — one process.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-4">
-              <a href="/features" className="rounded-lg bg-foreground px-6 py-3 text-sm font-semibold text-background hover:opacity-90 transition-opacity shadow-lg">
-                Get Started
-              </a>
-              <a href="/pricing" className="rounded-lg border border-border px-6 py-3 text-sm font-semibold hover:bg-accent transition-colors">
-                Learn More
-              </a>
-            </div>
-          </div>
+    <div className="pb-32">
+      {/* ── Hero ── */}
+      <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-6">
+        <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-16">
+          <div className="h-[500px] w-[500px] animate-pulse-glow rounded-full bg-primary/20 sm:h-[700px] sm:w-[700px]" />
         </div>
-      </section>
-
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Everything you need</h2>
-            <p className="mt-4 text-muted-foreground">A complete toolkit for building modern web applications.</p>
-          </div>
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={feature.title}
-                  className="group rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5"
-                >
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <h3 className="font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Trusted by developers</h2>
-            <p className="mt-4 text-muted-foreground">Hear from teams that ship with x.</p>
-          </div>
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            {testimonials.map((t) => (
-              <div key={t.name} className="rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-md">
-                <div className="mb-4 flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="h-4 w-4 fill-primary" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-4">&ldquo;{t.quote}&rdquo;</p>
-                <div className="border-t border-border pt-4">
-                  <p className="text-sm font-semibold">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.role}, {t.company}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Simple, transparent pricing</h2>
-            <p className="mt-4 text-muted-foreground">Start free, scale as you grow.</p>
-          </div>
-          <div className="mt-16 grid gap-8 lg:grid-cols-3 items-start">
-            {pricingPlans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative rounded-xl border p-8 transition-all duration-300 hover:shadow-lg ${plan.popular ? "border-primary shadow-md shadow-primary/10" : "border-border"}`}
-              >
-                {plan.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground">
-                    Popular
-                  </span>
-                )}
-                <h3 className="text-lg font-semibold">{plan.name}</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tracking-tight">{plan.price}</span>
-                  {plan.period && <span className="text-sm text-muted-foreground">{plan.period}</span>}
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
-                <ul className="mt-8 space-y-3">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm">
-                      <Check className="h-4 w-4 shrink-0 text-primary" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href="/pricing"
-                  className={`mt-8 flex w-full items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold transition-all ${
-                    plan.popular
-                      ? "bg-primary text-primary-foreground hover:opacity-90"
-                      : "border border-border hover:bg-accent"
-                  }`}
-                >
-                  {plan.cta}
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32">
-          <div className="mx-auto max-w-2xl">
-            <h2 className="text-3xl font-bold tracking-tight text-center sm:text-4xl">Frequently asked questions</h2>
-            <p className="mt-4 text-muted-foreground text-center">Got questions? We have answers.</p>
-            <div className="mt-12 divide-y divide-border rounded-xl border border-border px-6">
-              {faqItems.map((item, i) => (
-                <AccordionItem key={i} index={i} q={item.q} a={item.a} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32">
-          <div className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-card to-primary/5 px-6 py-16 text-center shadow-lg sm:px-16">
-            <div className="absolute top-0 right-0 -z-10 h-64 w-64 translate-x-1/4 -translate-y-1/4 rounded-full bg-primary/10 blur-3xl" />
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to get started?</h2>
-            <p className="mt-4 text-muted-foreground">Start building with x framework today.</p>
-            <a
-              href="/pricing"
-              className="mt-8 inline-flex items-center justify-center rounded-lg bg-foreground px-8 py-3 text-sm font-semibold text-background hover:opacity-90 transition-opacity shadow-lg"
-            >
-              Get Started Now
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <h1 className="max-w-3xl text-5xl font-bold tracking-tight leading-[1.1] sm:text-7xl">
+            Build anything.
+            <br />
+            <span className="text-primary">Ship anywhere.</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-lg text-muted-foreground sm:text-xl">
+            A fullstack framework for Bun. Static sites, SSR, API routes, and server functions — all in one process.
+          </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <a href="/docs/getting-started" className="group inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.97]">
+              Get Started <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </a>
+            <a href="/docs" className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-card/50 px-6 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:bg-muted active:scale-[0.97]">
+              <BookOpen className="h-4 w-4" /> Read the Docs
             </a>
           </div>
         </div>
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background to-transparent" />
       </section>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-6 py-8 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} Acme. All rights reserved.
+      {/* ── Features ── */}
+      <section className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Why x</p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Everything in one place</h2>
+          <p className="mt-4 text-muted-foreground">Most frameworks make you choose. x gives you everything — in one Bun process, zero config.</p>
         </div>
-      </footer>
-    </>
+        <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
+          {features.map((f) => (
+            <div key={f.title} className="bg-card p-8 transition-colors hover:bg-card/80">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <f.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mt-5 text-lg font-semibold">{f.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Terminal / Quick start ── */}
+      <section className="mx-auto mt-32 max-w-4xl px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Quick start</p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">One command to start</h2>
+          <p className="mt-4 text-muted-foreground">Create a project, add a page, run the dev server. Two minutes, zero config.</p>
+        </div>
+        <CodeBlock label="~/project — bash" lang="bash" code={`mkdir my-app && cd my-app
+bun create x@latest
+  Creating a new x project...
+  Done! 
+
+cat > src/pages/index.tsx <<EOF
+export default function Home() {
+  return (
+    <h1 className="text-3xl font-bold">Hello x!</h1>
+  )
+}
+EOF
+x dev
+  compiling Tailwind CSS...
+  dev server running at http://localhost:3000`} />
+        <div className="mt-8 text-center">
+          <a href="/docs/getting-started" className="group inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.97]">
+            Read the full guide <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </a>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="mx-auto mt-32 max-w-4xl px-6">
+        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/[0.07] via-primary/[0.03] to-background p-14 text-center sm:p-24">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to build?</h2>
+            <p className="mt-4 text-lg text-muted-foreground">One command, one process, everything you need. Start building with x today.</p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <a href="/docs" className="group inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.97]">
+                <BookOpen className="h-4 w-4" /> Read the docs
+              </a>
+              <a href="https://github.com/anomalyco/x" target="_blank" rel="noopener noreferrer" className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-card/50 px-6 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:bg-muted active:scale-[0.97]">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

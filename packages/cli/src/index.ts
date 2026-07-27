@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
@@ -123,10 +123,41 @@ async function cmdDev(): Promise<void> {
     if (r.status !== 0) console.warn("[x] Tailwind compilation failed, serving raw CSS.");
   }
 
+  // Watch for CSS changes and recompile Tailwind
+  const twSrc = join(projectDir, "src/styles");
+  if (existsSync(twSrc)) {
+    const { watch } = await import("node:fs");
+    let twTimeout: ReturnType<typeof setTimeout> | null = null;
+    watch(twSrc, { recursive: true }, () => {
+      if (twTimeout) clearTimeout(twTimeout);
+      twTimeout = setTimeout(() => {
+        console.log("[x] recompiling Tailwind CSS...");
+        spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], { cwd: projectDir });
+      }, 200);
+    });
+  }
+
   console.log("[x] dev server starting...");
   const app = await createApp({ ...dirs, development: true });
-  const server = Bun.serve({ ...app, port: opts.port });
-  console.log(`[x] dev server running at http://localhost:${opts.port}`);
+  let port = opts.port;
+  let server;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    try {
+      server = Bun.serve({ ...app, port });
+      break;
+    } catch (e) {
+      if ((e as { code?: string })?.code === "EADDRINUSE") {
+        port++;
+        continue;
+      }
+      throw e;
+    }
+  }
+  if (!server) {
+    console.error(`[x] could not find an available port after 20 attempts`);
+    process.exit(1);
+  }
+  console.log(`[x] dev server running at http://localhost:${port}`);
 }
 
 async function cmdBuild(): Promise<void> {
