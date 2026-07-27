@@ -1,15 +1,28 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { IslandProvider, createIslandRegistry } from "./island";
 import { renderStaticPage } from "./render";
-import { type RouteEntry, findLayoutChain, scanLayouts, scanRoutes } from "./router";
+import {
+  type RouteEntry,
+  findLayoutChain,
+  scanApiDir,
+  scanLayouts,
+  scanLayoutsDir,
+  scanPages,
+  scanRoutes,
+} from "./router";
+import { registerServerFunctions } from "./server-functions";
 
 export type RouteMode = "static" | "server";
 
 export interface BuildOptions {
-  routesDir: string;
+  routesDir?: string;
+  pagesDir?: string;
+  apiDir?: string;
+  layoutsDir?: string;
+  actionsDir?: string;
   contentDir?: string;
   outDir?: string;
 }
@@ -23,7 +36,7 @@ interface LoadedPage {
 }
 
 export async function build(options: BuildOptions): Promise<void> {
-  const outDir = options.outDir ?? join(process.cwd(), "dist");
+  const outDir = options.outDir ?? join(process.cwd(), ".x");
   const clientDir = join(outDir, "client");
   const serverDir = join(outDir, "server");
   const islandsDir = join(clientDir, "_islands");
@@ -32,8 +45,49 @@ export async function build(options: BuildOptions): Promise<void> {
   mkdirSync(serverDir, { recursive: true });
   mkdirSync(islandsDir, { recursive: true });
 
-  const routeEntries = scanRoutes(options.routesDir);
-  const layouts = scanLayouts(options.routesDir);
+  const pagesDir = options.pagesDir ?? options.routesDir ?? "";
+  const apiDir = options.apiDir;
+  const actionsDir = options.actionsDir;
+  const layoutsDir = options.layoutsDir ?? pagesDir;
+
+  let routeEntries: RouteEntry[] = [];
+  if (pagesDir && existsSync(pagesDir)) {
+    routeEntries = scanPages(pagesDir);
+  }
+  if (apiDir && existsSync(apiDir)) {
+    routeEntries.push(...scanApiDir(apiDir));
+  }
+  const legacyApiDir = pagesDir ? join(pagesDir, "api") : "";
+  if (legacyApiDir && existsSync(legacyApiDir) && legacyApiDir !== apiDir) {
+    routeEntries.push(...scanApiDir(legacyApiDir));
+  }
+
+  // Scan actions
+  if (actionsDir && existsSync(actionsDir)) {
+    for (const actionFile of scanRoutes(actionsDir)) {
+      const mod = (await import(actionFile.filePath)) as Record<string, unknown>;
+      const segments = actionFile.routePath.split("/").filter(Boolean);
+      const parentPath = `/${segments.slice(0, -1).join("/")}`;
+      const actions = mod.actions as
+        | Record<string, (...args: unknown[]) => Promise<unknown>>
+        | undefined;
+      if (actions) registerServerFunctions(parentPath, actionFile.paramNames, actions);
+      for (const [key, value] of Object.entries(mod)) {
+        if (key === "default" || key === "actions" || typeof value !== "function") continue;
+        registerServerFunctions(parentPath, actionFile.paramNames, {
+          [key]: value as (...args: unknown[]) => Promise<unknown>,
+        });
+      }
+    }
+  }
+
+  // Layouts: dedicated dir + nested _layout.tsx
+  const dedicatedLayouts =
+    layoutsDir && layoutsDir !== pagesDir && existsSync(layoutsDir)
+      ? scanLayoutsDir(layoutsDir)
+      : [];
+  const nestedLayouts = pagesDir && existsSync(pagesDir) ? scanLayouts(pagesDir) : [];
+  const layouts = [...dedicatedLayouts, ...nestedLayouts];
 
   const staticPages: LoadedPage[] = [];
   const serverPages: LoadedPage[] = [];
@@ -56,7 +110,12 @@ export async function build(options: BuildOptions): Promise<void> {
     }
 
     const mode = mod.mode ?? "server";
-    const layoutChain = findLayoutChain(entry.filePath, layouts, options.routesDir);
+    const layoutChain = findLayoutChain(entry.filePath, layouts, pagesDir);
+    for (const rootLayout of dedicatedLayouts) {
+      if (!layoutChain.some((l) => l.filePath === rootLayout.filePath)) {
+        layoutChain.unshift(rootLayout);
+      }
+    }
     const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
     for (const l of layoutChain) {
       const layoutMod = (await import(l.filePath)) as {
@@ -142,26 +201,27 @@ export async function build(options: BuildOptions): Promise<void> {
   }
 
   if (serverPages.length > 0 || apiRoutes.length > 0) {
-    const serverEntry = buildServerEntry(serverPages, apiRoutes);
+    const srvOpts: Record<string, string | undefined> = {
+      pagesDir: pagesDir || options.routesDir || "",
+    };
+    if (options.apiDir) srvOpts.apiDir = options.apiDir;
+    if (options.layoutsDir) srvOpts.layoutsDir = options.layoutsDir;
+    if (options.actionsDir) srvOpts.actionsDir = options.actionsDir;
+    if (options.contentDir) srvOpts.contentDir = options.contentDir;
+    const serverEntry = buildServerEntry(
+      srvOpts as {
+        pagesDir: string;
+        apiDir?: string;
+        layoutsDir?: string;
+        actionsDir?: string;
+        contentDir?: string;
+      },
+    );
     const serverEntryPath = join(serverDir, "index.ts");
     writeFileSync(serverEntryPath, serverEntry, "utf-8");
     console.log(
       `  [server] ${serverPages.length} page routes, ${apiRoutes.length} api routes -> server/index.ts`,
     );
-
-    const bundleResult = Bun.spawnSync([
-      "bun",
-      "build",
-      "--target=bun",
-      "--outdir",
-      serverDir,
-      serverEntryPath,
-    ]);
-    if (bundleResult.success) {
-      console.log("  [server] bundled -> server/index.js");
-    } else {
-      console.error("  [error] server bundle failed — the .ts entry is still available");
-    }
   }
 
   console.log(`[x] build complete -> ${outDir}`);
@@ -256,105 +316,28 @@ function StaticContentPage({
   );
 }
 
-function buildServerEntry(pages: LoadedPage[], apiRoutes: RouteEntry[]): string {
-  const pageImports = pages.map((p, i) => `import Page${i} from "${p.entry.filePath}";`).join("\n");
-
-  const apiImports = apiRoutes
-    .map((r, i) => `import * as Api${i} from "${r.filePath}";`)
-    .join("\n");
-
-  const pageRoutes: string[] = [];
-  for (let i = 0; i < pages.length; i++) {
-    const p = pages[i] as LoadedPage;
-    pageRoutes.push(`  "${p.entry.routePath}": Page${i}`);
-  }
-
-  const apiEntries = apiRoutes
-    .map(
-      (r, i) =>
-        `  "${r.routePath}": { GET: Api${i}.GET, POST: Api${i}.POST, PUT: Api${i}.PUT, PATCH: Api${i}.PATCH, DELETE: Api${i}.DELETE }`,
-    )
-    .join(",\n");
-
-  const handleApiCode = [
-    "async function handleApiRoute(req: Request): Promise<Response | null> {",
-    "  const url = new URL(req.url);",
-    "  for (const [routePath, handlers] of Object.entries(apiRoutes)) {",
-    "    const escaped = routePath.replace(/[.+?^${}()|[\\]\\\\]/g, '\\\\$&').replace(/:\\\\w+/g, '([^/]+)').replace(/\\\\\\*/g, '(.+)');",
-    "    const pattern = new RegExp('^' + escaped + '$');",
-    "    if (pattern.test(url.pathname)) {",
-    "      const handler = handlers[req.method];",
-    "      if (handler) return await handler(req);",
-    "      return new Response('Method not allowed', { status: 405 });",
-    "    }",
-    "  }",
-    "  return null;",
-    "}",
-  ].join("\n");
-
-  const hasServerPages = pages.length > 0;
-
-  const fetchHandler = hasServerPages
-    ? [
-        "  async fetch(req) {",
-        "    const url = new URL(req.url);",
-        "    const pathname = url.pathname;",
-        "",
-        "    const apiResult = await handleApiRoute(req);",
-        "    if (apiResult) return apiResult;",
-        "",
-        "    const Component = routes[pathname];",
-        "    if (Component) {",
-        '      const { renderToString } = await import("react-dom/server");',
-        '      const { createElement } = await import("react");',
-        "      const html = renderToString(createElement(Component, { params: {} }));",
-        "      return new Response('<!DOCTYPE html>' + html, {",
-        "        headers: { 'Content-Type': 'text/html; charset=utf-8' },",
-        "      });",
-        "    }",
-        "",
-        '    const filePath = pathname === "/" ? "/index.html" : pathname;',
-        "    const file = Bun.file(import.meta.dir + '/../client' + filePath);",
-        "    if (await file.exists()) return new Response(file);",
-        "",
-        "    return new Response('Not found', { status: 404 });",
-        "  },",
-        "});",
-      ]
-    : [
-        "  async fetch(req) {",
-        "    const url = new URL(req.url);",
-        "    const apiResult = await handleApiRoute(req);",
-        "    if (apiResult) return apiResult;",
-        "",
-        '    const filePath = url.pathname === "/" ? "/index.html" : url.pathname;',
-        "    const file = Bun.file(import.meta.dir + '/../client' + filePath);",
-        "    if (await file.exists()) return new Response(file);",
-        "",
-        "    return new Response('Not found', { status: 404 });",
-        "  },",
-        "});",
-      ];
-
-  return [
+function buildServerEntry(opts: Record<string, string>): string {
+  const dirKeys = ["pagesDir", "apiDir", "layoutsDir", "actionsDir", "contentDir"];
+  const lines = [
     "// Auto-generated by @x/core build",
-    pageImports,
-    apiImports,
+    'import { createApp } from "@x/core";',
     "",
-    "const routes: Record<string, any> = {",
-    ...pageRoutes,
-    "};",
+    "const app = await createApp({",
+  ];
+  for (const key of dirKeys) {
+    const val = opts[key];
+    if (val) lines.push(`  ${key}: ${JSON.stringify(val)},`);
+  }
+  lines.push(
+    '  port: parseInt(process.env.PORT || "3000", 10),',
+    "  development: false,",
+    "});",
     "",
-    "const apiRoutes: Record<string, Record<string, (req: Request) => Response | Promise<Response>>> = {",
-    apiEntries,
-    "};",
+    "const server = Bun.serve(app);",
     "",
-    handleApiCode,
-    "",
-    "const server = Bun.serve({",
-    "  port: parseInt(process.env.PORT || '3000', 10),",
-    ...fetchHandler,
-  ].join("\n");
+    "console.log(`[x] production server running at ${server.url}`);",
+  );
+  return lines.join("\n");
 }
 
 function hash(str: string): string {

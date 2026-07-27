@@ -15,7 +15,29 @@ export interface MiddlewareEntry {
 
 const ROUTE_FILE = /\.(tsx|ts)$/;
 
+/** Scan page routes — same as scanRoutes but never marks anything as api. */
+export function scanPages(rootDir: string): RouteEntry[] {
+  return scanRoutes(rootDir).map((r) => ({ ...r, isApi: false }));
+}
+
+/** Scan API routes from a separate directory (not nested under pages/routes).
+ *  Route paths are prefixed with /api so they match requests to /api/…. */
+export function scanApiDir(rootDir: string): RouteEntry[] {
+  return scanRoutes(rootDir).map((r) => ({
+    ...r,
+    routePath: r.routePath === "/" ? "/api" : `/api${r.routePath}`,
+    isApi: true,
+  }));
+}
+
 export function scanRoutes(rootDir: string): RouteEntry[] {
+  // If rootDir doesn't exist, return empty
+  try {
+    statSync(rootDir);
+  } catch {
+    return [];
+  }
+
   const entries: RouteEntry[] = [];
 
   function walk(dir: string) {
@@ -93,6 +115,33 @@ export function scanLayouts(rootDir: string): LayoutEntry[] {
   return entries;
 }
 
+/**
+ * Scan a dedicated layouts directory. Every layout file found is registered
+ * as a root-level layout. The file name becomes the layout key (e.g.
+ * main.tsx -> "main"), and it covers the root path "/" so it wraps every page.
+ * Nested _layout.tsx files inside pages/ still work for directory-level
+ * nesting — this is additive, not exclusive.
+ */
+export function scanLayoutsDir(layoutsDir: string): LayoutEntry[] {
+  const entries: LayoutEntry[] = [];
+  try {
+    if (!statSync(layoutsDir).isDirectory()) return entries;
+  } catch {
+    return entries;
+  }
+
+  for (const name of readdirSync(layoutsDir)) {
+    if (name.startsWith(".")) continue;
+    const full = join(layoutsDir, name);
+    const stat = statSync(full);
+    if (stat.isFile() && (name.endsWith(".tsx") || name.endsWith(".ts"))) {
+      entries.push({ filePath: full, dirPath: layoutsDir });
+    }
+  }
+
+  return entries;
+}
+
 export function findLayoutChain(
   routeFilePath: string,
   layouts: LayoutEntry[],
@@ -111,6 +160,25 @@ export function findLayoutChain(
   }
 
   return chain;
+}
+
+export interface NotFoundEntry {
+  filePath: string;
+}
+
+const NOT_FOUND_CANDIDATES = ["_404.tsx", "_404.ts"];
+
+export function scanNotFound(rootDir: string): NotFoundEntry | null {
+  for (const name of NOT_FOUND_CANDIDATES) {
+    const full = join(rootDir, name);
+    try {
+      statSync(full);
+      return { filePath: full };
+    } catch {
+      // doesn't exist
+    }
+  }
+  return null;
 }
 
 export function scanMiddleware(rootDir: string): MiddlewareEntry[] {

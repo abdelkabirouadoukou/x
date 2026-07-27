@@ -1,0 +1,15 @@
+{
+  "name": "@x/env",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./validators": "./src/validators.ts"
+  },
+  "peerDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

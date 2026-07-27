@@ -96,10 +96,10 @@ describe("build", () => {
   test("generates server entry for server-mode routes", async () => {
     await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
     expect(existsSync(join(OUT_DIR, "server/index.ts"))).toBe(true);
-    expect(existsSync(join(OUT_DIR, "server/index.js"))).toBe(true);
     const content = readFileSync(join(OUT_DIR, "server/index.ts"), "utf-8");
-    expect(content).toContain("about");
+    expect(content).toContain("createApp");
     expect(content).toContain("Bun.serve");
+    expect(content).toContain("pagesDir");
   });
 
   test("builds content collections", async () => {

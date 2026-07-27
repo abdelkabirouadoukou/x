@@ -1,10 +1,18 @@
 import type { ReactNode } from "react";
 import { renderToReadableStream, renderToStaticMarkup, renderToString } from "react-dom/server";
+import { CLIENT_NAV_SCRIPT } from "./client-nav";
+import { LIVE_RELOAD_SCRIPT } from "./live-reload";
 
 export interface RenderOptions {
   title?: string;
   islandScripts?: string[];
   islandProps?: Record<string, string>;
+  /** Path to a stylesheet to <link> in <head>, e.g. "/styles.css". */
+  stylesheet?: string | undefined;
+  /** Set to false to omit the client-side navigation script. Defaults to true. */
+  clientNav?: boolean;
+  /** Inject live-reload script (development mode). */
+  liveReload?: boolean;
 }
 
 export interface LoaderArgs {
@@ -26,58 +34,88 @@ function escapeJsonForScript(s: string): string {
   return s.replace(/<\//g, "<\\/");
 }
 
+function buildHeadExtras(stylesheet: string | undefined): string {
+  return stylesheet ? `\n    <link rel="stylesheet" href="${escapeHtml(stylesheet)}" />` : "";
+}
+
+function buildNavScriptTag(clientNav: boolean | undefined): string {
+  return clientNav === false ? "" : `\n    <script>${CLIENT_NAV_SCRIPT}</script>`;
+}
+
+function buildLiveReloadTag(liveReload: boolean | undefined): string {
+  return liveReload ? `\n    <script>${LIVE_RELOAD_SCRIPT}</script>` : "";
+}
+
 function htmlShell(
   title: string,
+  headExtras: string,
   propsScript: string,
   scripts: string | undefined,
   bodySlot: string,
+  navScriptTag: string,
+  liveReloadTag: string,
 ): string {
   const finalScripts = scripts ?? "";
+  const inside = `${bodySlot}${propsScript ? `\n    ${propsScript}` : ""}${finalScripts ? `\n    ${finalScripts}` : ""}`;
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${escapeHtml(title)}</title>
+    <title>${escapeHtml(title)}</title>${headExtras}
   </head>
   <body>
-    <div id="root">${bodySlot}</div>
-    ${propsScript ? `    ${propsScript}\n` : ""}${finalScripts ? `    ${finalScripts}\n` : ""}  </body>
+    <div id="root">${inside}</div>
+    ${navScriptTag ? `    ${navScriptTag}\n` : ""}${liveReloadTag}  </body>
 </html>`;
 }
 
 export function renderPage(node: ReactNode, options: RenderOptions = {}): string {
   const { islandScripts, islandProps } = options;
-  const title = escapeHtml(options.title ?? "x app");
+  const title = options.title ?? "x app";
 
   const body = renderToString(node);
-  const scripts = islandScripts
-    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
-    .join("\n    ");
-
   const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
   const propsScript = islandProps
     ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
+  const islandScriptsHtml = islandScripts
+    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
+    .join("\n    ");
 
-  return htmlShell(title, propsScript, scripts, body);
+  return htmlShell(
+    title,
+    buildHeadExtras(options.stylesheet),
+    propsScript,
+    islandScriptsHtml,
+    body,
+    buildNavScriptTag(options.clientNav),
+    buildLiveReloadTag(options.liveReload),
+  );
 }
 
 export function renderStaticPage(node: ReactNode, options: RenderOptions = {}): string {
   const { islandScripts, islandProps } = options;
-  const title = escapeHtml(options.title ?? "x app");
+  const title = options.title ?? "x app";
 
   const body = renderToStaticMarkup(node);
-  const scripts = islandScripts
-    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
-    .join("\n    ");
-
   const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
   const propsScript = islandProps
     ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
+  const islandScriptsHtml = islandScripts
+    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
+    .join("\n    ");
 
-  return htmlShell(title, propsScript, scripts, body);
+  return htmlShell(
+    title,
+    buildHeadExtras(options.stylesheet),
+    propsScript,
+    islandScriptsHtml,
+    body,
+    buildNavScriptTag(options.clientNav),
+    buildLiveReloadTag(options.liveReload),
+  );
 }
 
 export async function renderStreamingPage(
@@ -87,15 +125,18 @@ export async function renderStreamingPage(
   const { islandScripts, islandProps } = options;
   const title = escapeHtml(options.title ?? "x app");
 
-  const scripts = islandScripts
-    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
-    .join("\n    ");
-
   const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
   const propsScript = islandProps
     ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
-  const footer = `${propsScript ? `    ${propsScript}\n` : ""}${scripts ? `    ${scripts}\n` : ""}  </body>\n</html>`;
+  const islandScriptsHtml = islandScripts
+    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
+    .join("\n    ");
+  const navScriptTag = buildNavScriptTag(options.clientNav);
+  const liveReloadTag = buildLiveReloadTag(options.liveReload);
+  const headExtras = buildHeadExtras(options.stylesheet);
+  const rootFooter = `${propsScript ? `    ${propsScript}\n` : ""}${islandScriptsHtml ? `    ${islandScriptsHtml}\n` : ""}`;
+  const footer = `</div>${navScriptTag}\n${liveReloadTag}  </body>\n</html>`;
 
   const reactStream = await renderToReadableStream(node, {
     onError(err) {
@@ -103,7 +144,7 @@ export async function renderStreamingPage(
     },
   });
   const encoder = new TextEncoder();
-  const header = `<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>${title}</title>\n  </head>\n  <body>\n    <div id="root">`;
+  const header = `<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>${title}</title>${headExtras}\n  </head>\n  <body>\n    <div id="root">`;
 
   return new ReadableStream({
     async start(controller) {
@@ -113,7 +154,7 @@ export async function renderStreamingPage(
         try {
           const { done, value } = await reader.read();
           if (done) {
-            controller.enqueue(encoder.encode(`</div>\n    ${footer}`));
+            controller.enqueue(encoder.encode(`${rootFooter}\n  ${footer}`));
             controller.close();
             return;
           }
@@ -123,7 +164,7 @@ export async function renderStreamingPage(
           console.error("[x] stream read error:", err);
           controller.enqueue(
             encoder.encode(
-              `</div><div style="color:red;padding:1em">Render error: ${err instanceof Error ? err.message : "Unknown"}</div>\n    ${footer}`,
+              `${rootFooter}<div style="color:red;padding:1em;margin:1rem">Render error: ${err instanceof Error ? err.message : "Unknown"}</div>\n  ${footer}`,
             ),
           );
           controller.close();

@@ -1,0 +1,123 @@
+import {
+  ArrowRight,
+  BookOpen,
+  Code2,
+  Cog,
+  Database,
+  FileJson,
+  Globe,
+  Layers,
+  Layout,
+  Rocket,
+  Shield,
+  Zap,
+} from "lucide-react";
+
+const sections = [
+  {
+    icon: BookOpen,
+    title: "Getting Started",
+    desc: "Install x, create your first project, and learn the basics.",
+    href: "/docs/getting-started",
+  },
+  {
+    icon: Globe,
+    title: "Routing",
+    desc: "File-based routing: static pages, dynamic segments, nested routes.",
+    href: "/docs/routing",
+  },
+  {
+    icon: FileJson,
+    title: "Pages & Loaders",
+    desc: "Static pages, server-rendered pages, and data loading.",
+    href: "/docs/pages",
+  },
+  {
+    icon: Layout,
+    title: "Layouts",
+    desc: "Nested layouts, dedicated layout directories, and root layouts.",
+    href: "/docs/layouts",
+  },
+  {
+    icon: Code2,
+    title: "API Routes",
+    desc: "Build REST endpoints alongside your frontend pages.",
+    href: "/docs/api-routes",
+  },
+  {
+    icon: Zap,
+    title: "Server Functions",
+    desc: "Call server-side functions from the browser without REST.",
+    href: "/docs/server-functions",
+  },
+  {
+    icon: Layers,
+    title: "Content Collections",
+    desc: "Markdown files with frontmatter that become routes.",
+    href: "/docs/content-collections",
+  },
+  {
+    icon: Shield,
+    title: "Middleware",
+    desc: "Route-level middleware for auth, redirects, and validation.",
+    href: "/docs/middleware",
+  },
+  {
+    icon: Database,
+    title: "Data Layer",
+    desc: "SQLite and PostgreSQL integration with migrations.",
+    href: "/docs/data-layer",
+  },
+  {
+    icon: Rocket,
+    title: "Build & Deploy",
+    desc: "Production builds, static export, and deployment.",
+    href: "/docs/build-deploy",
+  },
+  {
+    icon: Cog,
+    title: "Configuration",
+    desc: "x.config.ts reference — all options and defaults.",
+    href: "/docs/configuration",
+  },
+];
+
+export default function DocsHubPage() {
+  return (
+    <div className="py-12">
+      <div className="mb-12">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+          Documentation
+        </p>
+        <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+          Everything you need to build with x
+        </h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          A fullstack framework for Bun. Static sites, server-rendered pages, API routes, and server
+          functions — all in a single process.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {sections.map((s) => (
+          <a
+            key={s.title}
+            href={s.href}
+            className="group rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+              <s.icon className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold group-hover:text-primary transition-colors">
+              {s.title}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
+            <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+              Read more <ArrowRight className="h-3 w-3" />
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
