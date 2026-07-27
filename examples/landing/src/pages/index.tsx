@@ -114,19 +114,11 @@ export default function HomePage() {
         <CodeBlock
           label="~/project — bash"
           lang="bash"
-          code={`mkdir my-app && cd my-app
-bun create x@latest
+          code={`> mkdir my-app && cd my-app
+> bun create x-app@latest ./
   Creating a new x project...
   Done! 
-
-cat > src/pages/index.tsx <<EOF
-export default function Home() {
-  return (
-    <h1 className="text-3xl font-bold">Hello x!</h1>
-  )
-}
-EOF
-x dev
+> x dev
   compiling Tailwind CSS...
   dev server running at http://localhost:3000`}
         />
