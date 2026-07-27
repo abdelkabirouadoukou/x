@@ -1,6 +1,9 @@
 {
   "name": "landing-example",
   "type": "module",
+  "scripts": {
+  "build": "bunx @x/cli build"
+  },
   "dependencies": {
     "@x/core": "workspace:*",
     "react": "^19.1.0",
