@@ -117,7 +117,8 @@ function wrapWithLayouts(
 ): ReactNode {
   let content: ReactNode = createElement(Component, { params, loaderData });
   for (let i = layoutModules.length - 1; i >= 0; i--) {
-    content = createElement(layoutModules[i], null, content);
+    const Layout = layoutModules[i]!;
+    content = createElement(Layout, null, content);
   }
   return content;
 }

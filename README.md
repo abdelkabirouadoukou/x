@@ -1,8 +1,5 @@
 <p align="center">
-  <svg viewBox="0 0 24 24" width="64" height="64" fill="none">
-    <polygon points="3,5 5,3 21,19 19,21" fill="currentColor" />
-    <polygon points="19,5 21,3 5,21 3,19" fill="currentColor" opacity="0.4" />
-  </svg>
+  <img src="./examples/landing/public/favicon.ico" alt="X logo" width="50">
 </p>
 
 <p align="center">
