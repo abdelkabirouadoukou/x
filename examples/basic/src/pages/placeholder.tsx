@@ -1,7 +1,9 @@
 export default function PlaceholderPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <h1 className="text-3xl font-bold">{'{'}JSON{'}'} Placeholder</h1>
+      <h1 className="text-3xl font-bold">
+        {"{"}JSON{"}"} Placeholder
+      </h1>
       <p className="text-muted-foreground">
         Free fake API powered by <strong>@x/core</strong> — in-memory data, sub-ms response times.
       </p>
@@ -16,24 +18,89 @@ export default function PlaceholderPage() {
             </tr>
           </thead>
           <tbody id="endpoints">
-            <tr className="border-b border-border"><td className="p-3"><code className="bg-muted px-1.5 py-0.5 rounded">GET /api/placeholder/posts</code></td><td className="text-right p-3">100</td><td className="text-right p-3"><button className="fetch-btn text-primary hover:underline text-xs" data-url="/api/placeholder/posts">Fetch</button></td></tr>
-            <tr className="border-b border-border"><td className="p-3"><code className="bg-muted px-1.5 py-0.5 rounded">GET /api/placeholder/comments</code></td><td className="text-right p-3">500</td><td className="text-right p-3"><button className="fetch-btn text-primary hover:underline text-xs" data-url="/api/placeholder/comments">Fetch</button></td></tr>
-            <tr className="border-b border-border"><td className="p-3"><code className="bg-muted px-1.5 py-0.5 rounded">GET /api/placeholder/todos</code></td><td className="text-right p-3">200</td><td className="text-right p-3"><button className="fetch-btn text-primary hover:underline text-xs" data-url="/api/placeholder/todos">Fetch</button></td></tr>
-            <tr className="border-b border-border"><td className="p-3"><code className="bg-muted px-1.5 py-0.5 rounded">GET /api/placeholder/users</code></td><td className="text-right p-3">10</td><td className="text-right p-3"><button className="fetch-btn text-primary hover:underline text-xs" data-url="/api/placeholder/users">Fetch</button></td></tr>
+            <tr className="border-b border-border">
+              <td className="p-3">
+                <code className="bg-muted px-1.5 py-0.5 rounded">GET /api/placeholder/posts</code>
+              </td>
+              <td className="text-right p-3">100</td>
+              <td className="text-right p-3">
+                <button
+                  className="fetch-btn text-primary hover:underline text-xs"
+                  data-url="/api/placeholder/posts"
+                >
+                  Fetch
+                </button>
+              </td>
+            </tr>
+            <tr className="border-b border-border">
+              <td className="p-3">
+                <code className="bg-muted px-1.5 py-0.5 rounded">
+                  GET /api/placeholder/comments
+                </code>
+              </td>
+              <td className="text-right p-3">500</td>
+              <td className="text-right p-3">
+                <button
+                  className="fetch-btn text-primary hover:underline text-xs"
+                  data-url="/api/placeholder/comments"
+                >
+                  Fetch
+                </button>
+              </td>
+            </tr>
+            <tr className="border-b border-border">
+              <td className="p-3">
+                <code className="bg-muted px-1.5 py-0.5 rounded">GET /api/placeholder/todos</code>
+              </td>
+              <td className="text-right p-3">200</td>
+              <td className="text-right p-3">
+                <button
+                  className="fetch-btn text-primary hover:underline text-xs"
+                  data-url="/api/placeholder/todos"
+                >
+                  Fetch
+                </button>
+              </td>
+            </tr>
+            <tr className="border-b border-border">
+              <td className="p-3">
+                <code className="bg-muted px-1.5 py-0.5 rounded">GET /api/placeholder/users</code>
+              </td>
+              <td className="text-right p-3">10</td>
+              <td className="text-right p-3">
+                <button
+                  className="fetch-btn text-primary hover:underline text-xs"
+                  data-url="/api/placeholder/users"
+                >
+                  Fetch
+                </button>
+              </td>
+            </tr>
             <tr className="font-semibold">
-              <td colSpan={2} className="p-3">All endpoints (sequential)</td>
-              <td className="text-right p-3"><button id="fetch-all" className="fetch-btn text-primary hover:underline text-xs">Fetch All</button></td>
+              <td colSpan={2} className="p-3">
+                All endpoints (sequential)
+              </td>
+              <td className="text-right p-3">
+                <button id="fetch-all" className="fetch-btn text-primary hover:underline text-xs">
+                  Fetch All
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div id="results" className="rounded-lg border border-border bg-muted p-4 font-mono text-xs whitespace-pre-wrap min-h-[60px]">
+      <div
+        id="results"
+        className="rounded-lg border border-border bg-muted p-4 font-mono text-xs whitespace-pre-wrap min-h-[60px]"
+      >
         Click a button to fetch data. Response times shown below.
       </div>
 
       <hr className="border-border" />
-      <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">&larr; Back home</a>
+      <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+        &larr; Back home
+      </a>
 
       <script
         dangerouslySetInnerHTML={{
@@ -49,7 +116,7 @@ export default function PlaceholderPage() {
     return ms.toFixed(1) + " ms";
   }
 
-  [].forEach.call(document.querySelectorAll(".fetch-btn"), function (btn) {
+  [].forEach.call(document.querySelectorAll(".fetch-btn:not(#fetch-all)"), function (btn) {
     btn.addEventListener("click", function () {
       var url = btn.getAttribute("data-url");
       btn.disabled = true;

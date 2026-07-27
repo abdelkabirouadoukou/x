@@ -57,11 +57,19 @@ function dropUndefined<T extends Record<string, unknown>>(obj: T): T {
   return out as T;
 }
 
-function detectOptionsFromConfig(
-  cfg: Record<string, unknown>,
-): DetectedOptions {
+function detectOptionsFromConfig(cfg: Record<string, unknown>): DetectedOptions {
   const resolveDir = (dir: unknown) =>
     typeof dir === "string" ? join(projectDir, dir) : undefined;
+  const guessPages = join(projectDir, "src", "pages");
+  const guessRoutes = join(projectDir, "src", "routes");
+  const defaultPagesDir =
+    typeof cfg.pagesDir === "string"
+      ? resolveDir(cfg.pagesDir)
+      : typeof cfg.routesDir === "string"
+        ? resolveDir(cfg.routesDir)
+        : existsSync(guessPages)
+          ? guessPages
+          : guessRoutes;
   const contentDir =
     typeof cfg.contentDir === "string"
       ? resolveDir(cfg.contentDir)
@@ -70,7 +78,7 @@ function detectOptionsFromConfig(
         : undefined;
   return dropUndefined({
     routesDir: resolveDir(cfg.routesDir) || undefined,
-    pagesDir: resolveDir(cfg.pagesDir) || undefined,
+    pagesDir: defaultPagesDir,
     apiDir: resolveDir(cfg.apiDir) || undefined,
     layoutsDir: resolveDir(cfg.layoutsDir) || undefined,
     actionsDir: resolveDir(cfg.actionsDir) || undefined,
@@ -119,7 +127,9 @@ async function cmdDev(): Promise<void> {
     console.log("[x] compiling Tailwind CSS...");
     const { writeFileSync } = await import("node:fs");
     const { spawnSync } = await import("node:child_process");
-    const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], { cwd: projectDir });
+    const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], {
+      cwd: projectDir,
+    });
     if (r.status !== 0) console.warn("[x] Tailwind compilation failed, serving raw CSS.");
   }
 
@@ -172,7 +182,9 @@ async function cmdBuild(): Promise<void> {
   if (existsSync(twInput)) {
     console.log("[x] compiling Tailwind CSS (production)...");
     const { spawnSync } = await import("node:child_process");
-    const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput, "--minify"], { cwd: projectDir });
+    const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput, "--minify"], {
+      cwd: projectDir,
+    });
     if (r.status !== 0) console.warn("[x] Tailwind compilation failed.");
   }
 

@@ -10,11 +10,11 @@ export default function Head({ title, description, ogImage, ogType, children }: 
   return (
     <>
       <title>{title}</title>
-      <meta name="og:title" content={title} />
+      <meta property="og:title" content={title} />
       {description && <meta name="description" content={description} />}
-      {description && <meta name="og:description" content={description} />}
-      {ogImage && <meta name="og:image" content={ogImage} />}
-      {ogType && <meta name="og:type" content={ogType} />}
+      {description && <meta property="og:description" content={description} />}
+      {ogImage && <meta property="og:image" content={ogImage} />}
+      {ogType && <meta property="og:type" content={ogType} />}
       {children}
     </>
   );

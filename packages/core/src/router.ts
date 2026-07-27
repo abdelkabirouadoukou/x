@@ -124,7 +124,11 @@ export function scanLayouts(rootDir: string): LayoutEntry[] {
  */
 export function scanLayoutsDir(layoutsDir: string): LayoutEntry[] {
   const entries: LayoutEntry[] = [];
-  try { statSync(layoutsDir); } catch { return entries; }
+  try {
+    if (!statSync(layoutsDir).isDirectory()) return entries;
+  } catch {
+    return entries;
+  }
 
   for (const name of readdirSync(layoutsDir)) {
     if (name.startsWith(".")) continue;
