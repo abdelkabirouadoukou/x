@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="fixed top-0 z-50 w-full border-b border-border/30 bg-background/60 backdrop-blur-2xl">
+      <header className="fixed top-0 z-[99] w-full border-b border-border/30 bg-background/60 backdrop-blur-2xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <a href="/" className="flex items-center text-primary transition-all duration-200 hover:scale-110 hover:opacity-80" aria-label="x home">
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
