@@ -206,20 +206,6 @@ export async function build(options: BuildOptions): Promise<void> {
     console.log(
       `  [server] ${serverPages.length} page routes, ${apiRoutes.length} api routes -> server/index.ts`,
     );
-
-    const bundleResult = Bun.spawnSync([
-      "bun",
-      "build",
-      "--target=bun",
-      "--outdir",
-      serverDir,
-      serverEntryPath,
-    ]);
-    if (bundleResult.success) {
-      console.log("  [server] bundled -> server/index.js");
-    } else {
-      console.error("  [error] server bundle failed — the .ts entry is still available");
-    }
   }
 
   console.log(`[x] build complete -> ${outDir}`);

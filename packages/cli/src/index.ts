@@ -156,16 +156,16 @@ async function cmdBuild(): Promise<void> {
 
 async function cmdStart(): Promise<void> {
   const outDir = join(projectDir, ".x");
-  const serverBundle = join(outDir, "server", "index.js");
+  const serverEntry = join(outDir, "server", "index.ts");
 
-  if (!existsSync(serverBundle)) {
-    console.error(`[x] no built server found at ${serverBundle}`);
+  if (!existsSync(serverEntry)) {
+    console.error(`[x] no built server found at ${serverEntry}`);
     console.error(`[x] run "x build" first`);
     process.exit(1);
   }
 
   console.log("[x] starting production server...");
-  const proc = spawn("bun", [serverBundle], {
+  const proc = spawn("bun", [serverEntry], {
     stdio: "inherit",
     cwd: projectDir,
     env: { ...process.env, NODE_ENV: "production" },
