@@ -12,15 +12,10 @@ Static sites, SSR, file-based API routes, and server functions — running in a 
 </p>
 
 <p align="center">
-
 <a href="#quick-start"><img src="https://img.shields.io/badge/Bun-1.0+-black?style=flat-square&logo=bun" alt="Bun Ready"></a>
-
 <a href="#features"><img src="https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react" alt="React 19"></a>
-
 <a href="#features"><img src="https://img.shields.io/badge/TypeScript-Strict-blue?style=flat-square&logo=typescript" alt="TypeScript"></a>
-
 <a href="./TASKS.md"><img src="https://img.shields.io/badge/Status-Active_Development-brightgreen?style=flat-square" alt="Status"></a>
-
 </p>
 
 <p align="center">
@@ -70,9 +65,9 @@ If you prefer to set up manually, create a directory and add x:
 ```bash
 mkdir my-app && cd my-app
 bun init -y
-bun add @x/core
+bun add @thexjs/core
 cat << EOF > x.config.ts
-import { defineConfig } from "@x/core";
+import { defineConfig } from "@thexjs/core";
 export default defineConfig({
   pagesDir: "src/pages",
 });
@@ -169,7 +164,7 @@ export default function About() {
 Wrap a filename in square brackets to create a dynamic segment. The value is available via the `params` object in loaders.
 
 ```tsx
-import type { RouteProps, LoaderArgs } from "@x/core";
+import type { RouteProps, LoaderArgs } from "@thexjs/core";
 
 export async function loader({ params }: LoaderArgs) {
   const post = await getPost(params.slug);
@@ -235,7 +230,7 @@ By default, pages are server-rendered (SSR). Export `mode = "static"` to prerend
 Static pages are rendered at build time and exported as HTML. Use this for marketing pages, blog posts, or any content that doesn't need per-request rendering.
 
 ```tsx
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 
 export const mode = "static";
 
@@ -256,7 +251,7 @@ export default function About({}: RouteProps) {
 Server pages (the default) run a `loader` function on every request. The loader can fetch data, query a database, or call an external API.
 
 ```tsx
-import type { RouteProps, LoaderArgs } from "@x/core";
+import type { RouteProps, LoaderArgs } from "@thexjs/core";
 
 export async function loader({ request }: LoaderArgs) {
   const res = await fetch("https://api.example.com/products");
@@ -286,7 +281,7 @@ export default function Products({ loaderData }: RouteProps<typeof loader>) {
 Combined with dynamic routing, loaders receive `params` parsed from the URL path.
 
 ```tsx
-import type { RouteProps, LoaderArgs } from "@x/core";
+import type { RouteProps, LoaderArgs } from "@thexjs/core";
 
 export async function loader({ params }: LoaderArgs) {
   const product = await db.query(
@@ -313,7 +308,7 @@ export default function ProductDetail({ loaderData }: RouteProps<typeof loader>)
 The `RouteProps` type provides typed access to `loaderData`, `params`, and `request`. Pass your loader function as the type parameter for full type safety.
 
 ```tsx
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 
 export default function Page({ loaderData, params, request }: RouteProps<typeof loader>) {
   // loaderData has the return type of loader()
@@ -333,7 +328,7 @@ Layouts wrap your pages with shared UI. x supports nested layouts via a dedicate
 Configure a layouts directory in `x.config.ts`. Layouts follow the same file-tree hierarchy as pages.
 
 ```tsx
-import { defineConfig } from "@x/core";
+import { defineConfig } from "@thexjs/core";
 
 export default defineConfig({
   pagesDir: "src/pages",
@@ -413,7 +408,7 @@ Build REST endpoints alongside your frontend pages. API routes live in `src/api/
 Like pages, API routes use the file system. A file at `src/api/hello.ts` becomes `/api/hello`.
 
 ```tsx
-import type { ApiHandler } from "@x/core";
+import type { ApiHandler } from "@thexjs/core";
 
 export const GET: ApiHandler = ({ request }) => {
   return Response.json({ message: "Hello from x!" });
@@ -425,7 +420,7 @@ export const GET: ApiHandler = ({ request }) => {
 Each exported HTTP method receives the request and returns a standard `Response` object. Dynamic segments work the same as pages: `api/users/[id].ts` → `/api/users/:id`.
 
 ```tsx
-import type { ApiHandler } from "@x/core";
+import type { ApiHandler } from "@thexjs/core";
 
 export const GET: ApiHandler = async ({ request }) => {
   const users = await db.query("SELECT * FROM users");
@@ -445,7 +440,7 @@ export const POST: ApiHandler = async ({ request }) => {
 ### POST endpoint example
 
 ```tsx
-import type { ApiHandler } from "@x/core";
+import type { ApiHandler } from "@thexjs/core";
 
 export const POST: ApiHandler = async ({ request }) => {
   const form = await request.formData();
@@ -555,7 +550,7 @@ export default function GreetForm() {
 You can also import and call server functions directly in loaders — no HTTP needed since they share the same process.
 
 ```tsx
-import type { RouteProps, LoaderArgs } from "@x/core";
+import type { RouteProps, LoaderArgs } from "@thexjs/core";
 import { getDashboardData } from "../actions/dashboard";
 
 export async function loader({ request }: LoaderArgs) {
@@ -579,7 +574,7 @@ Write content in Markdown with frontmatter, and x automatically turns it into pa
 Point the content directory in `x.config.ts` to a folder with your markdown files.
 
 ```tsx
-import { defineConfig } from "@x/core";
+import { defineConfig } from "@thexjs/core";
 
 export default defineConfig({
   contentDir: "content",
@@ -619,8 +614,8 @@ console.log(greeting);
 Use `scanContent` to discover files and `renderMarkdown` to convert markdown to HTML in your loaders.
 
 ```tsx
-import type { RouteProps, LoaderArgs } from "@x/core";
-import { scanContent, renderMarkdown } from "@x/core";
+import type { RouteProps, LoaderArgs } from "@thexjs/core";
+import { scanContent, renderMarkdown } from "@thexjs/core";
 
 export async function loader({ params }: LoaderArgs) {
   const posts = await scanContent("posts");
@@ -689,7 +684,7 @@ pages/
 A middleware function receives an object with `params` (dynamic route params), `request` (the original Request), and a `next` function to continue the chain.
 
 ```ts
-import type { MiddlewareContext, MiddlewareNext } from "@x/core";
+import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 
 export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
   console.log(`[${ctx.request.method}] ${ctx.request.url}`);
@@ -700,7 +695,7 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
 ### Auth middleware example
 
 ```ts
-import type { MiddlewareContext, MiddlewareNext } from "@x/core";
+import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 
 export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
   const session = ctx.request.cookies.get("session");
@@ -758,7 +753,7 @@ x provides built-in SQLite and PostgreSQL integrations. Connect to a database, r
 Use `connectSQLite` to connect to a local SQLite database file. SQLite requires zero configuration and is perfect for development and single-server deployments.
 
 ```ts
-import { connectSQLite, runSQLiteMigrations } from "@x/core";
+import { connectSQLite, runSQLiteMigrations } from "@thexjs/core";
 
 const db = connectSQLite("data/app.db");
 
@@ -796,7 +791,7 @@ export { db };
 The database object supports prepared statements with `query` and `execute` methods.
 
 ```tsx
-import type { RouteProps, LoaderArgs } from "@x/core";
+import type { RouteProps, LoaderArgs } from "@thexjs/core";
 import { db } from "../lib/db";
 
 export async function loader({}: LoaderArgs) {
@@ -828,7 +823,7 @@ export default function Users({ loaderData }: RouteProps<typeof loader>) {
 For production deployments, use `connectPostgres` with a connection string. PostgreSQL provides concurrent access, connection pooling, and is suitable for multi-server deployments.
 
 ```ts
-import { connectPostgres, runPostgresMigrations } from "@x/core";
+import { connectPostgres, runPostgresMigrations } from "@thexjs/core";
 
 const db = connectPostgres({
   connectionString: process.env.DATABASE_URL,
@@ -936,14 +931,14 @@ CMD ["x", "start"]
 
 ## Configuration
 
-Configure x via `x.config.ts` at your project root. Use `defineConfig` from `@x/core` for type-safe configuration.
+Configure x via `x.config.ts` at your project root. Use `defineConfig` from `@thexjs/core` for type-safe configuration.
 
 ### defineConfig
 
 All configuration options are optional. x provides sensible defaults so you can start with zero configuration and add settings as needed.
 
 ```ts
-import { defineConfig } from "@x/core";
+import { defineConfig } from "@thexjs/core";
 
 export default defineConfig({
   // Page routes

@@ -1,4 +1,4 @@
-import type { LoaderArgs, RouteProps } from "@x/core";
+import type { LoaderArgs, RouteProps } from "@thexjs/core";
 import { BarChart3, PieChart, TrendingUp } from "lucide-react";
 
 export async function loader({ request }: LoaderArgs) {

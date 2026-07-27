@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import { scanContent } from "@x/core";
-import type { LoaderArgs, RouteProps } from "@x/core";
+import { scanContent } from "@thexjs/core";
+import type { LoaderArgs, RouteProps } from "@thexjs/core";
 
 interface BlogEntry {
   routePath: string;

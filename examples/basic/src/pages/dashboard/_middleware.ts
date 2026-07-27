@@ -1,4 +1,4 @@
-import type { MiddlewareContext, MiddlewareFn } from "@x/core";
+import type { MiddlewareContext, MiddlewareFn } from "@thexjs/core";
 import { getSession, parseSessionCookie } from "../../lib/auth";
 
 export const middleware: MiddlewareFn = async (ctx: MiddlewareContext, next) => {

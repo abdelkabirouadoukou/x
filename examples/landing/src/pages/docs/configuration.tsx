@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -10,7 +10,7 @@ export default function DocPage({}: RouteProps) {
       <p className="mt-4 text-lg text-muted-foreground">
         Configure x via <span className="text-foreground">x.config.ts</span> at your project root.
         Use <span className="text-foreground">defineConfig</span> from{" "}
-        <span className="text-foreground">@x/core</span> for type-safe configuration.
+        <span className="text-foreground">@thexjs/core</span> for type-safe configuration.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">defineConfig</h2>
@@ -20,7 +20,7 @@ export default function DocPage({}: RouteProps) {
       </p>
       <CodeBlock
         label="x.config.ts"
-        code={`import { defineConfig } from "@x/core";
+        code={`import { defineConfig } from "@thexjs/core";
 
 export default defineConfig({
   // Page routes

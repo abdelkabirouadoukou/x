@@ -117,7 +117,7 @@ async function detectOptions(): Promise<DetectedOptions> {
 
 async function cmdDev(): Promise<void> {
   const opts = await detectOptions();
-  const { createApp } = await import("@x/core");
+  const { createApp } = await import("@thexjs/core");
   const { port: _port, ...dirs } = opts;
 
   // Auto-compile Tailwind if a source entry exists
@@ -188,7 +188,7 @@ async function cmdBuild(): Promise<void> {
     if (r.status !== 0) console.warn("[x] Tailwind compilation failed.");
   }
 
-  const { build } = await import("@x/core");
+  const { build } = await import("@thexjs/core");
   const outDir = join(projectDir, ".x");
   const { port: _port, ...rest } = opts;
   await build({ ...rest, outDir });

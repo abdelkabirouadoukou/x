@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -25,7 +25,7 @@ export default function DocPage({}: RouteProps) {
       </p>
       <CodeBlock
         label="src/pages/about.tsx"
-        code={`import type { RouteProps } from "@x/core";
+        code={`import type { RouteProps } from "@thexjs/core";
 
 export const mode = "static";
 
@@ -48,7 +48,7 @@ export default function About({}: RouteProps) {
       </p>
       <CodeBlock
         label="src/pages/products.tsx"
-        code={`import type { RouteProps, LoaderArgs } from "@x/core";
+        code={`import type { RouteProps, LoaderArgs } from "@thexjs/core";
 
 export async function loader({ request }: LoaderArgs) {
   const res = await fetch("https://api.example.com/products");
@@ -80,7 +80,7 @@ export default function Products({ loaderData }: RouteProps<typeof loader>) {
       </p>
       <CodeBlock
         label="src/pages/products/[id].tsx"
-        code={`import type { RouteProps, LoaderArgs } from "@x/core";
+        code={`import type { RouteProps, LoaderArgs } from "@thexjs/core";
 
 export async function loader({ params }: LoaderArgs) {
   const product = await db.query(
@@ -112,7 +112,7 @@ export default function ProductDetail({ loaderData }: RouteProps<typeof loader>)
       </p>
       <CodeBlock
         label="type usage"
-        code={`import type { RouteProps } from "@x/core";
+        code={`import type { RouteProps } from "@thexjs/core";
 
 // loaderData is automatically typed via the generic
 export default function Page({ loaderData, params, request }: RouteProps<typeof loader>) {

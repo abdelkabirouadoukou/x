@@ -3,7 +3,7 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "@x/core": ["../core/src"]
+      "@thexjs/core": ["../core/src"]
     }
   },
   "include": ["src"]

@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -20,7 +20,7 @@ export default function DocPage({}: RouteProps) {
       </p>
       <CodeBlock
         label="src/api/hello.ts"
-        code={`import type { ApiHandler } from "@x/core";
+        code={`import type { ApiHandler } from "@thexjs/core";
 
 export const GET: ApiHandler = ({ request }) => {
   return Response.json({ message: "Hello from x!" });
@@ -36,7 +36,7 @@ export const GET: ApiHandler = ({ request }) => {
       </p>
       <CodeBlock
         label="src/api/users.ts"
-        code={`import type { ApiHandler } from "@x/core";
+        code={`import type { ApiHandler } from "@thexjs/core";
 
 export const GET: ApiHandler = async ({ request }) => {
   const users = await db.query("SELECT * FROM users");
@@ -56,7 +56,7 @@ export const POST: ApiHandler = async ({ request }) => {
       <h2 className="mt-12 text-xl font-bold tracking-tight">POST endpoint example</h2>
       <CodeBlock
         label="src/api/contact.ts"
-        code={`import type { ApiHandler } from "@x/core";
+        code={`import type { ApiHandler } from "@thexjs/core";
 
 export const POST: ApiHandler = async ({ request }) => {
   const form = await request.formData();

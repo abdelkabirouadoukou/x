@@ -6,7 +6,7 @@ build-time server. Just `bun build --target=bun` + `bun dist/server/index.js`.
 ## Prerequisites
 
 - [Bun](https://bun.sh) 1.3.x or later (build + runtime)
-- A project using `@x/core` with at least one route
+- A project using `@thexjs/core` with at least one route
 
 ## Build
 

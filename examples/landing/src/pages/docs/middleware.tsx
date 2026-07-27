@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -41,7 +41,7 @@ export default function DocPage({}: RouteProps) {
       </p>
       <CodeBlock
         label="src/pages/_middleware.ts"
-        code={`import type { MiddlewareContext, MiddlewareNext } from "@x/core";
+        code={`import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 
 export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
   console.log(\`[${"$"}{ctx.request.method}] ${"$"}{ctx.request.url}\`);
@@ -55,7 +55,7 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
       </p>
       <CodeBlock
         label="src/pages/dashboard/_middleware.ts"
-        code={`import type { MiddlewareContext, MiddlewareNext } from "@x/core";
+        code={`import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 
 export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
   const session = ctx.request.cookies.get("session");

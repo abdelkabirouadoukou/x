@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -21,7 +21,7 @@ export default function DocPage({}: RouteProps) {
       </p>
       <CodeBlock
         label="x.config.ts"
-        code={`import { defineConfig } from "@x/core";
+        code={`import { defineConfig } from "@thexjs/core";
 
 export default defineConfig({
   contentDir: "content",
@@ -67,8 +67,8 @@ console.log(greeting);
       </p>
       <CodeBlock
         label="src/pages/blog/[slug].tsx"
-        code={`import type { RouteProps, LoaderArgs } from "@x/core";
-import { scanContent, renderMarkdown } from "@x/core";
+        code={`import type { RouteProps, LoaderArgs } from "@thexjs/core";
+import { scanContent, renderMarkdown } from "@thexjs/core";
 
 export async function loader({ params }: LoaderArgs) {
   const posts = await scanContent("posts");

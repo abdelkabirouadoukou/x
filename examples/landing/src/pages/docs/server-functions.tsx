@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -90,7 +90,7 @@ export default function GreetForm() {
       </p>
       <CodeBlock
         label="src/pages/dashboard.tsx"
-        code={`import type { RouteProps, LoaderArgs } from "@x/core";
+        code={`import type { RouteProps, LoaderArgs } from "@thexjs/core";
 import { getDashboardData } from "../actions/dashboard";
 
 export async function loader({ request }: LoaderArgs) {

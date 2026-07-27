@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -51,7 +51,7 @@ pages/_404.tsx          -> catch-all 404`}
       </p>
       <CodeBlock
         label="src/pages/blog/[slug].tsx"
-        code={`import type { RouteProps, LoaderArgs } from "@x/core";
+        code={`import type { RouteProps, LoaderArgs } from "@thexjs/core";
 
 export async function loader({ params }: LoaderArgs) {
   const post = await getPost(params.slug);

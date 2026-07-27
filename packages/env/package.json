@@ -1,15 +1,39 @@
 {
-  "name": "@x/env",
-  "version": "0.0.1",
-  "private": true,
+  "name": "@thexjs/env",
+  "version": "0.1.0",
+  "description": "Type-safe environment variable loading and validation for the x framework.",
+  "license": "MIT",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./validators": "./src/validators.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./validators": {
+      "types": "./dist/validators.d.ts",
+      "import": "./dist/validators.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/validators.ts --format esm --dts --clean --target node18",
+    "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
     "typescript": "^5.7.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0"
   }
 }

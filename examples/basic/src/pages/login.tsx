@@ -1,4 +1,4 @@
-import type { LoaderArgs, RouteProps } from "@x/core";
+import type { LoaderArgs, RouteProps } from "@thexjs/core";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";

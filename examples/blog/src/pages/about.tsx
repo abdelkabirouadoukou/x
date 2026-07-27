@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 
 export default function AboutPage(_props: RouteProps) {
   return (

@@ -1,4 +1,4 @@
-import type { MiddlewareContext, MiddlewareNext } from "@x/core";
+import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 import { getSession, parseSessionCookie } from "../../lib/auth";
 
 export default async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {

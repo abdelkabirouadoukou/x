@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -20,7 +20,7 @@ export default function DocPage({}: RouteProps) {
       </p>
       <CodeBlock
         label="src/lib/db.ts"
-        code={`import { connectSQLite, runSQLiteMigrations } from "@x/core";
+        code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core";
 
 const db = connectSQLite("data/app.db");
 
@@ -61,7 +61,7 @@ export { db };`}
       </p>
       <CodeBlock
         label="src/pages/users.tsx"
-        code={`import type { RouteProps, LoaderArgs } from "@x/core";
+        code={`import type { RouteProps, LoaderArgs } from "@thexjs/core";
 import { db } from "../lib/db";
 
 export async function loader({}: LoaderArgs) {
@@ -96,7 +96,7 @@ export default function Users({ loaderData }: RouteProps<typeof loader>) {
       </p>
       <CodeBlock
         label="src/lib/db.ts"
-        code={`import { connectPostgres, runPostgresMigrations } from "@x/core";
+        code={`import { connectPostgres, runPostgresMigrations } from "@thexjs/core";
 
 const db = connectPostgres({
   connectionString: process.env.DATABASE_URL,

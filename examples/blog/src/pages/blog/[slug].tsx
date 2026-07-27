@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import { renderMarkdown, scanContent } from "@x/core";
-import type { LoaderArgs, RouteProps } from "@x/core";
+import { renderMarkdown, scanContent } from "@thexjs/core";
+import type { LoaderArgs, RouteProps } from "@thexjs/core";
 
 interface PostLoaderData {
   html: string;

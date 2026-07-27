@@ -131,7 +131,7 @@ verified, not just written.
 
 ## Phase 5 — Production build
 
-- [x] `x build` → runs `build()` from `@x/core`, then `bun build --target=bun` on the
+- [x] `x build` → runs `build()` from `@thexjs/core`, then `bun build --target=bun` on the
   generated server entry (bundled in `build.ts` via `Bun.spawnSync`)
 - [x] Fully-static routes get a separate static-export output (`dist/client/`)
 - [x] `Dockerfile` using `oven/bun` base image (multi-stage: build then production)

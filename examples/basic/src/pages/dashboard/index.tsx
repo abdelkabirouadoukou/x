@@ -1,4 +1,4 @@
-import type { LoaderArgs, RouteProps } from "@x/core";
+import type { LoaderArgs, RouteProps } from "@thexjs/core";
 import Head from "../../components/Head";
 import { Button } from "../../components/ui/button";
 import { getSession, parseSessionCookie } from "../../lib/auth";

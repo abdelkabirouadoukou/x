@@ -1,4 +1,4 @@
-import type { LoaderArgs, RouteProps } from "@x/core";
+import type { LoaderArgs, RouteProps } from "@thexjs/core";
 import { Activity, DollarSign, TrendingUp, Users } from "lucide-react";
 
 export async function loader({ request }: LoaderArgs) {

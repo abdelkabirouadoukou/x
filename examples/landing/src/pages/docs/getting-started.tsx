@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -41,9 +41,9 @@ x dev`}
         lang="bash"
         code={`mkdir my-app && cd my-app
 bun init -y
-bun add @x/core
+bun add @thexjs/core
 cat << EOF > x.config.ts
-import { defineConfig } from "@x/core";
+import { defineConfig } from "@thexjs/core";
 export default defineConfig({
   pagesDir: "src/pages",
 });

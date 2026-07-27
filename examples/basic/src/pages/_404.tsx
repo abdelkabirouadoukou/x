@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import Link from "../components/Link";
 
 export default function CustomNotFound(_props: RouteProps) {

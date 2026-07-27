@@ -1,4 +1,4 @@
-import type { RouteProps } from "@x/core";
+import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
@@ -19,7 +19,7 @@ export default function DocPage({}: RouteProps) {
       </p>
       <CodeBlock
         label="x.config.ts"
-        code={`import { defineConfig } from "@x/core";
+        code={`import { defineConfig } from "@thexjs/core";
 
 export default defineConfig({
   pagesDir: "src/pages",
