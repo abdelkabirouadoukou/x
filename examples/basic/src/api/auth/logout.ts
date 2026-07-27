@@ -1,4 +1,4 @@
-import { clearSessionCookie, deleteSession, parseSessionCookie } from "../../../data/auth";
+import { clearSessionCookie, deleteSession, parseSessionCookie } from "../../lib/auth";
 
 export async function POST(req: Request): Promise<Response> {
   const token = parseSessionCookie(req.headers.get("Cookie"));

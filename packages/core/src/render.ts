@@ -7,7 +7,7 @@ export interface RenderOptions {
   islandScripts?: string[];
   islandProps?: Record<string, string>;
   /** Path to a stylesheet to <link> in <head>, e.g. "/styles.css". */
-  stylesheet?: string;
+  stylesheet?: string | undefined;
   /** Set to false to omit the client-side navigation script. Defaults to true. */
   clientNav?: boolean;
 }

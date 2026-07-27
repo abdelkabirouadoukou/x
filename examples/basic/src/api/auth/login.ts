@@ -1,5 +1,5 @@
 import type { RouteProps } from "@x/core";
-import { createSession, setSessionCookie } from "../../../data/auth";
+import { createSession, setSessionCookie } from "../../lib/auth";
 
 export async function POST(req: Request): Promise<Response> {
   try {
@@ -15,7 +15,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const session = createSession(username);
-    const cookie = setSessionCookie(session.id);
+    const cookie = setSessionCookie(session.token);
     return new Response(JSON.stringify({ user: { username: session.username } }), {
       status: 200,
       headers: {

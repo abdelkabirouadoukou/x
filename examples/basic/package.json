@@ -3,7 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot server.ts"
+    "dev": "bun ../../packages/cli/src/index.ts dev",
+    "build": "bun ../../packages/cli/src/index.ts build",
+    "start": "bun ../../packages/cli/src/index.ts start",
+    "dev:direct": "bun --hot server.ts"
   },
   "dependencies": {
     "@x/core": "workspace:*",

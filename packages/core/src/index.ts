@@ -1,5 +1,7 @@
 export {
   scanRoutes,
+  scanPages,
+  scanApiDir,
   scanLayouts,
   scanMiddleware,
   scanNotFound,
@@ -23,6 +25,7 @@ export {
 export { CLIENT_NAV_SCRIPT } from "./client-nav";
 export {
   createApp,
+  defineConfig,
   type CreateAppOptions,
   type RouteProps,
   type RevalidateOptions,

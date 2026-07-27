@@ -1,15 +1,18 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { IslandProvider, createIslandRegistry } from "./island";
 import { renderStaticPage } from "./render";
-import { type RouteEntry, findLayoutChain, scanLayouts, scanRoutes } from "./router";
+import { type RouteEntry, findLayoutChain, scanApiDir, scanLayouts, scanPages } from "./router";
 
 export type RouteMode = "static" | "server";
 
 export interface BuildOptions {
-  routesDir: string;
+  routesDir?: string;
+  pagesDir?: string;
+  apiDir?: string;
+  layoutsDir?: string;
   contentDir?: string;
   outDir?: string;
 }
@@ -32,8 +35,23 @@ export async function build(options: BuildOptions): Promise<void> {
   mkdirSync(serverDir, { recursive: true });
   mkdirSync(islandsDir, { recursive: true });
 
-  const routeEntries = scanRoutes(options.routesDir);
-  const layouts = scanLayouts(options.routesDir);
+  const pagesDir = options.pagesDir ?? options.routesDir ?? "";
+  const apiDir = options.apiDir;
+  const layoutsDir = options.layoutsDir ?? pagesDir;
+
+  let routeEntries: RouteEntry[] = [];
+  if (pagesDir && existsSync(pagesDir)) {
+    routeEntries = scanPages(pagesDir);
+  }
+  if (apiDir && existsSync(apiDir)) {
+    routeEntries.push(...scanApiDir(apiDir));
+  }
+  const legacyApiDir = pagesDir ? join(pagesDir, "api") : "";
+  if (legacyApiDir && existsSync(legacyApiDir) && legacyApiDir !== apiDir) {
+    routeEntries.push(...scanApiDir(legacyApiDir));
+  }
+
+  const layouts = scanLayouts(layoutsDir);
 
   const staticPages: LoadedPage[] = [];
   const serverPages: LoadedPage[] = [];
@@ -56,7 +74,7 @@ export async function build(options: BuildOptions): Promise<void> {
     }
 
     const mode = mod.mode ?? "server";
-    const layoutChain = findLayoutChain(entry.filePath, layouts, options.routesDir);
+    const layoutChain = findLayoutChain(entry.filePath, layouts, pagesDir);
     const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
     for (const l of layoutChain) {
       const layoutMod = (await import(l.filePath)) as {
@@ -142,7 +160,7 @@ export async function build(options: BuildOptions): Promise<void> {
   }
 
   if (serverPages.length > 0 || apiRoutes.length > 0) {
-    const serverEntry = buildServerEntry(options.routesDir, options.contentDir);
+    const serverEntry = buildServerEntry(pagesDir || options.routesDir || "", options.contentDir);
     const serverEntryPath = join(serverDir, "index.ts");
     writeFileSync(serverEntryPath, serverEntry, "utf-8");
     console.log(

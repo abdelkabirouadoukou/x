@@ -14,9 +14,11 @@ import {
   extractParams,
   findLayoutChain,
   findMiddlewareChain,
+  scanApiDir,
   scanLayouts,
   scanMiddleware,
   scanNotFound,
+  scanPages,
   scanRoutes,
   writeManifest,
 } from "./router";
@@ -33,8 +35,16 @@ export interface RouteProps {
 }
 
 export interface CreateAppOptions {
-  routesDir: string;
+  /** Primary route directory (legacy — mixes pages, api, layouts together). */
+  routesDir?: string;
+  /** Separate directory for page routes (preferred over routesDir when set). */
+  pagesDir?: string;
+  /** Separate directory for API routes. Defaults to routesDir/api if not set. */
+  apiDir?: string;
+  /** Separate directory for layout wrappers. */
+  layoutsDir?: string;
   contentDir?: string;
+  actionsDir?: string;
   port?: number;
   development?: boolean;
 }
@@ -131,7 +141,12 @@ function renderContentPage(content: ContentEntry, stylesheet: string | undefined
   return body;
 }
 
+export function defineConfig(config: CreateAppOptions): CreateAppOptions {
+  return config;
+}
+
 export async function createApp(options: CreateAppOptions): Promise<AppServeOptions> {
+  const primaryDir: string = options.pagesDir || options.routesDir || "src/pages";
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
   let publicDir: string | null = null;
@@ -154,17 +169,54 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
   async function buildHandlers(): Promise<void> {
     resetServerFunctions();
-    const found = scanRoutes(options.routesDir);
-    const layouts = scanLayouts(options.routesDir);
-    const middlewareEntries = scanMiddleware(options.routesDir);
+    const pagesDir: string = primaryDir;
+    const apiDir: string | undefined = options.apiDir;
+    const layoutsDir: string = options.layoutsDir || pagesDir;
 
-    const projectRoot = projectRootFromRoutesDir(options.routesDir);
+    let found: RouteEntry[] = scanPages(pagesDir);
+
+    const apiFound: RouteEntry[] = [];
+    if (apiDir && existsSync(apiDir)) {
+      apiFound.push(...scanApiDir(apiDir));
+    }
+    const legacyApiDir = join(pagesDir, "api");
+    if (existsSync(legacyApiDir) && legacyApiDir !== apiDir) {
+      apiFound.push(...scanApiDir(legacyApiDir));
+    }
+    found = found.filter((r) => !r.isApi);
+    found.push(...apiFound);
+
+    const layouts = scanLayouts(layoutsDir);
+    const middlewareEntries = scanMiddleware(pagesDir);
+
+    // Scan action files from a separate actionsDir if provided
+    if (options.actionsDir) {
+      const actionFiles = scanRoutes(options.actionsDir);
+      for (const actionFile of actionFiles) {
+        const mod = (await import(actionFile.filePath)) as Record<string, unknown>;
+        const actions = mod.actions as
+          | Record<string, (...args: unknown[]) => Promise<unknown>>
+          | undefined;
+        if (actions) {
+          registerServerFunctions(actionFile.routePath, actionFile.paramNames, actions);
+        }
+        // Also support individual named async exports as actions
+        for (const [key, value] of Object.entries(mod)) {
+          if (key === "default" || key === "actions" || typeof value !== "function") continue;
+          registerServerFunctions(actionFile.routePath, actionFile.paramNames, {
+            [key]: value as (...args: unknown[]) => Promise<unknown>,
+          });
+        }
+      }
+    }
+
+    const projectRoot = projectRootFromRoutesDir(pagesDir);
     const candidatePublicDir = join(projectRoot, "public");
     publicDir = existsSync(candidatePublicDir) ? candidatePublicDir : null;
     stylesheetHref =
       publicDir && existsSync(join(publicDir, "styles.css")) ? "/styles.css" : undefined;
 
-    const notFoundEntry = scanNotFound(options.routesDir);
+    const notFoundEntry = scanNotFound(pagesDir);
     if (notFoundEntry) {
       const mod = (await import(notFoundEntry.filePath)) as {
         default?: ComponentType<RouteProps>;
@@ -173,7 +225,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     } else {
       notFoundComponent = DefaultNotFound;
     }
-    const rootLayout = layouts.find((l) => l.dirPath === options.routesDir);
+    const rootLayout = layouts.find((l) => l.dirPath === pagesDir);
     if (rootLayout) {
       const layoutMod = (await import(rootLayout.filePath)) as {
         default?: ComponentType<{ children: ReactNode }>;
@@ -184,7 +236,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     }
 
     if (options.development) {
-      writeManifest(found, options.routesDir);
+      writeManifest(found, pagesDir);
     }
 
     const loaded: RouteHandler[] = [];
@@ -262,7 +314,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const routeMiddleware = mod.middleware as MiddlewareFn | undefined;
       const revalidate = mod.revalidate as number | undefined;
 
-      const layoutChain = findLayoutChain(route.filePath, layouts, options.routesDir);
+      const layoutChain = findLayoutChain(route.filePath, layouts, layoutsDir);
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
       for (const l of layoutChain) {
         const layoutMod = (await import(l.filePath)) as {
@@ -271,7 +323,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         if (layoutMod.default) layoutModules.push(layoutMod.default);
       }
 
-      const mwChain = findMiddlewareChain(route.filePath, middlewareEntries, options.routesDir);
+      const mwChain = findMiddlewareChain(route.filePath, middlewareEntries, pagesDir);
       const middlewareModules: MiddlewareFn[] = [];
       for (const m of mwChain) {
         const mwMod = (await import(m.filePath)) as {
@@ -412,11 +464,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
           if (added.length > 0) {
             for (const p of added)
-              console.log(`[x] route added: ${p.replace(options.routesDir, "")}`);
+              console.log(`[x] route added: ${p.replace(primaryDir, "")}`);
           }
           if (removed.length > 0) {
             for (const p of removed)
-              console.log(`[x] route removed: ${p.replace(options.routesDir, "")}`);
+              console.log(`[x] route removed: ${p.replace(primaryDir, "")}`);
           }
 
           if (added.length > 0 || removed.length > 0) {
@@ -433,7 +485,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     }
 
     try {
-      const watcher = watch(options.routesDir, { recursive: true }, (_eventType, filename) => {
+      const watcher = watch(primaryDir, { recursive: true }, (_eventType, filename) => {
         if (!filename) return;
         const name = typeof filename === "string" ? filename : (filename as Buffer).toString();
         if (name.startsWith(".") || name.startsWith("_")) return;

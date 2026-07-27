@@ -15,7 +15,24 @@ export interface MiddlewareEntry {
 
 const ROUTE_FILE = /\.(tsx|ts)$/;
 
+/** Scan page routes — same as scanRoutes but never marks anything as api. */
+export function scanPages(rootDir: string): RouteEntry[] {
+  return scanRoutes(rootDir).map((r) => ({ ...r, isApi: false }));
+}
+
+/** Scan API routes from a separate directory (not nested under pages/routes). */
+export function scanApiDir(rootDir: string): RouteEntry[] {
+  return scanRoutes(rootDir).map((r) => ({ ...r, isApi: true }));
+}
+
 export function scanRoutes(rootDir: string): RouteEntry[] {
+  // If rootDir doesn't exist, return empty
+  try {
+    statSync(rootDir);
+  } catch {
+    return [];
+  }
+
   const entries: RouteEntry[] = [];
 
   function walk(dir: string) {

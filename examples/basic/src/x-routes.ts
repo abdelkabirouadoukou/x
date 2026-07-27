@@ -4,11 +4,10 @@ export type RouteMap = {
   "/posts/:id": { id: string };
   "/login": Record<string, never>;
   "/dashboard": Record<string, never>;
-  "/dashboard/greet": Record<string, never>;
   "/blog": Record<string, never>;
-  "/api/auth/login": Record<string, never>;
-  "/api/auth/logout": Record<string, never>;
   "/about": Record<string, never>;
+  "/auth/login": Record<string, never>;
+  "/auth/logout": Record<string, never>;
 };
 
 export function href<T extends keyof RouteMap & string>(

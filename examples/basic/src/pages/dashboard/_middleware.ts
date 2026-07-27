@@ -1,5 +1,5 @@
 import type { MiddlewareContext, MiddlewareFn } from "@x/core";
-import { getSession, parseSessionCookie } from "../../data/auth";
+import { getSession, parseSessionCookie } from "../../lib/auth";
 
 export const middleware: MiddlewareFn = async (ctx: MiddlewareContext, next) => {
   const token = parseSessionCookie(ctx.request.headers.get("Cookie"));
