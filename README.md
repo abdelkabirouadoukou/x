@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./examples/landing/public/favicon.ico" alt="X logo" width="50">
+  <img src="./examples/landing/public/favicon.ico" alt="X logo" width="100">
 </p>
 
 <p align="center">
