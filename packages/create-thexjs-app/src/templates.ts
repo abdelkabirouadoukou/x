@@ -1,11 +1,30 @@
 export interface TemplateMeta {
   label: string;
   description: string;
+  recommended?: boolean;
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
 }
 
+export const DEFAULT_TEMPLATE = "default";
+
 export const TEMPLATES: Record<string, TemplateMeta> = {
+  default: {
+    label: "Default",
+    description: "Blank slate with a single home page — the fastest way to start.",
+    recommended: true,
+    dependencies: {
+      react: "^19.1.0",
+      "react-dom": "^19.1.0",
+    },
+    devDependencies: {
+      "@tailwindcss/cli": "^4.3.3",
+      "@types/react": "^19.1.0",
+      "@types/react-dom": "^19.1.0",
+      tailwindcss: "^4.3.3",
+      typescript: "^5.8.0",
+    },
+  },
   basic: {
     label: "Basic",
     description: "Minimal starter: pages, an API route, auth, and a dashboard.",

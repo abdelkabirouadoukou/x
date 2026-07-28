@@ -1,20 +1,66 @@
 import { Menu, X } from "lucide-react";
 import type { ReactNode } from "react";
 
-const sidebarLinks = [
-  { href: "/docs", label: "Overview" },
-  { href: "/docs/getting-started", label: "Getting Started" },
-  { href: "/docs/routing", label: "Routing" },
-  { href: "/docs/pages", label: "Pages & Loaders" },
-  { href: "/docs/layouts", label: "Layouts" },
-  { href: "/docs/api-routes", label: "API Routes" },
-  { href: "/docs/server-functions", label: "Server Functions" },
-  { href: "/docs/content-collections", label: "Content Collections" },
-  { href: "/docs/middleware", label: "Middleware" },
-  { href: "/docs/data-layer", label: "Data Layer" },
-  { href: "/docs/build-deploy", label: "Build & Deploy" },
-  { href: "/docs/configuration", label: "Configuration" },
+const sidebarSections = [
+  {
+    title: "Start here",
+    links: [
+      { href: "/docs", label: "Overview" },
+      { href: "/docs/introduction", label: "Introduction" },
+      { href: "/docs/installation", label: "Installation" },
+      { href: "/docs/getting-started", label: "Getting Started" },
+    ],
+  },
+  {
+    title: "Packages",
+    links: [
+      { href: "/docs/packages/core", label: "@thexjs/core" },
+      { href: "/docs/packages/cli", label: "@thexjs/cli" },
+      { href: "/docs/packages/env", label: "@thexjs/env" },
+    ],
+  },
+  {
+    title: "Guides",
+    links: [
+      { href: "/docs/routing", label: "Routing" },
+      { href: "/docs/pages", label: "Pages & Loaders" },
+      { href: "/docs/layouts", label: "Layouts" },
+      { href: "/docs/api-routes", label: "API Routes" },
+      { href: "/docs/server-functions", label: "Server Functions" },
+      { href: "/docs/content-collections", label: "Content Collections" },
+      { href: "/docs/middleware", label: "Middleware" },
+      { href: "/docs/data-layer", label: "Data Layer" },
+      { href: "/docs/build-deploy", label: "Build & Deploy" },
+      { href: "/docs/configuration", label: "Configuration" },
+    ],
+  },
 ];
+
+function SidebarNav() {
+  return (
+    <>
+      {sidebarSections.map((section) => (
+        <div key={section.title} className="mb-6 last:mb-0">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+            {section.title}
+          </p>
+          <ul className="space-y-1">
+            {section.links.map((link) => (
+              <li key={link.href}>
+                <a
+                  href={link.href}
+                  className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </>
+  );
+}
 
 export default function DocsLayout({ children }: { children: ReactNode }) {
   return (
@@ -35,42 +81,14 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         id="sidebar-panel"
         className="fixed left-0 top-16 z-50 hidden h-[calc(100vh-4rem)] w-56 overflow-y-auto border-r border-border/40 bg-background lg:hidden"
       >
-        <nav className="px-4 pb-4 pt-0">
-          <p className="mb-3 pt-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-            Docs
-          </p>
-          <ul className="space-y-1">
-            {sidebarLinks.map((link) => (
-              <li key={link.href}>
-                <a
-                  href={link.href}
-                  className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
+        <nav className="px-4 pb-4 pt-3">
+          <SidebarNav />
         </nav>
       </aside>
 
       <aside className="hidden w-56 shrink-0 border-r border-border/40 lg:block">
         <nav className="sticky top-16 px-4 pb-4 pt-0">
-          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-            Docs
-          </p>
-          <ul className="space-y-1">
-            {sidebarLinks.map((link) => (
-              <li key={link.href}>
-                <a
-                  href={link.href}
-                  className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <SidebarNav />
         </nav>
       </aside>
       <div className="min-w-0 flex-1">

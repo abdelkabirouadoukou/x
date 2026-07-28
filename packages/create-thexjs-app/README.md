@@ -48,13 +48,15 @@ Create a new x project, learn the project structure, and build your first page.
 
 ### Installation
 
-The fastest way to start is with the create-x CLI. Make sure you have [Bun](https://bun.sh) installed, then run:
+The fastest way to start is with the project scaffolder. Make sure you have [Bun](https://bun.sh) installed, then run:
 
 ```bash
-bun create x-app@latest my-app
+bun create thexjs-app@latest my-app
 cd my-app
-x dev
+bun run dev
 ```
+
+When prompted for a template, press Enter to accept **default** (recommended) — a single home page to start from.
 
 Your app will be running at `http://localhost:3000`.
 

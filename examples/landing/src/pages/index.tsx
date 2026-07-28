@@ -40,33 +40,45 @@ export default function HomePage() {
   return (
     <div className="pb-32">
       {/* ── Hero ── */}
-      <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-6">
-        <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-16">
-          <div className="h-[500px] w-[500px] animate-pulse-glow rounded-full bg-primary/20 sm:h-[700px] sm:w-[700px]" />
+      <section className="relative flex min-h-[92vh] flex-col items-center justify-center overflow-hidden px-6">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.22]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, oklch(0.22 0.015 265) 1px, transparent 1px), linear-gradient(to bottom, oklch(0.22 0.015 265) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            maskImage: "radial-gradient(ellipse 75% 65% at 50% 35%, black 15%, transparent 100%)",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-12">
+          <div className="h-[480px] w-[480px] animate-pulse-glow rounded-full bg-primary/15 sm:h-[640px] sm:w-[640px]" />
         </div>
         <div className="relative z-10 flex flex-col items-center text-center">
-          <h1 className="max-w-3xl text-5xl font-bold tracking-tight leading-[1.1] sm:text-7xl">
-            Build anything.
+          <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-primary/90">
+            Fullstack · Bun · React
+          </p>
+          <h1 className="mt-6 max-w-4xl text-5xl font-bold tracking-tight leading-[1.05] sm:text-7xl">
+            One runtime.
             <br />
-            <span className="text-primary">Ship anywhere.</span>
+            <span className="text-primary">Every layer.</span>
           </h1>
-          <p className="mt-6 max-w-xl text-lg text-muted-foreground sm:text-xl">
-            A fullstack framework for Bun. Static sites, SSR, API routes, and server functions — all
-            in one process.
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+            x is a fullstack framework for Bun — file-based routing, SSR, static export, API routes,
+            and server functions in a single process.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <a
-              href="/docs/getting-started"
+              href="/docs/installation"
               className="group inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.97]"
             >
-              Get Started{" "}
+              Install x{" "}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <a
-              href="/docs"
+              href="/docs/introduction"
               className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-card/50 px-6 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:bg-muted active:scale-[0.97]"
             >
-              <BookOpen className="h-4 w-4" /> Read the Docs
+              <BookOpen className="h-4 w-4" /> Introduction
             </a>
           </div>
         </div>
@@ -105,30 +117,43 @@ export default function HomePage() {
             Quick start
           </p>
           <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-            One command to start
+            Scaffold in one command
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Create a project, add a page, run the dev server. Two minutes, zero config.
+            Create a project with the default template — a single home page, ready to edit.
           </p>
         </div>
         <CodeBlock
           label="~/project — bash"
           lang="bash"
-          code={`> mkdir my-app && cd my-app
-> bun create x-app@latest ./
-  Creating a new x project...
-  Done! 
-> x dev
-  compiling Tailwind CSS...
+          code={`$ bun create thexjs-app@latest my-app
+
+  Available templates:
+
+    default  Blank slate with a single home page. (recommended)
+    basic    Pages, API route, auth, and dashboard.
+    blog     Markdown content collections.
+    saas     Dashboard, pricing, and data layer.
+    landing  Marketing site with docs pages.
+
+  Choose a template (default): █
+
+$ cd my-app && bun run dev
   dev server running at http://localhost:3000`}
         />
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <a
-            href="/docs/getting-started"
+            href="/docs/installation"
             className="group inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.97]"
           >
-            Read the full guide{" "}
+            Installation guide{" "}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </a>
+          <a
+            href="/docs/packages/core"
+            className="inline-flex h-11 items-center rounded-xl border border-border px-6 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            Package docs
           </a>
         </div>
       </section>

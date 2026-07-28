@@ -53,6 +53,21 @@
         "typescript": "^5.8.0",
       },
     },
+    "examples/default": {
+      "name": "default-example",
+      "dependencies": {
+        "@thexjs/core": "workspace:*",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+      },
+      "devDependencies": {
+        "@tailwindcss/cli": "^4.3.3",
+        "@types/react": "^19.1.0",
+        "@types/react-dom": "^19.1.0",
+        "tailwindcss": "^4.3.3",
+        "typescript": "^5.8.0",
+      },
+    },
     "examples/landing": {
       "name": "landing-example",
       "dependencies": {
@@ -99,7 +114,7 @@
     },
     "packages/cli": {
       "name": "@thexjs/cli",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "bin": {
         "x": "./dist/index.js",
       },
@@ -112,7 +127,7 @@
     },
     "packages/core": {
       "name": "@thexjs/core",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "devDependencies": {
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
@@ -136,7 +151,7 @@
     },
     "packages/env": {
       "name": "@thexjs/env",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "devDependencies": {
         "tsup": "^8.3.0",
       },
@@ -554,6 +569,8 @@
     "default-browser": ["default-browser@5.5.0", "", { "dependencies": { "bundle-name": "^4.1.0", "default-browser-id": "^5.0.0" } }, "sha512-H9LMLr5zwIbSxrmvikGuI/5KGhZ8E2zH3stkMgM5LpOWDutGM2JZaj460Udnf1a+946zc7YBgrqEWwbk7zHvGw=="],
 
     "default-browser-id": ["default-browser-id@5.0.1", "", {}, "sha512-x1VCxdX4t+8wVfd1so/9w+vQ4vx7lKd2Qp5tDRutErwmR85OgmfX7RlLRMWafRMY7hbEiXIbudNrjOAPa/hL8Q=="],
+
+    "default-example": ["default-example@workspace:examples/default"],
 
     "define-lazy-prop": ["define-lazy-prop@3.0.0", "", {}, "sha512-N+MeXYoqr3pOgn8xfyRPREN7gHakLYjhsHhWGT3fWAiL4IkAt0iDw14QiiEm2bE30c5XX5q0FtAA3CK5f9/BUg=="],
 

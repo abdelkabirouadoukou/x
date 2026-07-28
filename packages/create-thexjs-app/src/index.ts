@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync, cpSync } from "node:
 import { createInterface } from "node:readline/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TEMPLATES, TEMPLATE_NAMES } from "./templates.js";
+import { DEFAULT_TEMPLATE, TEMPLATES, TEMPLATE_NAMES } from "./templates.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Templates ship inside the published package at ../templates relative to dist/index.js
@@ -56,7 +56,8 @@ function printBanner(): void {
 function printTemplateList(): void {
   for (const name of TEMPLATE_NAMES) {
     const meta = TEMPLATES[name]!;
-    console.log(`    ${name.padEnd(8)} ${meta.description}`);
+    const tag = meta.recommended ? " (recommended)" : "";
+    console.log(`    ${name.padEnd(8)} ${meta.description}${tag}`);
   }
 }
 
@@ -85,7 +86,10 @@ async function main(): Promise<void> {
     console.log("\n  Available templates:\n");
     printTemplateList();
     console.log("");
-    templateArg = await prompt(`Choose a template (${TEMPLATE_NAMES.join("/")})`, "basic");
+    templateArg = await prompt(
+      `Choose a template (${TEMPLATE_NAMES.join("/")})`,
+      DEFAULT_TEMPLATE,
+    );
   }
   if (!TEMPLATES[templateArg]) {
     console.error(`\n[create-thexjs-app] Unknown template "${templateArg}".`);

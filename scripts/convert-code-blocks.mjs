@@ -33,7 +33,7 @@ const replacements = {
         </div>
         <pre className="overflow-x-auto p-5 text-sm leading-relaxed">
           <code className="font-mono text-muted-foreground">
-            <span className="text-primary">$</span> bun create x my-app{"\\n"}
+            <span className="text-primary">$</span> bun create thexjs-app@latest my-app{"\\n"}
             <span className="text-primary">$</span> cd my-app{"\\n"}
             <span className="text-primary">$</span> x dev
           </code>

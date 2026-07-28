@@ -34,12 +34,15 @@ Static sites, SSR, file-based API routes, and server functions — running in a 
 ## Layout
 
 ```
-packages/core      framework runtime: file-based router, SSR renderer, middleware
-packages/cli       x dev / x build / x start
-packages/env       type-safe environment variable validation
-examples/basic     basic app exercising pages, API routes, server functions
-examples/landing   full marketing site with docs, blog (x's own docs site)
-examples/blog     blog example with content collections
+packages/core           framework runtime: file-based router, SSR renderer, middleware
+packages/cli            x dev / x build / x start
+packages/env            type-safe environment variable validation
+packages/create-thexjs-app   project scaffolder (bun create thexjs-app@latest)
+examples/default        minimal starter — single home page (recommended template)
+examples/basic          pages, API routes, auth, and dashboard
+examples/landing        marketing site with docs (x's own docs site)
+examples/blog           blog with content collections
+examples/saas           SaaS dashboard demo
 ```
 
 ## Getting Started
@@ -48,13 +51,15 @@ Create a new x project, learn the project structure, and build your first page.
 
 ### Installation
 
-The fastest way to start is with the create-x CLI. Make sure you have [Bun](https://bun.sh) installed, then run:
+The fastest way to start is with the project scaffolder. Make sure you have [Bun](https://bun.sh) installed, then run:
 
 ```bash
 bun create thexjs-app@latest my-app
 cd my-app
-x dev
+bun run dev
 ```
+
+When prompted for a template, press Enter to accept **default** (recommended) — a single home page to start from. Other templates include `basic`, `blog`, `saas`, and `landing`.
 
 Your app will be running at `http://localhost:3000`.
 

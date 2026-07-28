@@ -2,6 +2,8 @@ import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
+export const mode = "static";
+
 export default function DocPage({}: RouteProps) {
   return (
     <div>
@@ -13,23 +15,25 @@ export default function DocPage({}: RouteProps) {
         Create a new x project, learn the project structure, and build your first page.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Installation</h2>
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Create a project</h2>
       <p className="mt-3 text-muted-foreground">
-        The fastest way to start is with the create-x CLI. Make sure you have{" "}
-        <a href="https://bun.sh" className="text-primary underline underline-offset-2">
-          Bun
+        The fastest way to start is with the project scaffolder. See{" "}
+        <a href="/docs/installation" className="text-primary underline underline-offset-2">
+          Installation
         </a>{" "}
-        installed, then run:
+        for prerequisites and template options. Quick version:
       </p>
       <CodeBlock
         label="terminal"
         lang="bash"
-        code={`bun create x my-app
+        code={`bun create thexjs-app@latest my-app
 cd my-app
-x dev`}
+bun run dev`}
       />
       <p className="mt-4 text-muted-foreground">
-        Your app will be running at <span className="text-foreground">http://localhost:3000</span>.
+        Press Enter at the template prompt to use{" "}
+        <span className="text-foreground">default</span> (recommended) — a single home page. Your
+        app will be running at <span className="text-foreground">http://localhost:3000</span>.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Manual setup</h2>
@@ -106,7 +110,13 @@ EOF`}
         automatically reloads when files change.
       </p>
 
-      <div className="mt-16 border-t border-border pt-8">
+      <div className="mt-16 flex flex-wrap gap-6 border-t border-border pt-8">
+        <a
+          href="/docs/routing"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+        >
+          Routing <ArrowRight className="h-3.5 w-3.5" />
+        </a>
         <a
           href="/docs"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"

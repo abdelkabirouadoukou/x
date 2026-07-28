@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   BookOpen,
+  Box,
   Code2,
   Cog,
   Database,
@@ -8,18 +9,56 @@ import {
   Globe,
   Layers,
   Layout,
+  Package,
   Rocket,
   Shield,
+  Terminal,
   Zap,
 } from "lucide-react";
 
-const sections = [
+const startSections = [
   {
     icon: BookOpen,
+    title: "Introduction",
+    desc: "What x is, how the packages fit together, and a minimal page.",
+    href: "/docs/introduction",
+  },
+  {
+    icon: Terminal,
+    title: "Installation",
+    desc: "Prerequisites, create command, templates, and manual setup.",
+    href: "/docs/installation",
+  },
+  {
+    icon: Rocket,
     title: "Getting Started",
-    desc: "Install x, create your first project, and learn the basics.",
+    desc: "Project structure, your first page, and running the dev server.",
     href: "/docs/getting-started",
   },
+];
+
+const packageSections = [
+  {
+    icon: Package,
+    title: "@thexjs/core",
+    desc: "Rendering engine — routing, SSR/SSG, islands, server functions, data layer.",
+    href: "/docs/packages/core",
+  },
+  {
+    icon: Terminal,
+    title: "@thexjs/cli",
+    desc: "The x command — dev, build, start, and deployment output.",
+    href: "/docs/packages/cli",
+  },
+  {
+    icon: Box,
+    title: "@thexjs/env",
+    desc: "Type-safe environment variable validation with fail-fast errors.",
+    href: "/docs/packages/env",
+  },
+];
+
+const guideSections = [
   {
     icon: Globe,
     title: "Routing",
@@ -82,6 +121,35 @@ const sections = [
   },
 ];
 
+function SectionGrid({
+  sections,
+}: {
+  sections: typeof startSections;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      {sections.map((s) => (
+        <a
+          key={s.title}
+          href={s.href}
+          className="group rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+            <s.icon className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold transition-colors group-hover:text-primary">
+            {s.title}
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
+          <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+            Read more <ArrowRight className="h-3 w-3" />
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export const mode = "static";
 
 export default function DocsHubPage() {
@@ -100,26 +168,20 @@ export default function DocsHubPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {sections.map((s) => (
-          <a
-            key={s.title}
-            href={s.href}
-            className="group rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-              <s.icon className="h-5 w-5" />
-            </div>
-            <h3 className="mt-4 text-lg font-semibold group-hover:text-primary transition-colors">
-              {s.title}
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
-            <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-              Read more <ArrowRight className="h-3 w-3" />
-            </span>
-          </a>
-        ))}
-      </div>
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+        Start here
+      </h2>
+      <SectionGrid sections={startSections} />
+
+      <h2 className="mb-4 mt-12 text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+        Packages
+      </h2>
+      <SectionGrid sections={packageSections} />
+
+      <h2 className="mb-4 mt-12 text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+        Guides
+      </h2>
+      <SectionGrid sections={guideSections} />
     </div>
   );
 }
