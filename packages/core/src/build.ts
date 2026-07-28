@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
@@ -49,6 +49,19 @@ export async function build(options: BuildOptions): Promise<void> {
   const apiDir = options.apiDir;
   const actionsDir = options.actionsDir;
   const layoutsDir = options.layoutsDir ?? pagesDir;
+
+  // Resolve public/ the same way the dev server does (createApp.ts),
+  // so static builds ship the same stylesheet/assets dev mode serves.
+  const projectRoot = pagesDir ? join(pagesDir, "..", "..") : process.cwd();
+  const publicDir = join(projectRoot, "public");
+  const hasPublicDir = existsSync(publicDir);
+  const stylesheetHref =
+    hasPublicDir && existsSync(join(publicDir, "styles.css")) ? "/styles.css" : undefined;
+
+  if (hasPublicDir) {
+    cpSync(publicDir, clientDir, { recursive: true });
+    console.log(`[x] build: copied public/ -> ${relative(process.cwd(), clientDir)}`);
+  }
 
   let routeEntries: RouteEntry[] = [];
   if (pagesDir && existsSync(pagesDir)) {
@@ -149,7 +162,7 @@ export async function build(options: BuildOptions): Promise<void> {
     const registry = createIslandRegistry();
     const pageContent = renderPageWithLayout(page.Component, params, page.layoutModules);
     const content = createElement(IslandProvider, { registry }, pageContent);
-    const html = renderStaticPage(content);
+    const html = renderStaticPage(content, { stylesheet: stylesheetHref });
 
     const outPath =
       page.entry.routePath === "/" ? "/index.html" : `${page.entry.routePath}/index.html`;
@@ -170,7 +183,7 @@ export async function build(options: BuildOptions): Promise<void> {
       );
     }
 
-    const finalHtml = renderStaticPage(content, { islandScripts });
+    const finalHtml = renderStaticPage(content, { islandScripts, stylesheet: stylesheetHref });
     writeFileSync(fullPath, finalHtml, "utf-8");
     console.log(`  [static] ${page.entry.routePath} -> ${outPath}`);
   }
@@ -185,6 +198,7 @@ export async function build(options: BuildOptions): Promise<void> {
     const rendered = createElement(IslandProvider, { registry }, pageContent);
     const html = renderStaticPage(rendered, {
       title: (content.frontmatter.title as string) ?? content.slug,
+      stylesheet: stylesheetHref,
     });
 
     const outPath = content.routePath === "/" ? "/index.html" : `${content.routePath}/index.html`;

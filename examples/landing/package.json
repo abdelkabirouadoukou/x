@@ -1,6 +1,10 @@
 {
   "name": "landing-example",
   "type": "module",
+    "scripts": {
+    "dev": "x dev",
+    "build": "x build"
+  },
   "dependencies": {
     "@thexjs/core": "workspace:*",
     "react": "^19.1.0",
