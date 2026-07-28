@@ -20,9 +20,6 @@ export default function MainLayout({ children }: { children: ReactNode }) {
               <polygon points="19,5 21,3 5,21 3,19" fill="currentColor" opacity="0.45" />
             </svg>
           </span>
-          <span className="font-display text-sm font-bold tracking-tight text-foreground/90 transition-colors group-hover:text-primary">
-            x
-          </span>
         </a>
       </header>
       <main className="relative z-10 flex flex-1 flex-col">{children}</main>

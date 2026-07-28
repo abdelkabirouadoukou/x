@@ -47,7 +47,7 @@ export default function HomePage({}: RouteProps) {
 
       <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
         <a
-          href="https://x-framework.dev/docs"
+          href="https://thexjs.vercel.app/docs"
           className="inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
         >
           Read the docs
