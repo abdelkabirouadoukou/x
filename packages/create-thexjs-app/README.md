@@ -1,6 +1,6 @@
 <p align="center">
   <a href="#">
-    <img src="./examples/landing/public/favicon.ico" alt="x framework logo" width="120" height="120">
+    <img src="https://github.com/abdelkabirouadoukou/x/raw/main/examples/landing/public/favicon.ico" alt="x framework logo" width="120" height="120">
   </a>
 </p>
 
