@@ -150,7 +150,7 @@ export default function HomePage() {
                 <BookOpen className="h-4 w-4" /> Read the docs
               </a>
               <a
-                href="https://github.com/anomalyco/x"
+                href="https://github.com/abdelkabirouadoukou/x"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-card/50 px-6 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:bg-muted active:scale-[0.97]"

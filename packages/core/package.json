@@ -1,7 +1,20 @@
 {
   "name": "@thexjs/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Full-stack React framework core (router, SSR/SSG renderer, islands, server functions) for the x framework, built on Bun.",
+  "keywords": [
+    "react",
+    "bun",
+    "framework",
+    "full-stack",
+    "ssr",
+    "ssg",
+    "static-site-generation",
+    "islands",
+    "file-based-routing",
+    "server-functions",
+    "x"
+  ],
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
