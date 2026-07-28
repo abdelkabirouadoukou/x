@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/env",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Type-safe environment variable loading and validation for the x framework.",
   "license": "MIT",
   "type": "module",
