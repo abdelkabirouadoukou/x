@@ -22,7 +22,7 @@
   --foreground: #e6eaf2;
   --muted: #121824;
   --muted-foreground: #7b879c;
-  --primary: #f0a030;
+  --primary: oklch(0.72 0.18 35);
   --primary-foreground: #0a0d14;
   --border: #1c2433;
   --surface: #0d111a;
