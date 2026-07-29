@@ -70,6 +70,9 @@ interface DetectedOptions {
   actionsDir?: string;
   contentDir?: string;
   port: number;
+  /** Passed through untouched from x.config.ts — may hold live values (functions, reporters). */
+  security?: Record<string, unknown>;
+  observability?: Record<string, unknown>;
 }
 
 function dropUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -107,6 +110,8 @@ function detectOptionsFromConfig(cfg: Record<string, unknown>): DetectedOptions 
     actionsDir: resolveDir(cfg.actionsDir) || undefined,
     contentDir,
     port: (cfg.port as number) ?? 3000,
+    security: (cfg.security as Record<string, unknown>) ?? undefined,
+    observability: (cfg.observability as Record<string, unknown>) ?? undefined,
   }) as unknown as DetectedOptions;
 }
 
@@ -124,22 +129,22 @@ function detectDefaultOptions(): DetectedOptions {
   }) as unknown as DetectedOptions;
 }
 
-async function detectOptions(): Promise<DetectedOptions> {
+async function detectOptions(): Promise<{ options: DetectedOptions; configPath: string | null }> {
   const configPath = findConfig();
   if (configPath) {
     try {
       const mod = (await import(configPath)) as { default?: Record<string, unknown> };
-      return detectOptionsFromConfig(mod.default ?? {});
+      return { options: detectOptionsFromConfig(mod.default ?? {}), configPath };
     } catch (err) {
       console.warn(`[x] failed to load config: ${err}`);
     }
   }
 
-  return detectDefaultOptions();
+  return { options: detectDefaultOptions(), configPath: null };
 }
 
 async function cmdDev(): Promise<void> {
-  const opts = await detectOptions();
+  const { options: opts } = await detectOptions();
   const { createApp } = await import("@thexjs/core");
   const { port: _port, ...dirs } = opts;
 
@@ -194,7 +199,7 @@ async function cmdDev(): Promise<void> {
 }
 
 async function cmdBuild(adapterName: string | undefined): Promise<void> {
-  const opts = await detectOptions();
+  const { options: opts, configPath } = await detectOptions();
 
   console.log("[x] build starting...");
   const start = performance.now();
@@ -211,7 +216,7 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
     if (r.status !== 0) console.warn("[x] Tailwind compilation failed.");
   }
 
-  const { port: _port, ...rest } = opts;
+  const { port: _port, security: _security, observability: _observability, ...rest } = opts;
 
   if (adapterName === "vercel") {
     let buildVercelOutput: (options: Record<string, unknown>) => Promise<void>;
@@ -235,7 +240,7 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
 
   const { build } = await import("@thexjs/core");
   const outDir = join(projectDir, ".x");
-  await build({ ...rest, outDir });
+  await build({ ...rest, outDir, configPath: configPath ?? undefined });
 
   const ms = Math.round(performance.now() - start);
   console.log(`[x] build complete in ${ms}ms -> ${relative(projectDir, outDir)}`);

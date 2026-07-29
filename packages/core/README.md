@@ -172,6 +172,41 @@ await build({ pagesDir: "./src/pages", outDir: "./.x" });
 
 `build()` writes prerendered `static` pages (and copies `public/`) to `<outDir>/client` — that output is a plain static site, deployable anywhere (Vercel, Netlify, any CDN). Any page left in the default `server` mode requires a running Bun process (`x start`) and **is not included in the static output** — it needs a Bun-capable host (Fly.io, a VPS, Docker, etc.), not a static host or a Node-only serverless platform.
 
+## Enterprise readiness: security & observability
+
+`createApp` accepts optional `security` and `observability` config, all on by sane defaults:
+
+```ts
+import { createApp, createSentryReporter } from "@thexjs/core";
+
+const app = createApp({
+  pagesDir: "./src/pages",
+  actionsDir: "./src/actions",
+  security: {
+    // Origin/Referer verification on /__x/actions/* is always on; add explicit
+    // cross-subdomain origins here, or requireToken for double-submit CSRF cookies.
+    csrf: { allowedOrigins: ["https://app.example.com"] },
+    // CSP, HSTS, X-Frame-Options, etc. Pass `false` to disable entirely, or
+    // override individual fields (see SecurityHeadersOptions).
+    headers: { contentSecurityPolicy: "default-src 'self'" },
+    // In-memory fixed-window limiter, keyed by client IP by default.
+    rateLimit: { limit: 100, windowMs: 60_000 },
+  },
+  observability: {
+    // Structured JSON request logs (timestamp, requestId, route, status, durationMs). Default: true.
+    logging: true,
+    // Forward SSR/action/API exceptions to Sentry, OpenTelemetry, or both — see
+    // createSentryReporter / createOtelReporter / combineReporters.
+    errorReporter: createSentryReporter(Sentry),
+    // /healthz (liveness) and /readyz (readiness) are always served, ahead of all
+    // other routing. Add named checks (e.g. a DB ping) for /readyz.
+    health: { checks: { database: () => db.ping() } },
+  },
+});
+```
+
+Only variables prefixed `THEXJS_PUBLIC_` may reach the browser — `@thexjs/env`'s `createEnv` defaults `clientPrefix` to that, and the build step throws an `EnvLeakageError` if any client bundle references a server-only `process.env`/`Bun.env`/`import.meta.env` variable, so a secret like `STRIPE_SECRET_KEY` can never round-trip into shipped JS.
+
 ## Exports reference
 
 | Export | Purpose |
@@ -186,6 +221,13 @@ await build({ pagesDir: "./src/pages", outDir: "./.x" });
 | `registerServerFunctions`, `generateServerFunctionClient`, `getServerFunctionHandler`, `resetServerFunctions` | Server functions/actions internals |
 | `connectSQLite`, `connectPostgres`, `runSQLiteMigrations`, `runPostgresMigrations` | Data layer |
 | `DefaultNotFound`, `renderErrorOverlay`, `CLIENT_NAV_SCRIPT` | Defaults / dev tooling |
+| `checkCsrf`, `verifyOrigin`, `verifyCsrfToken`, `generateCsrfToken`, `withCsrfCookie`, `CsrfOptions`, `CsrfResult` | CSRF protection |
+| `buildSecurityHeaders`, `applySecurityHeaders`, `SecurityHeadersOptions` | Security response headers (CSP/HSTS/etc.) |
+| `createRateLimiter`, `rateLimitMiddleware`, `RateLimitOptions`, `RateLimitResult` | Rate limiting |
+| `findLeakedEnvKeys`, `assertNoEnvLeakage`, `EnvLeakageError`, `PUBLIC_ENV_PREFIX` | Server/client env var isolation |
+| `logger`, `withRequestLogging`, `Logger`, `LogFields` | Structured JSON logging |
+| `setErrorReporter`, `getErrorReporter`, `reportException`, `createSentryReporter`, `createOtelReporter`, `combineReporters`, `noopReporter`, `ErrorReporter` | Error reporting (Sentry/OpenTelemetry hook) |
+| `createHealthCheckHandler`, `HealthCheckOptions`, `HealthCheck`, `ReadinessResult` | `/healthz` and `/readyz` |
 
 ## License
 

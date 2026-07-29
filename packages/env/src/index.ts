@@ -3,8 +3,17 @@ import type { EnvValidator } from "./validators";
 export { str, num, bool, oneOf, url } from "./validators";
 export type { EnvValidator } from "./validators";
 
+/**
+ * Default prefix required of any variable exposed to client/browser code.
+ * Matches the compiler boundary enforced by `@thexjs/core`'s build step
+ * (`security/env-isolation.ts`) — anything not prefixed with this is treated
+ * as server-only and will fail the build if referenced from client code.
+ */
+export const DEFAULT_CLIENT_PREFIX = "THEXJS_PUBLIC_";
+
 interface EnvSchemaInput {
   server?: Record<string, EnvValidator>;
+  /** Required prefix for client-exposed variables. Default: "THEXJS_PUBLIC_". */
   clientPrefix?: string;
   client?: Record<string, EnvValidator>;
   runtimeEnv: Record<string, string | undefined>;
@@ -38,7 +47,7 @@ export function createEnv<T extends EnvSchemaInput>(
   }
 
   if (schema.client) {
-    const prefix = schema.clientPrefix ?? "";
+    const prefix = schema.clientPrefix ?? DEFAULT_CLIENT_PREFIX;
     for (const [key, validator] of Object.entries(schema.client)) {
       if (!key.startsWith(prefix)) {
         errors.push(`client.${key}: must start with prefix "${prefix}"`);

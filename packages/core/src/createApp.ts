@@ -29,6 +29,12 @@ import {
   registerServerFunctions,
   resetServerFunctions,
 } from "./server-functions";
+import { createHealthCheckHandler, type HealthCheckOptions } from "./observability/health";
+import { withRequestLogging } from "./observability/logger";
+import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
+import { type CsrfOptions } from "./security/csrf";
+import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
+import { createRateLimiter, rateLimitMiddleware, type RateLimitOptions } from "./security/rate-limit";
 
 export interface RouteProps {
   params: Record<string, string>;
@@ -48,6 +54,22 @@ export interface CreateAppOptions {
   actionsDir?: string;
   port?: number;
   development?: boolean;
+  security?: {
+    /** CSRF protection for /__x/actions/* requests. Origin/Referer verification is always on unless disabled. */
+    csrf?: CsrfOptions;
+    /** Security response headers (CSP, HSTS, X-Frame-Options, ...). Pass false to disable entirely. */
+    headers?: SecurityHeadersOptions | false;
+    /** Rate limiting applied ahead of all routing. Pass false to disable entirely. */
+    rateLimit?: RateLimitOptions | false;
+  };
+  observability?: {
+    /** Structured JSON request logging. Default: true. */
+    logging?: boolean;
+    /** Plugin hook for exceptions during SSR/actions/API — see createSentryReporter/createOtelReporter. */
+    errorReporter?: ErrorReporter;
+    /** /healthz and /readyz endpoints, served ahead of all other routing. */
+    health?: HealthCheckOptions;
+  };
 }
 
 export interface AppServeOptions {
@@ -163,8 +185,21 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   let stylesheetHref: string | undefined;
   let notFoundComponent: ComponentType<RouteProps> = DefaultNotFound;
   let notFoundLayout: ComponentType<{ children: ReactNode }> | undefined;
-  const serverFnHandler = getServerFunctionHandler();
+  const serverFnHandler = getServerFunctionHandler(options.security?.csrf);
   const staticCache = new Map<string, StaticCacheEntry>();
+
+  if (options.observability?.errorReporter) {
+    setErrorReporter(options.observability.errorReporter);
+  }
+  const healthHandler = createHealthCheckHandler(options.observability?.health ?? {});
+  const rateLimiter =
+    options.security?.rateLimit === false ? null : createRateLimiter(options.security?.rateLimit ?? {});
+  const securityHeadersOptions = options.security?.headers;
+  const loggingEnabled = options.observability?.logging ?? true;
+
+  function withResponseHardening(res: Response): Response {
+    return securityHeadersOptions === false ? res : applySecurityHeaders(res, securityHeadersOptions);
+  }
 
   async function renderNotFound(req?: Request): Promise<Response> {
     const content = notFoundLayout
@@ -307,6 +342,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               }
               return new Response(`Method ${method} not allowed`, { status: 405 });
             } catch (err) {
+              reportException(err, { route: route.routePath, phase: "api" });
               console.error("[x] API handler error:", err);
               if (options.development) {
                 return new Response(renderErrorOverlay(err), {
@@ -443,6 +479,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
             return baseHandler({ params, request: req });
           } catch (err) {
+            reportException(err, { route: route.routePath, phase: "ssr" });
             console.error("[x] route handler error:", err);
             if (options.development) {
               return new Response(renderErrorOverlay(err), {
@@ -558,8 +595,16 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       console.warn("[x] file watching not available on this platform");
     }
 
-    const devFetch = async (req: Request) => {
+    const devFetchInner = async (req: Request) => {
       const url = new URL(req.url).pathname;
+
+      const healthResult = await healthHandler(req);
+      if (healthResult !== null) return healthResult;
+
+      if (rateLimiter) {
+        const limited = rateLimitMiddleware(rateLimiter, req);
+        if (limited !== null) return limited;
+      }
 
       if (url === "/__x/reload") {
         const body = new ReadableStream({
@@ -607,6 +652,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       return renderNotFound(req);
     };
 
+    const devFetchHardened = async (req: Request) => withResponseHardening(await devFetchInner(req));
+    const devFetch = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
+
     return {
       routes: {},
       development: true,
@@ -617,8 +665,16 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
   // Production -- same iteration logic as dev, so dynamic routes, layouts,
   // middleware, static assets and 404 page all work identically.
-  const prodFetch = async (req: Request) => {
+  const prodFetchInner = async (req: Request) => {
     const url = new URL(req.url).pathname;
+
+    const healthResult = await healthHandler(req);
+    if (healthResult !== null) return healthResult;
+
+    if (rateLimiter) {
+      const limited = rateLimitMiddleware(rateLimiter, req);
+      if (limited !== null) return limited;
+    }
 
     const revalidationResult = await handleRevalidation(req);
     if (revalidationResult !== null) return revalidationResult;
@@ -644,6 +700,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     return renderNotFound(req);
   };
+
+  const prodFetchHardened = async (req: Request) => withResponseHardening(await prodFetchInner(req));
+  const prodFetch = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
 
   return {
     routes: {},
