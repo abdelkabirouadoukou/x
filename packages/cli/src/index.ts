@@ -258,7 +258,15 @@ async function cmdStart(): Promise<void> {
     env: { ...process.env, NODE_ENV: "production" },
   });
 
-  proc.on("exit", (code) => process.exit(code ?? 1));
+  // `spawn()`'s return type here is typed against bun-types' lightweight
+  // `child_process` stub (this project doesn't pull in `@types/node`), which
+  // doesn't declare EventEmitter methods like `.on()` even though Bun's
+  // actual runtime child process object supports them. Cast narrowly rather
+  // than widening the whole file's node:child_process typing.
+  (proc as unknown as { on(event: "exit", listener: (code: number | null) => void): void }).on(
+    "exit",
+    (code) => process.exit(code ?? 1),
+  );
 }
 
 function printVersion(): void {
