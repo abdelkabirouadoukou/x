@@ -1,9 +1,10 @@
 {
   "name": "landing-example",
   "type": "module",
-    "scripts": {
+  "scripts": {
     "dev": "x dev",
-    "build": "x build"
+    "build": "x build",
+    "vercel-build": "x build --adapter vercel"
   },
   "dependencies": {
     "@thexjs/core": "workspace:*",
@@ -22,6 +23,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "@thexjs/adapter-vercel": "workspace:*"
   }
 }
