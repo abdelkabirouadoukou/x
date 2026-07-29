@@ -11,7 +11,7 @@ vercel deploy --prebuilt
 
 ## What it produces
 
-```
+```text
 .vercel/output/
   config.json                    routes: filesystem first, then fallback -> render
   static/                        HTML, CSS, island JS chunks (served via Vercel's CDN)

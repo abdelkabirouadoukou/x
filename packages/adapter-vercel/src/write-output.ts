@@ -13,6 +13,7 @@ export interface VercelConfigRoute {
  *  remaining request to the render function. Apps that are 100% static
  *  (SSG only) get NO function at all -- filesystem routing is enough. */
 export function writeConfigJson(outputDir: string, manifest: BuildManifest): void {
+  mkdirSync(outputDir, { recursive: true });
   const routes: VercelConfigRoute[] = [{ handle: "filesystem" }];
   if (manifest.hasServerSurface) {
     routes.push({ src: "/(.*)", dest: "/render" });

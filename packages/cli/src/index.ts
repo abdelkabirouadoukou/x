@@ -25,11 +25,21 @@ function parseArgv(argv: string[]): {
       continue;
     }
     if (arg === "--adapter") {
-      adapter = argv[++i];
+      const next = argv[++i];
+      if (!next || next.startsWith("--")) {
+        console.error('[x] "--adapter" requires a name, e.g. "--adapter vercel"');
+        process.exit(1);
+      }
+      adapter = next;
       continue;
     }
     if (arg.startsWith("--adapter=")) {
-      adapter = arg.slice("--adapter=".length);
+      const value = arg.slice("--adapter=".length);
+      if (!value) {
+        console.error('[x] "--adapter=" requires a name, e.g. "--adapter=vercel"');
+        process.exit(1);
+      }
+      adapter = value;
       continue;
     }
     rest.push(arg);
@@ -204,9 +214,7 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
   const { port: _port, ...rest } = opts;
 
   if (adapterName === "vercel") {
-    let buildVercelOutput: (
-      options: Record<string, unknown>,
-    ) => Promise<void>;
+    let buildVercelOutput: (options: Record<string, unknown>) => Promise<void>;
     try {
       ({ buildVercelOutput } = await import("@thexjs/adapter-vercel"));
     } catch {

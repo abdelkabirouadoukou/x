@@ -107,11 +107,10 @@ export async function resolveBuildManifest(
     if ((mod.mode ?? "server") === "static") continue;
 
     const layoutChain = findLayoutChain(entry.filePath, layouts, pagesDir);
-    for (const rootLayout of dedicatedLayouts) {
-      if (!layoutChain.some((l) => l.filePath === rootLayout.filePath)) {
-        layoutChain.unshift(rootLayout);
-      }
-    }
+    const missingDedicated = dedicatedLayouts.filter(
+      (rootLayout) => !layoutChain.some((l) => l.filePath === rootLayout.filePath),
+    );
+    if (missingDedicated.length > 0) layoutChain.unshift(...missingDedicated);
     const mwChain = findMiddlewareChain(entry.filePath, middlewareEntries, pagesDir);
 
     routes.push({
@@ -144,7 +143,7 @@ export async function resolveBuildManifest(
   const notFoundEntry = existsSync(pagesDir) ? scanNotFound(pagesDir) : null;
   const notFound = notFoundEntry ? registry.ref(notFoundEntry.filePath, "notfound") : undefined;
 
-  const rootLayoutEntry = layouts.find((l) => l.dirPath === pagesDir);
+  const rootLayoutEntry = dedicatedLayouts[0] ?? layouts.find((l) => l.dirPath === pagesDir);
   const rootLayout = rootLayoutEntry ? registry.ref(rootLayoutEntry.filePath, "rootlayout") : undefined;
 
   return {
