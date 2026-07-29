@@ -9,8 +9,7 @@
     "typecheck": "for p in packages/*/tsconfig.json examples/*/tsconfig.json; do echo \"-- $p\"; tsc --noEmit -p \"$p\" || exit 1; done",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "build:packages": "bun run --cwd packages/core build && bun run --cwd packages/env build && bun run --cwd packages/cli build",
-    "dev": "bun run build:packages && bun --cwd examples/basic run dev",
+    "build:packages": "bun run --cwd packages/core build && bun run --cwd packages/env build && bun run --cwd packages/adapter-vercel build && bun run --cwd packages/cli build",    "dev": "bun run build:packages && bun --cwd examples/basic run dev",
     "postinstall": "bun run build:packages && cd packages/cli && bun link --force && echo '[x] \"x\" CLI linked globally. Make sure ~/.bun/bin is in your PATH.' || echo '[x] Could not link globally. Use \"bun run dev\" in the example instead.'"
   },
   "devDependencies": {
