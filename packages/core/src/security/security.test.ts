@@ -1,0 +1,166 @@
+import { describe, expect, test } from "bun:test";
+import { checkCsrf, generateCsrfToken, verifyCsrfToken, verifyOrigin } from "./csrf";
+import { EnvLeakageError, assertNoEnvLeakage, findLeakedEnvKeys } from "./env-isolation";
+import { applySecurityHeaders, buildSecurityHeaders } from "./headers";
+import { createRateLimiter, rateLimitMiddleware } from "./rate-limit";
+
+describe("csrf: verifyOrigin", () => {
+  test("allows safe methods without any Origin/Referer header", () => {
+    const req = new Request("https://example.com/__x/actions/foo/bar", { method: "GET" });
+    expect(verifyOrigin(req).ok).toBe(true);
+  });
+
+  test("allows a POST whose Origin matches the request's own origin", () => {
+    const req = new Request("https://example.com/__x/actions/foo/bar", {
+      method: "POST",
+      headers: { origin: "https://example.com" },
+    });
+    expect(verifyOrigin(req).ok).toBe(true);
+  });
+
+  test("allows a POST whose Origin is in the explicit allow-list", () => {
+    const req = new Request("https://example.com/__x/actions/foo/bar", {
+      method: "POST",
+      headers: { origin: "https://app.example.com" },
+    });
+    expect(verifyOrigin(req, ["https://app.example.com"]).ok).toBe(true);
+  });
+
+  test("rejects a cross-site POST with a mismatched Origin", () => {
+    const req = new Request("https://example.com/__x/actions/foo/bar", {
+      method: "POST",
+      headers: { origin: "https://evil.example" },
+    });
+    const result = verifyOrigin(req);
+    expect(result.ok).toBe(false);
+  });
+
+  test("rejects a POST with neither Origin nor Referer", () => {
+    const req = new Request("https://example.com/__x/actions/foo/bar", { method: "POST" });
+    expect(verifyOrigin(req).ok).toBe(false);
+  });
+
+  test("falls back to Referer when Origin is absent", () => {
+    const req = new Request("https://example.com/__x/actions/foo/bar", {
+      method: "POST",
+      headers: { referer: "https://example.com/dashboard" },
+    });
+    expect(verifyOrigin(req).ok).toBe(true);
+  });
+});
+
+describe("csrf: double-submit token", () => {
+  test("rejects when cookie and header are both missing", () => {
+    const req = new Request("https://example.com/x", { method: "POST" });
+    expect(verifyCsrfToken(req).ok).toBe(false);
+  });
+
+  test("rejects when cookie and header mismatch", () => {
+    const req = new Request("https://example.com/x", {
+      method: "POST",
+      headers: { cookie: "x_csrf_token=abc", "x-csrf-token": "def" },
+    });
+    expect(verifyCsrfToken(req).ok).toBe(false);
+  });
+
+  test("accepts when cookie and header match", () => {
+    const token = generateCsrfToken();
+    const req = new Request("https://example.com/x", {
+      method: "POST",
+      headers: { cookie: `x_csrf_token=${token}`, "x-csrf-token": token },
+    });
+    expect(verifyCsrfToken(req).ok).toBe(true);
+  });
+});
+
+describe("csrf: checkCsrf", () => {
+  test("disabled option bypasses all checks", () => {
+    const req = new Request("https://example.com/x", { method: "POST" });
+    expect(checkCsrf(req, { disabled: true }).ok).toBe(true);
+  });
+
+  test("requireToken adds the double-submit check on top of origin checks", () => {
+    const req = new Request("https://example.com/x", {
+      method: "POST",
+      headers: { origin: "https://example.com" },
+    });
+    expect(checkCsrf(req, { requireToken: true }).ok).toBe(false);
+  });
+});
+
+describe("security headers", () => {
+  test("sets conservative defaults", () => {
+    const headers = buildSecurityHeaders();
+    expect(headers.get("X-Frame-Options")).toBe("DENY");
+    expect(headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(headers.has("Content-Security-Policy")).toBe(true);
+    expect(headers.has("Strict-Transport-Security")).toBe(true);
+  });
+
+  test("individual headers can be disabled", () => {
+    const headers = buildSecurityHeaders({ frameOptions: false, hstsMaxAge: false });
+    expect(headers.has("X-Frame-Options")).toBe(false);
+    expect(headers.has("Strict-Transport-Security")).toBe(false);
+  });
+
+  test("applySecurityHeaders merges onto an existing response without clobbering it", () => {
+    const original = new Response("hi", { headers: { "Content-Type": "text/plain" } });
+    const hardened = applySecurityHeaders(original);
+    expect(hardened.headers.get("Content-Type")).toBe("text/plain");
+    expect(hardened.headers.get("X-Frame-Options")).toBe("DENY");
+  });
+});
+
+describe("rate limiting", () => {
+  test("allows requests under the limit and blocks once exceeded", () => {
+    const limiter = createRateLimiter({ limit: 2, windowMs: 60_000, keyFn: () => "same-key" });
+    const req = new Request("https://example.com/x");
+
+    expect(rateLimitMiddleware(limiter, req)).toBeNull();
+    expect(rateLimitMiddleware(limiter, req)).toBeNull();
+    const blocked = rateLimitMiddleware(limiter, req);
+    expect(blocked).not.toBeNull();
+    expect(blocked?.status).toBe(429);
+  });
+
+  test("separate keys get independent buckets", () => {
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
+    const reqA = new Request("https://example.com/x", {
+      headers: { "x-forwarded-for": "1.1.1.1" },
+    });
+    const reqB = new Request("https://example.com/x", {
+      headers: { "x-forwarded-for": "2.2.2.2" },
+    });
+
+    expect(rateLimitMiddleware(limiter, reqA)).toBeNull();
+    expect(rateLimitMiddleware(limiter, reqB)).toBeNull();
+    expect(rateLimitMiddleware(limiter, reqA)).not.toBeNull();
+  });
+});
+
+describe("env isolation", () => {
+  test("flags a server-only process.env access", () => {
+    const code = 'const key = process.env.STRIPE_SECRET_KEY;\nfetch("/x", { headers: { key } });';
+    expect(findLeakedEnvKeys(code)).toEqual(["STRIPE_SECRET_KEY"]);
+  });
+
+  test("allows THEXJS_PUBLIC_-prefixed variables", () => {
+    const code = "const url = process.env.THEXJS_PUBLIC_API_URL;";
+    expect(findLeakedEnvKeys(code)).toEqual([]);
+  });
+
+  test("catches Bun.env and import.meta.env access too", () => {
+    const code = "const a = Bun.env.DATABASE_URL;\nconst b = import.meta.env.SECRET;";
+    expect(findLeakedEnvKeys(code).sort()).toEqual(["DATABASE_URL", "SECRET"]);
+  });
+
+  test("assertNoEnvLeakage throws EnvLeakageError with the offending file and keys", () => {
+    const code = "const key = process.env.STRIPE_SECRET_KEY;";
+    expect(() => assertNoEnvLeakage(code, "dist/client/_islands/foo.js")).toThrow(EnvLeakageError);
+  });
+
+  test("assertNoEnvLeakage is a no-op for clean code", () => {
+    const code = "const url = process.env.THEXJS_PUBLIC_API_URL;";
+    expect(() => assertNoEnvLeakage(code, "dist/client/_islands/foo.js")).not.toThrow();
+  });
+});

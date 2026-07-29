@@ -2,7 +2,7 @@ import type { RouteProps } from "@thexjs/core";
 
 export const mode = "static";
 
-export default function HomePage({}: RouteProps) {
+export default function HomePage(_props: RouteProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 pb-20 pt-8 sm:px-10">
       <div className="mb-10 flex w-full max-w-md items-center gap-3 rounded-xl border border-border bg-surface/80 px-4 py-3 font-mono text-xs backdrop-blur-sm sm:text-sm">

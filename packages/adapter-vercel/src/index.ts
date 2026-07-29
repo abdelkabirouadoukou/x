@@ -4,13 +4,13 @@ import { join } from "node:path";
 import { build as coreBuild } from "@thexjs/core";
 import { bundleRenderFunction } from "./bundle-function";
 import { resolveBuildManifest } from "./scan";
+import type { VercelAdapterOptions } from "./types";
 import {
   copyStaticAssets,
   resolveOutputDir,
   writeConfigJson,
   writeFunctionConfig,
 } from "./write-output";
-import type { VercelAdapterOptions } from "./types";
 
 export type { VercelAdapterOptions } from "./types";
 

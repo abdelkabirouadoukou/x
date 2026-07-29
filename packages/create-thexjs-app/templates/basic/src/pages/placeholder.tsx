@@ -5,7 +5,8 @@ export default function PlaceholderPage() {
         {"{"}JSON{"}"} Placeholder
       </h1>
       <p className="text-muted-foreground">
-        Free fake API powered by <strong>@thexjs/core</strong> — in-memory data, sub-ms response times.
+        Free fake API powered by <strong>@thexjs/core</strong> — in-memory data, sub-ms response
+        times.
       </p>
 
       <div className="overflow-x-auto rounded-lg border border-border">

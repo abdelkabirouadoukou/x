@@ -4,7 +4,7 @@ import { CodeBlock } from "../../../components/code-block";
 
 export const mode = "static";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
@@ -69,7 +69,10 @@ src/pages/_404.tsx              Custom not-found page`}
       <p className="mt-3 text-muted-foreground">
         Every page defaults to server-rendered. Opt into build-time prerendering:
       </p>
-      <CodeBlock label="src/pages/index.tsx" code={`export const mode: "static" | "server" = "static";`} />
+      <CodeBlock
+        label="src/pages/index.tsx"
+        code={`export const mode: "static" | "server" = "static";`}
+      />
       <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
           <span className="text-foreground">static</span> — rendered once at build time to HTML in{" "}
@@ -77,7 +80,8 @@ src/pages/_404.tsx              Custom not-found page`}
         </li>
         <li>
           <span className="text-foreground">server</span> — rendered per request via{" "}
-          <span className="text-foreground">x start</span> or <span className="text-foreground">x dev</span>
+          <span className="text-foreground">x start</span> or{" "}
+          <span className="text-foreground">x dev</span>
         </li>
       </ul>
 

@@ -14,6 +14,26 @@ export interface VercelAdapterOptions {
   runtime?: "nodejs18.x" | "nodejs20.x" | "nodejs22.x";
   /** Extra directories to copy verbatim into static/ (in addition to public/). */
   additionalStaticDirs?: string[];
+  /** Security options (CSRF, headers, rate limiting). */
+  security?: {
+    csrf?: { allowedOrigins?: string[]; requireToken?: boolean; disabled?: boolean };
+    headers?:
+      | {
+          contentSecurityPolicy?: string | false;
+          hstsMaxAge?: number | false;
+          hstsIncludeSubDomains?: boolean;
+          frameOptions?: string | false;
+          contentTypeOptions?: string | false;
+          referrerPolicy?: string | false;
+        }
+      | false;
+    rateLimit?: { limit?: number; windowMs?: number } | false;
+  };
+  /** Observability options (logging, health checks, error reporting). */
+  observability?: {
+    /** Structured JSON logging. Default: true. */
+    logging?: boolean;
+  };
 }
 
 /** A single file that needs to be transpiled from .ts/.tsx source into a
@@ -50,4 +70,8 @@ export interface BuildManifest {
   notFound?: CompiledModuleRef;
   rootLayout?: CompiledModuleRef;
   hasServerSurface: boolean;
+  /** Security options serialized for the generated entry. */
+  security?: VercelAdapterOptions["security"];
+  /** Observability options serialized for the generated entry. */
+  observability?: VercelAdapterOptions["observability"];
 }

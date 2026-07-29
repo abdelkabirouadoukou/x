@@ -1,6 +1,8 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { reportException } from "./observability/monitoring";
 import { routePatternToRegex } from "./router";
+import { type CsrfOptions, checkCsrf } from "./security/csrf";
 
 export function generateServerFunctionClient(
   routeFilePath: string,
@@ -69,12 +71,19 @@ export function registerServerFunctions(
   }
 }
 
-export function getServerFunctionHandler(): (req: Request) => Promise<Response | null> {
+export function getServerFunctionHandler(
+  csrfOptions?: CsrfOptions,
+): (req: Request) => Promise<Response | null> {
   return async (req: Request) => {
     if (req.method !== "POST") return null;
 
     const url = new URL(req.url);
     if (!url.pathname.startsWith("/__x/actions/")) return null;
+
+    const csrfResult = checkCsrf(req, csrfOptions);
+    if (!csrfResult.ok) {
+      return new Response(`Forbidden: ${csrfResult.reason}`, { status: 403 });
+    }
 
     const parts = url.pathname.replace("/__x/actions/", "").split("/");
     if (parts.length < 2) return null;
@@ -102,6 +111,7 @@ export function getServerFunctionHandler(): (req: Request) => Promise<Response |
         const result = await fn(...args);
         return Response.json(result);
       } catch (err) {
+        reportException(err, { route: concretePath, phase: "action" });
         const message = err instanceof Error ? err.message : "Internal error";
         return new Response(message, { status: 500 });
       }

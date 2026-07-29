@@ -4,7 +4,7 @@ import { CodeBlock } from "../../components/code-block";
 
 export const mode = "static";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
@@ -31,9 +31,9 @@ cd my-app
 bun run dev`}
       />
       <p className="mt-4 text-muted-foreground">
-        Press Enter at the template prompt to use{" "}
-        <span className="text-foreground">default</span> (recommended) — a single home page. Your
-        app will be running at <span className="text-foreground">http://localhost:3000</span>.
+        Press Enter at the template prompt to use <span className="text-foreground">default</span>{" "}
+        (recommended) — a single home page. Your app will be running at{" "}
+        <span className="text-foreground">http://localhost:3000</span>.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Manual setup</h2>

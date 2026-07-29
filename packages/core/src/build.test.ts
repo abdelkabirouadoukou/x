@@ -1,12 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { build } from "./build";
 
 const FIXTURE_DIR = join(import.meta.dir, "__fixtures__/build-test");
 const ROUTES_DIR = join(FIXTURE_DIR, "src/routes");
 const CONTENT_DIR = join(FIXTURE_DIR, "content");
 const OUT_DIR = join(FIXTURE_DIR, "dist");
+const ISLAND_IMPORT = relative(ROUTES_DIR, join(import.meta.dir, "island.tsx")).replace(/\\/g, "/");
 
 function touch(dir: string, relPath: string, content: string) {
   const full = join(dir, relPath);
@@ -36,7 +37,7 @@ export default function About() {
   touch(
     ROUTES_DIR,
     "counter.tsx",
-    `import { Island } from "@thexjs/core";
+    `import { Island } from "${ISLAND_IMPORT}";
 import { useState } from "react";
 
 export function Counter() {

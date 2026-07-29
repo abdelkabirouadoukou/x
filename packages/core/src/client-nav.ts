@@ -5,5 +5,158 @@
  * Intercepts same-origin <a> clicks, fetches the destination page, and swaps
  * the #root element's content in place. Includes hover-prefetch and popstate
  * (back/forward) support.
+ *
+ * Opt-out attributes on <a> / <Link />:
+ * - data-no-nav       — skip client navigation (full page load)
+ * - data-no-prefetch  — skip hover prefetch (navigation still works)
  */
-export const CLIENT_NAV_SCRIPT = `!function(){if(!window.__xNav){window.__xNav=!0;var t=new Map;document.addEventListener("click",function(t){if(!t.defaultPrevented&&0===t.button&&!(t.metaKey||t.ctrlKey||t.shiftKey||t.altKey)){var e=n(t.target&&t.target.closest?t.target.closest("a[href]"):null);e&&(t.preventDefault(),e.href!==location.href&&i(e,!0))}}),document.addEventListener("mouseover",function(e){var r=n(e.target&&e.target.closest?e.target.closest("a[href]"):null);r&&function(e){t.has(e.href)||a(e).catch(function(){})}(r)},{passive:!0}),window.addEventListener("popstate",function(){i(new URL(location.href),!1)});var e=document.createElement("style");e.textContent=[".x-nav-loading{cursor:progress}",".x-nav-loading::after{content:'';position:fixed;top:0;left:0;height:2px;width:100%;","background:var(--x-accent,#6ab0ff);z-index:9999;animation:x-nav-progress .8s ease-in-out infinite}","@keyframes x-nav-progress{0%{transform:translateX(-100%)}50%{transform:translateX(0)}100%{transform:translateX(100%)}}"].join(""),document.head.appendChild(e)}function n(t){if(!t)return null;if(t.hasAttribute("data-no-nav"))return null;if(t.target&&"_self"!==t.target)return null;if(t.hasAttribute("download"))return null;var e,n=t.getAttribute("href");if(!n)return null;if(/^(#|mailto:|tel:|javascript:)/i.test(n))return null;try{e=new URL(n,location.href)}catch(t){return null}if(e.origin!==location.origin)return null;var r=new URL(location.href);return e.pathname===r.pathname&&e.search===r.search&&e.hash?null:e}function r(t){document.documentElement.classList.toggle("x-nav-loading",t)}function a(e){var n=e.href;if(t.has(n))return t.get(n);var r=fetch(e.href,{headers:{"X-X-Nav":"1"}}).then(function(t){return t.text().then(function(n){var r=t.headers.get("content-type")||"";return{html:n,ok:t.ok,finalUrl:t.url||e.href,isHtml:-1!==r.indexOf("text/html")}})}).catch(function(e){throw t.delete(n),e});return function(){if(!(t.size<30)){var e=t.keys().next().value;void 0!==e&&t.delete(e)}}(),t.set(n,r),r}function i(t,e){return r(!0),a(t).then(function(n){if(n.isHtml){var r=(new DOMParser).parseFromString(n.html,"text/html"),a=r.getElementById("root"),i=document.getElementById("root");if(a&&i){if(e&&history.pushState({xNav:!0},"",n.finalUrl),r.title&&(document.title=r.title),i.innerHTML=a.innerHTML,function(t){for(var e=t.querySelectorAll("script"),n=0;n<e.length;n++){for(var r=e[n],a=document.createElement("script"),i=0;i<r.attributes.length;i++){var o=r.attributes[i];a.setAttribute(o.name,o.value)}a.textContent=r.textContent,r.replaceWith(a)}}(i),t.hash){var o=document.getElementById(t.hash.slice(1));if(o)return void o.scrollIntoView()}window.scrollTo(0,0)}else location.href=t.href}else location.href=t.href}).catch(function(){location.href=t.href}).finally(function(){r(!1)})}}();`;
+export const CLIENT_NAV_SCRIPT = `
+(function () {
+  if (window.__xNav) return;
+  window.__xNav = true;
+
+  var cache = new Map();
+
+  document.addEventListener("click", function (ev) {
+    if (ev.defaultPrevented || ev.button !== 0) return;
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    var anchor = resolveLink(ev.target && ev.target.closest ? ev.target.closest("a[href]") : null);
+    if (!anchor) return;
+    ev.preventDefault();
+    if (anchor.href !== location.href) navigate(anchor, true);
+  });
+
+  document.addEventListener(
+    "mouseover",
+    function (ev) {
+      var anchor = resolveLink(ev.target && ev.target.closest ? ev.target.closest("a[href]") : null);
+      if (!anchor || anchor.hasAttribute("data-no-prefetch")) return;
+      prefetch(anchor);
+    },
+    { passive: true },
+  );
+
+  document.addEventListener(
+    "focusin",
+    function (ev) {
+      var anchor = resolveLink(ev.target && ev.target.closest ? ev.target.closest("a[href]") : null);
+      if (!anchor || anchor.hasAttribute("data-no-prefetch")) return;
+      prefetch(anchor);
+    },
+    { passive: true },
+  );
+
+  window.addEventListener("popstate", function () {
+    navigate(new URL(location.href), false);
+  });
+
+  var style = document.createElement("style");
+  style.textContent = [
+    ".x-nav-loading{cursor:progress}",
+    ".x-nav-loading::after{content:'';position:fixed;top:0;left:0;height:2px;width:100%;",
+    "background:var(--x-accent,#6ab0ff);z-index:9999;animation:x-nav-progress .8s ease-in-out infinite}",
+    "@keyframes x-nav-progress{0%{transform:translateX(-100%)}50%{transform:translateX(0)}100%{transform:translateX(100%)}}",
+  ].join("");
+  document.head.appendChild(style);
+
+  function resolveLink(anchor) {
+    if (!anchor) return null;
+    if (anchor.hasAttribute("data-no-nav")) return null;
+    if (anchor.target && anchor.target !== "_self") return null;
+    if (anchor.hasAttribute("download")) return null;
+    var href = anchor.getAttribute("href");
+    if (!href) return null;
+    if (/^(#|mailto:|tel:|javascript:)/i.test(href)) return null;
+    var url;
+    try {
+      url = new URL(href, location.href);
+    } catch (_) {
+      return null;
+    }
+    if (url.origin !== location.origin) return null;
+    var here = new URL(location.href);
+    if (url.pathname === here.pathname && url.search === here.search && url.hash) return null;
+    return url;
+  }
+
+  function setLoading(on) {
+    document.documentElement.classList.toggle("x-nav-loading", on);
+  }
+
+  function prefetch(url) {
+    if (cache.has(url.href)) return cache.get(url.href);
+    var promise = fetch(url.href, { headers: { "X-X-Nav": "1" } })
+      .then(function (res) {
+        return res.text().then(function (html) {
+          var ct = res.headers.get("content-type") || "";
+          return { html: html, ok: res.ok, finalUrl: res.url || url.href, isHtml: ct.indexOf("text/html") !== -1 };
+        });
+      })
+      .catch(function (err) {
+        cache.delete(url.href);
+        throw err;
+      });
+    if (cache.size >= 30) {
+      var first = cache.keys().next().value;
+      if (first !== undefined) cache.delete(first);
+    }
+    cache.set(url.href, promise);
+    return promise;
+  }
+
+  function navigate(url, push) {
+    setLoading(true);
+    prefetch(url)
+      .then(function (payload) {
+        if (!payload.isHtml) {
+          location.href = url.href;
+          return;
+        }
+        var doc = new DOMParser().parseFromString(payload.html, "text/html");
+        var next = doc.getElementById("root");
+        var root = document.getElementById("root");
+        if (!next || !root) {
+          location.href = url.href;
+          return;
+        }
+        if (push) history.pushState({ xNav: true }, "", payload.finalUrl);
+        if (doc.title) document.title = doc.title;
+        root.innerHTML = next.innerHTML;
+        reexecuteScripts(root);
+        if (url.hash) {
+          var target = document.getElementById(url.hash.slice(1));
+          if (target) {
+            target.scrollIntoView();
+            return;
+          }
+        }
+        window.scrollTo(0, 0);
+      })
+      .catch(function () {
+        location.href = url.href;
+      })
+      .finally(function () {
+        setLoading(false);
+      });
+  }
+
+  function reexecuteScripts(root) {
+    var scripts = root.querySelectorAll("script");
+    for (var i = 0; i < scripts.length; i++) {
+      var old = scripts[i];
+      var el = document.createElement("script");
+      for (var j = 0; j < old.attributes.length; j++) {
+        var attr = old.attributes[j];
+        el.setAttribute(attr.name, attr.value);
+      }
+      el.textContent = old.textContent;
+      old.replaceWith(el);
+    }
+  }
+
+  /** Soft reload current page without a full document reload (used by dev live-reload). */
+  window.__xSoftReload = function () {
+    navigate(new URL(location.href), false);
+  };
+})();
+`.trim();

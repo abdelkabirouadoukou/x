@@ -17,6 +17,7 @@ const sidebarSections = [
       { href: "/docs/packages/core", label: "@thexjs/core" },
       { href: "/docs/packages/cli", label: "@thexjs/cli" },
       { href: "/docs/packages/env", label: "@thexjs/env" },
+      { href: "/docs/packages/adapter-vercel", label: "@thexjs/adapter-vercel" },
     ],
   },
   {
@@ -32,6 +33,8 @@ const sidebarSections = [
       { href: "/docs/data-layer", label: "Data Layer" },
       { href: "/docs/build-deploy", label: "Build & Deploy" },
       { href: "/docs/configuration", label: "Configuration" },
+      { href: "/docs/security", label: "Security" },
+      { href: "/docs/observability", label: "Observability" },
     ],
   },
 ];
@@ -40,16 +43,17 @@ function SidebarNav() {
   return (
     <>
       {sidebarSections.map((section) => (
-        <div key={section.title} className="mb-6 last:mb-0">
-          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+        <div key={section.title} className="mb-7 last:mb-0">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary/80">
             {section.title}
           </p>
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {section.links.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="block rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  data-doc-link={link.href}
+                  className="doc-nav-link block rounded-lg border border-transparent px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/50 hover:text-foreground"
                 >
                   {link.label}
                 </a>
@@ -64,41 +68,49 @@ function SidebarNav() {
 
 export default function DocsLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl px-6">
+    <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-full max-w-6xl px-4 sm:px-6">
       <button
         id="sidebar-btn"
         type="button"
-        className="fixed left-4 top-20 z-50 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+        className="fixed left-4 top-[4.25rem] z-50 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground lg:hidden"
         aria-label="Toggle sidebar"
       >
         <Menu className="h-4 w-4 btn-icon-open" />
         <X className="hidden h-4 w-4 btn-icon-close" />
       </button>
 
-      <div id="sidebar-overlay" className="fixed inset-0 z-40 hidden bg-black/50 lg:hidden" />
+      <div id="sidebar-overlay" className="fixed inset-0 z-40 hidden bg-black/60 lg:hidden" />
 
       <aside
         id="sidebar-panel"
-        className="fixed left-0 top-16 z-50 hidden h-[calc(100vh-4rem)] w-56 overflow-y-auto border-r border-border/40 bg-background lg:hidden"
+        className="fixed left-0 top-14 z-50 hidden h-[calc(100vh-3.5rem)] w-60 overflow-y-auto border-r border-border/50 bg-background lg:hidden"
       >
-        <nav className="px-4 pb-4 pt-3">
+        <nav className="px-3 pb-6 pt-4">
           <SidebarNav />
         </nav>
       </aside>
 
-      <aside className="hidden w-56 shrink-0 border-r border-border/40 lg:block">
-        <nav className="sticky top-16 px-4 pb-4 pt-0">
+      <aside className="hidden w-60 shrink-0 border-r border-border/50 lg:block">
+        <nav className="sticky top-14 max-h-[calc(100vh-3.5rem)] overflow-y-auto px-3 pb-8 pt-2">
           <SidebarNav />
         </nav>
       </aside>
+
       <div className="min-w-0 flex-1">
-        <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10">{children}</div>
+        <div className="doc-content mx-auto max-w-3xl px-4 py-10 sm:px-8 sm:py-12">{children}</div>
       </div>
 
       <script
         dangerouslySetInnerHTML={{
           __html: `
 (function(){
+  var path=location.pathname.replace(/\\/$/,"")||"/docs";
+  document.querySelectorAll("[data-doc-link]").forEach(function(a){
+    var href=a.getAttribute("data-doc-link").replace(/\\/$/,"")||"/docs";
+    if(href===path||(path!=="/docs"&&href!=="/docs"&&path.indexOf(href)===0)){
+      a.classList.add("border-primary/30","bg-primary/10","text-primary");
+    }
+  });
   var btn=document.getElementById("sidebar-btn");
   var panel=document.getElementById("sidebar-panel");
   var overlay=document.getElementById("sidebar-overlay");
@@ -109,7 +121,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
   overlay.addEventListener("click",close);
   panel.querySelectorAll("a").forEach(function(a){a.addEventListener("click",close)});
 })();
-        `.trim(),
+          `.trim(),
         }}
       />
       <style
@@ -119,7 +131,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
   #sidebar-btn.open .btn-icon-open{display:none}
   #sidebar-btn.open .btn-icon-close{display:block}
 }
-        `.trim(),
+          `.trim(),
         }}
       />
     </div>

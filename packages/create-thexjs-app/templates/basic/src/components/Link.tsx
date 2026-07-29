@@ -1,16 +1,10 @@
+import { Link as XLink, type LinkProps as XLinkProps } from "@thexjs/core";
 import type { ReactNode } from "react";
 
-interface LinkProps {
-  href: string;
-  children: ReactNode;
-  className?: string;
-  prefetch?: boolean;
+type LinkProps = XLinkProps;
+
+export default function Link(props: LinkProps) {
+  return <XLink {...props} />;
 }
 
-export default function Link({ href, children, className, prefetch = true }: LinkProps) {
-  return (
-    <a href={href} className={className} data-no-nav={prefetch ? undefined : ""}>
-      {children}
-    </a>
-  );
-}
+export type { LinkProps };

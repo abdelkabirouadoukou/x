@@ -144,7 +144,9 @@ export async function resolveBuildManifest(
   const notFound = notFoundEntry ? registry.ref(notFoundEntry.filePath, "notfound") : undefined;
 
   const rootLayoutEntry = dedicatedLayouts[0] ?? layouts.find((l) => l.dirPath === pagesDir);
-  const rootLayout = rootLayoutEntry ? registry.ref(rootLayoutEntry.filePath, "rootlayout") : undefined;
+  const rootLayout = rootLayoutEntry
+    ? registry.ref(rootLayoutEntry.filePath, "rootlayout")
+    : undefined;
 
   return {
     pagesDirLabel: pagesDir,
@@ -153,6 +155,8 @@ export async function resolveBuildManifest(
     ...(notFound ? { notFound } : {}),
     ...(rootLayout ? { rootLayout } : {}),
     hasServerSurface: routes.length > 0 || actions.length > 0,
+    security: options.security,
+    observability: options.observability,
   };
 }
 
