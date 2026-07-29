@@ -50,10 +50,16 @@ export function buildSecurityHeaders(options: SecurityHeadersOptions = {}): Head
 }
 
 /** Returns a new Response with security headers merged onto the original response's headers. */
-export function applySecurityHeaders(res: Response, options: SecurityHeadersOptions = {}): Response {
+export function applySecurityHeaders(
+  res: Response,
+  options: SecurityHeadersOptions = {},
+): Response {
   const extra = buildSecurityHeaders(options);
   const headers = new Headers(res.headers);
-  for (const [key, value] of extra.entries()) {
+  // Headers.entries() exists at runtime in Bun but isn't in the DOM lib types.
+  for (const [key, value] of (
+    extra as unknown as { entries(): IterableIterator<[string, string]> }
+  ).entries()) {
     if (!headers.has(key)) headers.set(key, value);
   }
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
