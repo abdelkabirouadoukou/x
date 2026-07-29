@@ -6,6 +6,7 @@ export type RouteMap = {
   "/docs/content-collections": Record<string, never>;
   "/docs/build-deploy": Record<string, never>;
   "/docs/configuration": Record<string, never>;
+  "/docs/observability": Record<string, never>;
   "/docs/data-layer": Record<string, never>;
   "/docs/server-functions": Record<string, never>;
   "/docs/layouts": Record<string, never>;
@@ -14,9 +15,11 @@ export type RouteMap = {
   "/docs/installation": Record<string, never>;
   "/docs/packages/cli": Record<string, never>;
   "/docs/packages/env": Record<string, never>;
+  "/docs/packages/adapter-vercel": Record<string, never>;
   "/docs/packages/core": Record<string, never>;
   "/docs/pages": Record<string, never>;
   "/docs/introduction": Record<string, never>;
+  "/docs/security": Record<string, never>;
   "/docs/getting-started": Record<string, never>;
   "/docs/middleware": Record<string, never>;
 };

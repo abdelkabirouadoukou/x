@@ -1,9 +1,9 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { BuildManifest } from "./types";
 import { generateEntrySource } from "./generate-entry";
-import { transpileModules } from "./transpile";
 import { allModuleRefs } from "./scan";
+import { transpileModules } from "./transpile";
+import type { BuildManifest } from "./types";
 
 /**
  * Produces `.vercel/output/functions/render.func/index.mjs`: a single

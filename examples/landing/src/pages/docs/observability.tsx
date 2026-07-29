@@ -1,0 +1,196 @@
+import type { RouteProps } from "@thexjs/core";
+import { ArrowRight } from "lucide-react";
+import { CodeBlock } from "../../components/code-block";
+
+export const mode = "static";
+
+export default function DocPage({}: RouteProps) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Observability</p>
+      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Observability</h1>
+      <p className="mt-4 text-lg text-muted-foreground">
+        x includes production-ready observability out of the box — structured JSON logging,
+        container health/readiness probes, and pluggable APM error tracing. All of it is optional
+        and configurable via the <span className="text-foreground">observability</span> key in{" "}
+        <span className="text-foreground">x.config.ts</span>.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Configuration overview</h2>
+      <CodeBlock
+        label="x.config.ts"
+        code={`import { defineConfig, createSentryReporter } from "@thexjs/core";
+import * as Sentry from "@sentry/bun";
+
+Sentry.init({ dsn: process.env.SENTRY_DSN });
+
+export default defineConfig({
+  // ...pagesDir, apiDir, etc.
+  observability: {
+    logging: true,
+    errorReporter: createSentryReporter(Sentry),
+    health: {
+      checks: {
+        database: () => db.ping(),
+      },
+    },
+  },
+});`}
+      />
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Structured JSON logging</h2>
+      <p className="mt-3 text-muted-foreground">
+        Every request is logged as one JSON line with{" "}
+        <span className="text-foreground">timestamp</span>,{" "}
+        <span className="text-foreground">requestId</span>,{" "}
+        <span className="text-foreground">route</span>,{" "}
+        <span className="text-foreground">method</span>,{" "}
+        <span className="text-foreground">status</span>, and{" "}
+        <span className="text-foreground">durationMs</span>. This is ready to ingest into Datadog,
+        Grafana Loki, Kibana, or any JSON log pipeline.
+      </p>
+      <CodeBlock
+        label="log output"
+        lang="json"
+        code={`{"timestamp":"2026-07-29T12:00:00.000Z","level":"info","message":"request completed","requestId":"abc-123","route":"/api/users","method":"GET","status":200,"durationMs":42}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        Logging is enabled by default. Disable it with{" "}
+        <span className="text-foreground">logging: false</span>.
+      </p>
+      <CodeBlock
+        label="disable logging"
+        code={`observability: {
+  logging: false,
+}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        You can also use the <span className="text-foreground">logger</span> export directly in
+        loaders, server functions, and API routes:
+      </p>
+      <CodeBlock
+        label="manual logging"
+        code={`import { logger } from "@thexjs/core";
+
+export async function loader() {
+  logger.info("fetching users", { userId: 42 });
+  const users = await getUsers();
+  logger.info("users fetched", { count: users.length });
+  return { users };
+}`}
+      />
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Health &amp; readiness probes</h2>
+      <p className="mt-3 text-muted-foreground">
+        Two endpoints are served ahead of all routing for container orchestrators:
+      </p>
+      <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
+        <li>
+          <span className="text-foreground">/healthz</span> — liveness probe. Returns{" "}
+          <span className="text-foreground">{'{ status: "ok" }'}</span> when the Bun process is up
+          and serving.
+        </li>
+        <li>
+          <span className="text-foreground">/readyz</span> — readiness probe. Runs all configured
+          checks and returns <span className="text-foreground">200</span> only if every check
+          passes, or <span className="text-foreground">503</span> otherwise.
+        </li>
+      </ul>
+      <CodeBlock
+        label="health checks"
+        code={`observability: {
+  health: {
+    checks: {
+      database: async () => {
+        try {
+          await db.query("SELECT 1");
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      redis: () => redis.ping(),
+    },
+  },
+}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        Kubernetes/Docker can poll these endpoints to decide whether to send traffic to a pod or
+        restart it.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">APM error tracing</h2>
+      <p className="mt-3 text-muted-foreground">
+        When an uncaught exception occurs during SSR, a server action, or an API handler, x reports
+        it to the configured error reporter. Two reporters are built in:
+      </p>
+      <CodeBlock
+        label="reporters"
+        code={`import { createSentryReporter, createOtelReporter } from "@thexjs/core";
+
+// Sentry
+observability: {
+  errorReporter: createSentryReporter(Sentry),
+}
+
+// OpenTelemetry
+observability: {
+  errorReporter: createOtelReporter(trace.getTracer("x")),
+}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        You can also combine multiple reporters, or write your own by implementing the{" "}
+        <span className="text-foreground">ErrorReporter</span> interface:
+      </p>
+      <CodeBlock
+        label="custom reporter"
+        code={`import { combineReporters } from "@thexjs/core";
+
+const customReporter = {
+  captureException(error, context) {
+    // Send to your own error tracking service
+    fetch("https://errors.example.com", {
+      method: "POST",
+      body: JSON.stringify({ error: String(error), context }),
+    });
+  },
+};
+
+observability: {
+  errorReporter: combineReporters(
+    createSentryReporter(Sentry),
+    customReporter,
+  ),
+}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        If no reporter is configured, errors are logged to the console and the request returns a
+        generic 500. The reporter never blocks the response — if it throws, the error is caught and
+        logged so it can't take down the request.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">What's captured</h2>
+      <p className="mt-3 text-muted-foreground">
+        Every error report includes the <span className="text-foreground">phase</span> it occurred
+        in:
+      </p>
+      <CodeBlock
+        label="ErrorContext"
+        code={`interface ErrorContext {
+  route?: string;          // e.g. "/dashboard"
+  requestId?: string;      // matches the log entry for this request
+  phase: "ssr" | "action" | "api" | "loader";
+}`}
+      />
+
+      <div className="mt-16 border-t border-border pt-8">
+        <a
+          href="/docs"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowRight className="h-3.5 w-3.5 rotate-180" /> Back to docs
+        </a>
+      </div>
+    </div>
+  );
+}

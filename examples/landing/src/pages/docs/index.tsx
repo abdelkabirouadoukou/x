@@ -11,6 +11,7 @@ import {
   Layout,
   Package,
   Rocket,
+  Server,
   Shield,
   Terminal,
   Zap,
@@ -55,6 +56,12 @@ const packageSections = [
     title: "@thexjs/env",
     desc: "Type-safe environment variable validation with fail-fast errors.",
     href: "/docs/packages/env",
+  },
+  {
+    icon: Server,
+    title: "@thexjs/adapter-vercel",
+    desc: "Zero-config Vercel Build Output API v3 adapter for serverless deployment.",
+    href: "/docs/packages/adapter-vercel",
   },
 ];
 
@@ -118,6 +125,18 @@ const guideSections = [
     title: "Configuration",
     desc: "x.config.ts reference — all options and defaults.",
     href: "/docs/configuration",
+  },
+  {
+    icon: Shield,
+    title: "Security",
+    desc: "Env isolation, CSRF protection, security headers, and rate limiting.",
+    href: "/docs/security",
+  },
+  {
+    icon: Globe,
+    title: "Observability",
+    desc: "Structured logging, health probes, and APM error tracing.",
+    href: "/docs/observability",
   },
 ];
 

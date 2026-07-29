@@ -1,4 +1,4 @@
-import { Menu, X } from "lucide-react";
+import { Menu, Shield, X } from "lucide-react";
 import type { ReactNode } from "react";
 
 const sidebarSections = [
@@ -17,6 +17,7 @@ const sidebarSections = [
       { href: "/docs/packages/core", label: "@thexjs/core" },
       { href: "/docs/packages/cli", label: "@thexjs/cli" },
       { href: "/docs/packages/env", label: "@thexjs/env" },
+      { href: "/docs/packages/adapter-vercel", label: "@thexjs/adapter-vercel" },
     ],
   },
   {
@@ -32,6 +33,8 @@ const sidebarSections = [
       { href: "/docs/data-layer", label: "Data Layer" },
       { href: "/docs/build-deploy", label: "Build & Deploy" },
       { href: "/docs/configuration", label: "Configuration" },
+      { href: "/docs/security", label: "Security" },
+      { href: "/docs/observability", label: "Observability" },
     ],
   },
 ];

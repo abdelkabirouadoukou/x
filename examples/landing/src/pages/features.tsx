@@ -45,6 +45,16 @@ const allFeatures = [
     desc: "TypeScript from loader to component. LoaderData is typed through RouteProps, params are inferred from file paths, and server functions are fully typed.",
   },
   {
+    icon: Shield,
+    title: "Production security",
+    desc: "Build-time env isolation prevents secret leaks into client bundles. CSRF protection on server actions. Security headers (CSP, HSTS, X-Frame-Options) on every response. In-memory rate limiting — all on by default.",
+  },
+  {
+    icon: BarChart3,
+    title: "Observability",
+    desc: "Structured JSON logging, /healthz and /readyz probes for containers, and pluggable APM error tracing (Sentry + OpenTelemetry). Production-ready out of the box.",
+  },
+  {
     icon: BarChart3,
     title: "Content collections",
     desc: "Write markdown files with frontmatter and x turns them into pages. Built-in rendering with code highlighting, slug generation, and frontmatter parsing.",
