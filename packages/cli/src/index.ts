@@ -5,9 +5,14 @@ import { join, relative, resolve } from "node:path";
 
 // Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
 // (common muscle memory from `npm run` / `bun run`).
-function parseArgv(argv: string[]): { command: string | undefined; cwd: string | undefined } {
+function parseArgv(argv: string[]): {
+  command: string | undefined;
+  cwd: string | undefined;
+  adapter: string | undefined;
+} {
   const rest: string[] = [];
   let cwd: string | undefined;
+  let adapter: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] as string;
@@ -19,15 +24,33 @@ function parseArgv(argv: string[]): { command: string | undefined; cwd: string |
       cwd = arg.slice("--cwd=".length);
       continue;
     }
+    if (arg === "--adapter") {
+      const next = argv[++i];
+      if (!next || next.startsWith("--")) {
+        console.error('[x] "--adapter" requires a name, e.g. "--adapter vercel"');
+        process.exit(1);
+      }
+      adapter = next;
+      continue;
+    }
+    if (arg.startsWith("--adapter=")) {
+      const value = arg.slice("--adapter=".length);
+      if (!value) {
+        console.error('[x] "--adapter=" requires a name, e.g. "--adapter=vercel"');
+        process.exit(1);
+      }
+      adapter = value;
+      continue;
+    }
     rest.push(arg);
   }
 
   if (rest[0] === "run") rest.shift();
 
-  return { command: rest[0], cwd };
+  return { command: rest[0], cwd, adapter };
 }
 
-const { command, cwd } = parseArgv(Bun.argv.slice(2));
+const { command, cwd, adapter } = parseArgv(Bun.argv.slice(2));
 const projectDir = cwd ? resolve(process.cwd(), cwd) : process.cwd();
 
 function findConfig(): string | null {
@@ -170,7 +193,7 @@ async function cmdDev(): Promise<void> {
   console.log(`[x] dev server running at http://localhost:${port}`);
 }
 
-async function cmdBuild(): Promise<void> {
+async function cmdBuild(adapterName: string | undefined): Promise<void> {
   const opts = await detectOptions();
 
   console.log("[x] build starting...");
@@ -188,9 +211,30 @@ async function cmdBuild(): Promise<void> {
     if (r.status !== 0) console.warn("[x] Tailwind compilation failed.");
   }
 
+  const { port: _port, ...rest } = opts;
+
+  if (adapterName === "vercel") {
+    let buildVercelOutput: (options: Record<string, unknown>) => Promise<void>;
+    try {
+      ({ buildVercelOutput } = await import("@thexjs/adapter-vercel"));
+    } catch {
+      console.error('[x] "--adapter vercel" requires @thexjs/adapter-vercel.');
+      console.error("[x] install it with: bun add -d @thexjs/adapter-vercel");
+      process.exit(1);
+    }
+    await buildVercelOutput({ ...rest, projectRoot: projectDir });
+    const ms = Math.round(performance.now() - start);
+    console.log(`[x] build complete in ${ms}ms -> .vercel/output`);
+    return;
+  }
+
+  if (adapterName) {
+    console.error(`[x] unknown adapter "${adapterName}"`);
+    process.exit(1);
+  }
+
   const { build } = await import("@thexjs/core");
   const outDir = join(projectDir, ".x");
-  const { port: _port, ...rest } = opts;
   await build({ ...rest, outDir });
 
   const ms = Math.round(performance.now() - start);
@@ -239,11 +283,14 @@ Commands:
   start   Start the production server (run "x build" first)
 
 Options:
-  --cwd <dir>    Run as if started inside <dir> (default: current directory)
-  -h, --help     Show this help message
-  -v, --version  Print the CLI version
+  --cwd <dir>          Run as if started inside <dir> (default: current directory)
+  --adapter <name>     "build" target adapter, e.g. "vercel" (default: Bun server -> .x/)
+  -h, --help           Show this help message
+  -v, --version        Print the CLI version
 
-Tip: "x run dev" also works, as an alias for "x dev".`);
+Tip: "x run dev" also works, as an alias for "x dev".
+Tip: "x build --adapter vercel" emits a .vercel/output tree (Build Output API v3),
+     no vercel.json needed. Requires @thexjs/adapter-vercel as a dependency.`);
 }
 
 async function main(): Promise<void> {
@@ -257,7 +304,7 @@ async function main(): Promise<void> {
       await cmdDev();
       break;
     case "build":
-      await cmdBuild();
+      await cmdBuild(adapter);
       break;
     case "start":
       await cmdStart();
