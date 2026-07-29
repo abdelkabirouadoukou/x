@@ -4,7 +4,7 @@ import { CodeBlock } from "../../components/code-block";
 
 export const mode = "static";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Middleware</p>

@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Link as XLink, type LinkProps as XLinkProps } from "@thexjs/core";
 
 type LinkProps = XLinkProps;

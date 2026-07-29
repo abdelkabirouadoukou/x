@@ -20,7 +20,7 @@ export interface SecurityHeadersOptions {
 }
 
 const DEFAULT_CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'";
+  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'";
 
 export function buildSecurityHeaders(options: SecurityHeadersOptions = {}): Headers {
   const headers = new Headers();

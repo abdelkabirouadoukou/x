@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createHealthCheckHandler } from "./health";
+import { withRequestLogging } from "./logger";
 import {
   combineReporters,
   getErrorReporter,
@@ -7,7 +8,6 @@ import {
   reportException,
   setErrorReporter,
 } from "./monitoring";
-import { withRequestLogging } from "./logger";
 
 describe("health checks", () => {
   test("/healthz always returns 200 ok", async () => {

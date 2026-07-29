@@ -84,7 +84,7 @@ export const CLIENT_NAV_SCRIPT = `
   }
 
   function prefetch(url) {
-    if (cache.has(url.href)) return;
+    if (cache.has(url.href)) return cache.get(url.href);
     var promise = fetch(url.href, { headers: { "X-X-Nav": "1" } })
       .then(function (res) {
         return res.text().then(function (html) {
@@ -101,6 +101,7 @@ export const CLIENT_NAV_SCRIPT = `
       if (first !== undefined) cache.delete(first);
     }
     cache.set(url.href, promise);
+    return promise;
   }
 
   function navigate(url, push) {

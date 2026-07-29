@@ -2,6 +2,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
+import { xError, xInfo, xSuccess, xWarn } from "./terminal.js";
 
 // Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
 // (common muscle memory from `npm run` / `bun run`).
@@ -27,7 +28,7 @@ function parseArgv(argv: string[]): {
     if (arg === "--adapter") {
       const next = argv[++i];
       if (!next || next.startsWith("--")) {
-        console.error('[x] "--adapter" requires a name, e.g. "--adapter vercel"');
+        xError('"--adapter" requires a name, e.g. "--adapter vercel"');
         process.exit(1);
       }
       adapter = next;
@@ -36,7 +37,7 @@ function parseArgv(argv: string[]): {
     if (arg.startsWith("--adapter=")) {
       const value = arg.slice("--adapter=".length);
       if (!value) {
-        console.error('[x] "--adapter=" requires a name, e.g. "--adapter=vercel"');
+        xError('"--adapter=" requires a name, e.g. "--adapter=vercel"');
         process.exit(1);
       }
       adapter = value;
@@ -136,7 +137,7 @@ async function detectOptions(): Promise<{ options: DetectedOptions; configPath: 
       const mod = (await import(configPath)) as { default?: Record<string, unknown> };
       return { options: detectOptionsFromConfig(mod.default ?? {}), configPath };
     } catch (err) {
-      console.warn(`[x] failed to load config: ${err}`);
+      xWarn(`failed to load config: ${String(err)}`);
     }
   }
 
@@ -152,13 +153,13 @@ async function cmdDev(): Promise<void> {
   const twInput = join(projectDir, "src/styles/globals.css");
   const twOutput = join(projectDir, "public/styles.css");
   if (existsSync(twInput)) {
-    console.log("[x] compiling Tailwind CSS...");
+    xInfo("compiling Tailwind CSS...");
     const { writeFileSync } = await import("node:fs");
     const { spawnSync } = await import("node:child_process");
     const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], {
       cwd: projectDir,
     });
-    if (r.status !== 0) console.warn("[x] Tailwind compilation failed, serving raw CSS.");
+    if (r.status !== 0) xWarn("Tailwind compilation failed, serving raw CSS.");
   }
 
   // Watch for CSS changes and recompile Tailwind
@@ -169,16 +170,16 @@ async function cmdDev(): Promise<void> {
     watch(twSrc, { recursive: true }, () => {
       if (twTimeout) clearTimeout(twTimeout);
       twTimeout = setTimeout(() => {
-        console.log("[x] recompiling Tailwind CSS...");
+        xInfo("recompiling Tailwind CSS...");
         spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], { cwd: projectDir });
       }, 200);
     });
   }
 
-  console.log("[x] dev server starting...");
+  xInfo("dev server starting...");
   const app = await createApp({ ...dirs, development: true });
   let port = opts.port;
-  let server;
+  let server: ReturnType<typeof Bun.serve> | undefined;
   for (let attempt = 0; attempt < 20; attempt++) {
     try {
       server = Bun.serve({ ...app, port });
@@ -192,28 +193,28 @@ async function cmdDev(): Promise<void> {
     }
   }
   if (!server) {
-    console.error("[x] could not find an available port after 20 attempts");
+    xError("could not find an available port after 20 attempts");
     process.exit(1);
   }
-  console.log(`[x] dev server running at http://localhost:${port}`);
+  xSuccess(`dev server running at http://localhost:${port}`);
 }
 
 async function cmdBuild(adapterName: string | undefined): Promise<void> {
   const { options: opts, configPath } = await detectOptions();
 
-  console.log("[x] build starting...");
+  xInfo("build starting...");
   const start = performance.now();
 
   // Compile Tailwind for production
   const twInput = join(projectDir, "src/styles/globals.css");
   const twOutput = join(projectDir, "public/styles.css");
   if (existsSync(twInput)) {
-    console.log("[x] compiling Tailwind CSS (production)...");
+    xInfo("compiling Tailwind CSS (production)...");
     const { spawnSync } = await import("node:child_process");
     const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput, "--minify"], {
       cwd: projectDir,
     });
-    if (r.status !== 0) console.warn("[x] Tailwind compilation failed.");
+    if (r.status !== 0) xWarn("Tailwind compilation failed.");
   }
 
   const { port: _port, security: _security, observability: _observability, ...rest } = opts;
@@ -223,18 +224,18 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
     try {
       ({ buildVercelOutput } = await import("@thexjs/adapter-vercel"));
     } catch {
-      console.error('[x] "--adapter vercel" requires @thexjs/adapter-vercel.');
-      console.error("[x] install it with: bun add -d @thexjs/adapter-vercel");
+      xError('"--adapter vercel" requires @thexjs/adapter-vercel.');
+      xError("install it with: bun add -d @thexjs/adapter-vercel");
       process.exit(1);
     }
     await buildVercelOutput({ ...rest, projectRoot: projectDir });
     const ms = Math.round(performance.now() - start);
-    console.log(`[x] build complete in ${ms}ms -> .vercel/output`);
+    xSuccess(`build complete in ${ms}ms -> .vercel/output`);
     return;
   }
 
   if (adapterName) {
-    console.error(`[x] unknown adapter "${adapterName}"`);
+    xError(`unknown adapter "${adapterName}"`);
     process.exit(1);
   }
 
@@ -247,7 +248,7 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
   });
 
   const ms = Math.round(performance.now() - start);
-  console.log(`[x] build complete in ${ms}ms -> ${relative(projectDir, outDir)}`);
+  xSuccess(`build complete in ${ms}ms -> ${relative(projectDir, outDir)}`);
 }
 
 async function cmdStart(): Promise<void> {
@@ -255,12 +256,12 @@ async function cmdStart(): Promise<void> {
   const serverEntry = join(outDir, "server", "index.ts");
 
   if (!existsSync(serverEntry)) {
-    console.error(`[x] no built server found at ${serverEntry}`);
-    console.error(`[x] run "x build" first`);
+    xError(`no built server found at ${serverEntry}`);
+    xError('run "x build" first');
     process.exit(1);
   }
 
-  console.log("[x] starting production server...");
+  xInfo("starting production server...");
   const proc = spawn("bun", [serverEntry], {
     stdio: "inherit",
     cwd: projectDir,
@@ -333,7 +334,7 @@ async function main(): Promise<void> {
       if (command === undefined) process.exitCode = 1;
       break;
     default:
-      console.error(`[x] unknown command "${command}"`);
+      xError(`unknown command "${command}"`);
       printHelp();
       process.exit(1);
   }

@@ -6,6 +6,9 @@ import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { renderErrorOverlay } from "./error-overlay";
 import { type MiddlewareFn, composeMiddleware } from "./middleware";
 import DefaultNotFound from "./not-found";
+import { type HealthCheckOptions, createHealthCheckHandler } from "./observability/health";
+import { withRequestLogging } from "./observability/logger";
+import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
 import {
@@ -24,17 +27,18 @@ import {
   scanRoutes,
   writeManifest,
 } from "./router";
+import type { CsrfOptions } from "./security/csrf";
+import { type SecurityHeadersOptions, applySecurityHeaders } from "./security/headers";
+import {
+  type RateLimitOptions,
+  createRateLimiter,
+  rateLimitMiddleware,
+} from "./security/rate-limit";
 import {
   getServerFunctionHandler,
   registerServerFunctions,
   resetServerFunctions,
 } from "./server-functions";
-import { createHealthCheckHandler, type HealthCheckOptions } from "./observability/health";
-import { withRequestLogging } from "./observability/logger";
-import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
-import { type CsrfOptions } from "./security/csrf";
-import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
-import { createRateLimiter, rateLimitMiddleware, type RateLimitOptions } from "./security/rate-limit";
 
 export interface RouteProps {
   params: Record<string, string>;
@@ -193,12 +197,16 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   }
   const healthHandler = createHealthCheckHandler(options.observability?.health ?? {});
   const rateLimiter =
-    options.security?.rateLimit === false ? null : createRateLimiter(options.security?.rateLimit ?? {});
+    options.security?.rateLimit === false
+      ? null
+      : createRateLimiter(options.security?.rateLimit ?? {});
   const securityHeadersOptions = options.security?.headers;
   const loggingEnabled = options.observability?.logging ?? true;
 
   function withResponseHardening(res: Response): Response {
-    return securityHeadersOptions === false ? res : applySecurityHeaders(res, securityHeadersOptions);
+    return securityHeadersOptions === false
+      ? res
+      : applySecurityHeaders(res, securityHeadersOptions);
   }
 
   async function renderNotFound(req?: Request): Promise<Response> {
@@ -652,7 +660,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       return renderNotFound(req);
     };
 
-    const devFetchHardened = async (req: Request) => withResponseHardening(await devFetchInner(req));
+    const devFetchHardened = async (req: Request) =>
+      withResponseHardening(await devFetchInner(req));
     const devFetch = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
 
     return {
@@ -701,7 +710,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     return renderNotFound(req);
   };
 
-  const prodFetchHardened = async (req: Request) => withResponseHardening(await prodFetchInner(req));
+  const prodFetchHardened = async (req: Request) =>
+    withResponseHardening(await prodFetchInner(req));
   const prodFetch = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
 
   return {

@@ -1,10 +1,10 @@
 import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
-import { CodeBlock } from "../../components/code-block";
+import { CodeBlock, TerminalBlock } from "../../components/code-block";
 
 export const mode = "static";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Installation</p>
@@ -23,7 +23,7 @@ export default function DocPage({}: RouteProps) {
         — x uses <span className="text-foreground">Bun.serve</span>,{" "}
         <span className="text-foreground">Bun.file</span>, and other Bun-only APIs. Verify with:
       </p>
-      <CodeBlock label="terminal" lang="bash" code="bun --version" />
+      <TerminalBlock label="terminal — bun" code="bun --version" />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Create a new project</h2>
       <p className="mt-3 text-muted-foreground">
@@ -33,41 +33,37 @@ export default function DocPage({}: RouteProps) {
         <span className="text-foreground">@thexjs/cli</span> versions, and runs{" "}
         <span className="text-foreground">bun install</span>.
       </p>
-      <CodeBlock
-        label="terminal"
-        lang="bash"
+      <TerminalBlock
+        label="~/projects — zsh"
         code={`bun create thexjs-app@latest my-app
 cd my-app
 bun run dev`}
       />
       <p className="mt-4 text-muted-foreground">
         When prompted for a template, press Enter to accept{" "}
-        <span className="text-foreground">default</span> (recommended) — a single home page to
-        start from. Other templates include <span className="text-foreground">basic</span>,{" "}
+        <span className="text-foreground">default</span> (recommended) — a single home page to start
+        from. Other templates include <span className="text-foreground">basic</span>,{" "}
         <span className="text-foreground">blog</span>, <span className="text-foreground">saas</span>
         , and <span className="text-foreground">landing</span>.
       </p>
-      <CodeBlock
+      <TerminalBlock
         label="template selection"
-        lang="bash"
         code={`Available templates:
 
-    default  Blank slate with a single home page — the fastest way to start. (recommended)
-    basic    Minimal starter: pages, an API route, auth, and a dashboard.
-    blog     Markdown content collections, post listing, and post pages.
-    saas     Dashboard, settings, pricing, auth, and a data layer example.
-    landing  Marketing site with docs pages, styled with shadcn/Tailwind.
+  default  Blank slate with a single home page. (recommended)
+  basic    Minimal starter: pages, API route, auth, dashboard.
+  blog     Markdown content collections.
+  saas     Dashboard, settings, pricing, auth, data layer.
+  landing  Marketing site with docs pages.
 
 Choose a template (default/basic/blog/saas/landing) (default):`}
       />
       <p className="mt-4 text-muted-foreground">
-        Pass a template explicitly with{" "}
-        <span className="text-foreground">--template</span> or{" "}
+        Pass a template explicitly with <span className="text-foreground">--template</span> or{" "}
         <span className="text-foreground">-t</span>:
       </p>
-      <CodeBlock
-        label="terminal"
-        lang="bash"
+      <TerminalBlock
+        label="~/projects — zsh"
         code="bun create thexjs-app@latest my-app --template default"
       />
 

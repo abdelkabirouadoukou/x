@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { checkCsrf, generateCsrfToken, verifyCsrfToken, verifyOrigin } from "./csrf";
-import { findLeakedEnvKeys, assertNoEnvLeakage, EnvLeakageError } from "./env-isolation";
+import { EnvLeakageError, assertNoEnvLeakage, findLeakedEnvKeys } from "./env-isolation";
 import { applySecurityHeaders, buildSecurityHeaders } from "./headers";
 import { createRateLimiter, rateLimitMiddleware } from "./rate-limit";
 
@@ -125,8 +125,12 @@ describe("rate limiting", () => {
 
   test("separate keys get independent buckets", () => {
     const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
-    const reqA = new Request("https://example.com/x", { headers: { "x-forwarded-for": "1.1.1.1" } });
-    const reqB = new Request("https://example.com/x", { headers: { "x-forwarded-for": "2.2.2.2" } });
+    const reqA = new Request("https://example.com/x", {
+      headers: { "x-forwarded-for": "1.1.1.1" },
+    });
+    const reqB = new Request("https://example.com/x", {
+      headers: { "x-forwarded-for": "2.2.2.2" },
+    });
 
     expect(rateLimitMiddleware(limiter, reqA)).toBeNull();
     expect(rateLimitMiddleware(limiter, reqB)).toBeNull();
@@ -146,7 +150,7 @@ describe("env isolation", () => {
   });
 
   test("catches Bun.env and import.meta.env access too", () => {
-    const code = 'const a = Bun.env.DATABASE_URL;\nconst b = import.meta.env.SECRET;';
+    const code = "const a = Bun.env.DATABASE_URL;\nconst b = import.meta.env.SECRET;";
     expect(findLeakedEnvKeys(code).sort()).toEqual(["DATABASE_URL", "SECRET"]);
   });
 

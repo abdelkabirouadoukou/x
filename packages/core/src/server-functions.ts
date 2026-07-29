@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { routePatternToRegex } from "./router";
 import { reportException } from "./observability/monitoring";
+import { routePatternToRegex } from "./router";
 import { type CsrfOptions, checkCsrf } from "./security/csrf";
 
 export function generateServerFunctionClient(

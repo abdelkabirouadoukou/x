@@ -4,7 +4,7 @@ import { CodeBlock } from "../../../components/code-block";
 
 export const mode = "static";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
@@ -84,8 +84,8 @@ function json<T>(): EnvValidator<T> {
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">client / clientPrefix</h2>
       <p className="mt-3 text-muted-foreground">
-        The <span className="text-foreground">client</span> schema is for variables safe to expose to
-        the browser. <span className="text-foreground">clientPrefix</span> enforces that every
+        The <span className="text-foreground">client</span> schema is for variables safe to expose
+        to the browser. <span className="text-foreground">clientPrefix</span> enforces that every
         client key starts with that prefix (e.g.{" "}
         <span className="text-foreground">NEXT_PUBLIC_</span>,{" "}
         <span className="text-foreground">PUBLIC_</span>) — a key that does not match fails

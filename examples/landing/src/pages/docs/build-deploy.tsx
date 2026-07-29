@@ -4,7 +4,7 @@ import { CodeBlock } from "../../components/code-block";
 
 export const mode = "static";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
@@ -117,8 +117,8 @@ CMD ["x", "start"]`}
       <p className="mt-3 text-muted-foreground">
         Vercel doesn't run a long-lived Bun process, so it uses a different adapter:{" "}
         <span className="text-foreground">@thexjs/adapter-vercel</span> builds a{" "}
-        <span className="text-foreground">.vercel/output/</span> tree (Build Output API v3)
-        directly — no <span className="text-foreground">vercel.json</span> required.
+        <span className="text-foreground">.vercel/output/</span> tree (Build Output API v3) directly
+        — no <span className="text-foreground">vercel.json</span> required.
       </p>
       <CodeBlock
         label="terminal"
@@ -128,8 +128,8 @@ x build --adapter vercel
 vercel deploy --prebuilt`}
       />
       <p className="mt-3 text-muted-foreground">
-        If every page in your app uses <span className="text-foreground">mode = "static"</span>{" "}
-        (no API routes, no server actions), no function is emitted at all — just static files and
+        If every page in your app uses <span className="text-foreground">mode = "static"</span> (no
+        API routes, no server actions), no function is emitted at all — just static files and
         filesystem routing. Server-mode pages, API routes, and server actions run inside a single
         bundled <span className="text-foreground">nodejs20.x</span> function.
       </p>

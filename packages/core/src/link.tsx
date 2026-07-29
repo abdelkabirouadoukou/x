@@ -13,13 +13,7 @@ export interface LinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>,
  * Framework `<Link />` — renders an anchor wired for the inline client nav script
  * (SPA transitions + hover prefetch). Opt out with `clientNav={false}` or `prefetch={false}`.
  */
-export function Link({
-  href,
-  children,
-  clientNav = true,
-  prefetch = true,
-  ...rest
-}: LinkProps) {
+export function Link({ href, children, clientNav = true, prefetch = true, ...rest }: LinkProps) {
   return (
     <a
       href={href}

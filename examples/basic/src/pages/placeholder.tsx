@@ -5,7 +5,8 @@ export default function PlaceholderPage() {
         {"{"}JSON{"}"} Placeholder
       </h1>
       <p className="text-muted-foreground">
-        Free fake API powered by <strong>@thexjs/core</strong> — in-memory data, sub-ms response times.
+        Free fake API powered by <strong>@thexjs/core</strong> — in-memory data, sub-ms response
+        times.
       </p>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -25,6 +26,7 @@ export default function PlaceholderPage() {
               <td className="text-right p-3">100</td>
               <td className="text-right p-3">
                 <button
+                  type="button"
                   className="fetch-btn text-primary hover:underline text-xs"
                   data-url="/api/placeholder/posts"
                 >
@@ -41,6 +43,7 @@ export default function PlaceholderPage() {
               <td className="text-right p-3">500</td>
               <td className="text-right p-3">
                 <button
+                  type="button"
                   className="fetch-btn text-primary hover:underline text-xs"
                   data-url="/api/placeholder/comments"
                 >
@@ -55,6 +58,7 @@ export default function PlaceholderPage() {
               <td className="text-right p-3">200</td>
               <td className="text-right p-3">
                 <button
+                  type="button"
                   className="fetch-btn text-primary hover:underline text-xs"
                   data-url="/api/placeholder/todos"
                 >
@@ -69,6 +73,7 @@ export default function PlaceholderPage() {
               <td className="text-right p-3">10</td>
               <td className="text-right p-3">
                 <button
+                  type="button"
                   className="fetch-btn text-primary hover:underline text-xs"
                   data-url="/api/placeholder/users"
                 >
@@ -81,7 +86,8 @@ export default function PlaceholderPage() {
                 All endpoints (sequential)
               </td>
               <td className="text-right p-3">
-                <button id="fetch-all" className="fetch-btn text-primary hover:underline text-xs">
+                <button
+                  type="button" id="fetch-all" className="fetch-btn text-primary hover:underline text-xs">
                   Fetch All
                 </button>
               </td>

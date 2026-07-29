@@ -2,7 +2,7 @@
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "organizeImports": { "enabled": true },
   "files": {
-    "ignore": ["**/dist/**", "**/node_modules/**", "**/*.lock"]
+    "ignore": ["**/dist/**", "**/node_modules/**", "**/*.lock", "**/public/styles.css"]
   },
   "formatter": {
     "enabled": true,
@@ -16,6 +16,53 @@
       "recommended": true
     }
   },
+  "overrides": [
+    {
+      "include": [
+        "**/pages/**/*.tsx",
+        "**/templates/**/pages/**",
+        "**/examples/blog/**",
+        "**/examples/basic/**"
+      ],
+      "linter": {
+        "rules": {
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          }
+        }
+      }
+    },
+    {
+      "include": ["**/pages/docs/_layout.tsx", "**/templates/**/docs/_layout.tsx"],
+      "linter": {
+        "rules": {
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          }
+        }
+      }
+    },
+    {
+      "include": ["**/examples/landing/src/lib/syntax.tsx", "**/templates/**/syntax.tsx"],
+      "linter": {
+        "rules": {
+          "style": { "noNonNullAssertion": "off" },
+          "suspicious": { "noArrayIndexKey": "off" }
+        }
+      }
+    },
+    {
+      "include": ["**/examples/**", "**/templates/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noSvgWithoutTitle": "off",
+            "useButtonType": "warn"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double",

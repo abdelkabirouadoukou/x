@@ -2,7 +2,7 @@ import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
 import { CodeBlock } from "../../components/code-block";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Configuration</p>

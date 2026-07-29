@@ -4,7 +4,7 @@ import { CodeBlock } from "../../components/code-block";
 
 export const mode = "static";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Introduction</p>
@@ -23,9 +23,9 @@ export default function DocPage({}: RouteProps) {
         Most stacks split concerns across multiple tools: a bundler, a server, a static host, a
         separate API layer. x keeps everything in one Bun process. Drop a file in{" "}
         <span className="text-foreground">src/pages</span>, get a route. Mark a page{" "}
-        <span className="text-foreground">static</span> and it prerenders at build time. Leave it
-        as server mode and it renders per request. API routes and server functions live alongside
-        your pages — same types, same runtime.
+        <span className="text-foreground">static</span> and it prerenders at build time. Leave it as
+        server mode and it renders per request. API routes and server functions live alongside your
+        pages — same types, same runtime.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">The package ecosystem</h2>
@@ -88,14 +88,11 @@ export default function HomePage({}: RouteProps) {
       <p className="mt-3 text-muted-foreground">
         Pages default to server-rendered (SSR). Opt into build-time prerendering per page:
       </p>
-      <CodeBlock
-        label="route mode"
-        code={`export const mode: "static" | "server" = "static";`}
-      />
+      <CodeBlock label="route mode" code={`export const mode: "static" | "server" = "static";`} />
       <p className="mt-4 text-muted-foreground">
-        Static pages ship as plain HTML in{" "}
-        <span className="text-foreground">.x/client/</span> — deployable to any static host.
-        Server pages need a running Bun process via <span className="text-foreground">x start</span>.
+        Static pages ship as plain HTML in <span className="text-foreground">.x/client/</span> —
+        deployable to any static host. Server pages need a running Bun process via{" "}
+        <span className="text-foreground">x start</span>.
       </p>
 
       <div className="mt-16 flex flex-wrap gap-6 border-t border-border pt-8">

@@ -4,7 +4,7 @@ import { CodeBlock } from "../../../components/code-block";
 
 export const mode = "static";
 
-export default function DocPage({}: RouteProps) {
+export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
@@ -16,8 +16,9 @@ export default function DocPage({}: RouteProps) {
 
       <CodeBlock label="terminal" lang="bash" code="bun add @thexjs/cli" />
       <p className="mt-4 text-sm text-muted-foreground">
-        Requires Bun on your PATH. The CLI shells out to <span className="text-foreground">bun</span>{" "}
-        and uses Bun-only APIs (<span className="text-foreground">Bun.serve</span>,{" "}
+        Requires Bun on your PATH. The CLI shells out to{" "}
+        <span className="text-foreground">bun</span> and uses Bun-only APIs (
+        <span className="text-foreground">Bun.serve</span>,{" "}
         <span className="text-foreground">Bun.argv</span>).
       </p>
 
@@ -65,9 +66,9 @@ export default defineConfig({
 });`}
       />
       <p className="mt-4 text-muted-foreground">
-        Without a config file, defaults apply: <span className="text-foreground">src/pages</span> for
-        pages, <span className="text-foreground">content</span> for content collections if present,
-        port <span className="text-foreground">3000</span>.
+        Without a config file, defaults apply: <span className="text-foreground">src/pages</span>{" "}
+        for pages, <span className="text-foreground">content</span> for content collections if
+        present, port <span className="text-foreground">3000</span>.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">What each command does</h2>
@@ -83,7 +84,9 @@ export default defineConfig({
       </p>
 
       <h3 className="mt-8 text-lg font-semibold">x build</h3>
-      <p className="mt-2 text-muted-foreground">Compiles Tailwind in production mode, then writes:</p>
+      <p className="mt-2 text-muted-foreground">
+        Compiles Tailwind in production mode, then writes:
+      </p>
       <ul className="mt-3 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
           <span className="text-foreground">.x/client/</span> — prerendered HTML for static pages,
