@@ -240,7 +240,11 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
 
   const { build } = await import("@thexjs/core");
   const outDir = join(projectDir, ".x");
-  await build({ ...rest, outDir, configPath: configPath ?? undefined });
+  await build({
+    ...rest,
+    outDir,
+    ...(configPath ? { configPath } : {}),
+  });
 
   const ms = Math.round(performance.now() - start);
   console.log(`[x] build complete in ${ms}ms -> ${relative(projectDir, outDir)}`);

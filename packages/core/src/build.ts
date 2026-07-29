@@ -293,15 +293,17 @@ async function bundleRouteIslands(
   return [`/_islands/${entryId}/${entryId}.js`];
 }
 
-function generateHydrateEntry(routeRelPath: string, islandNames: string[]): string {
-  return `import * as Route from "${routeRelPath}";
+function generateHydrateEntry(routeRelPath: string, _islandNames: string[]): string {
+  return `import React from "react";
+import { hydrateRoot } from "react-dom/client";
+import * as Route from "${routeRelPath}";
 
 document.querySelectorAll("[data-island]").forEach((el) => {
   const name = el.getAttribute("data-island");
   if (!name) return;
   const Component = Route.islands?.[name];
   if (!Component) return;
-  const root = ReactDOM.hydrateRoot(el, React.createElement(Component));
+  hydrateRoot(el, React.createElement(Component));
 });
 `;
 }

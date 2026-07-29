@@ -20,7 +20,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --target node18 --external bun:sqlite",
+    "build": "tsup src/index.ts --format esm --dts --clean --target node18 --external bun:sqlite --external react --external react-dom --external react/jsx-runtime",
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {

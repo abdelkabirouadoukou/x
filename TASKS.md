@@ -183,3 +183,36 @@ verified, not just written.
   constraints, separate project once the Bun-native version is proven
 - Full React Server Components — islands + typed server functions cover most
   of the value with far less complexity; RSC is a v2 conversation
+
+---
+
+## Feature roadmap (next)
+
+### Phase 1 — Core DX (in progress)
+
+| Feature | Status | Notes |
+| --- | --- | --- |
+| `create-thexjs-app` CLI (`bun create thexjs-app@latest`) | done | `default` template recommended |
+| `<Link />` client router + prefetch | done | `@thexjs/core` export; works with inline client nav |
+| Dev soft reload | done | SSE reload swaps `#root` via `__xSoftReload` instead of full document reload |
+| React Fast Refresh (HMR) | planned | preserve component state during dev — needs react-refresh transform |
+| Native View Transitions API | planned | hook into client nav `navigate()` |
+
+### Phase 2 — Performance
+
+| Feature | Status |
+| --- | --- |
+| HTML streaming + Suspense | partial (`renderStreamingPage` exists) |
+| Native `<Image />` optimization | planned |
+| Tailwind v4 zero-config pipeline | done in dev/build |
+| Font optimization (self-host, CLS) | planned |
+
+### Phase 3 — Ecosystem
+
+| Feature | Status |
+| --- | --- |
+| Plugin architecture (`onBuild`, `onRequest`, …) | planned |
+| Dynamic OG image generation | planned |
+| Global request middleware | partial (route `_middleware.ts` exists) |
+| Session/cookie helpers | partial (`examples/basic` auth demo) |
+| Auto sitemap/RSS | planned |

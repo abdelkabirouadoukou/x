@@ -36,7 +36,7 @@ export default function About() {
   touch(
     ROUTES_DIR,
     "counter.tsx",
-    `import { Island } from "@thexjs/core";
+    `import { Island } from "../../../../island.tsx";
 import { useState } from "react";
 
 export function Counter() {
