@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/env",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Type-safe environment variable loading and validation for the x framework.",
   "keywords": ["environment-variables", "env", "validation", "typescript", "config", "bun", "x"],
   "license": "MIT",
