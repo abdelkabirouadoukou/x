@@ -148,7 +148,7 @@
     },
     "packages/core": {
       "name": "@thexjs/core",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "devDependencies": {
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
