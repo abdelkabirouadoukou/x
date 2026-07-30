@@ -160,7 +160,33 @@ export async function greet(name: string) {
 }
 ```
 
-Calling it from a component sends a POST to `/__x/actions/greet/greet` under the hood, or you can just import it directly inside a loader since it's all the same process.
+At runtime, `registerServerFunctions()` stores the real function (closure, db access, everything) in an in-memory route table (`ACTION_ROUTES`). A single `Bun.serve()` handler (`getServerFunctionHandler`) matches incoming `POST /__x/actions/<path>/<fnName>` requests against that table, runs a CSRF check, parses the JSON body as args, calls the real function, and returns the JSON result (or a `500` if it throws).
+
+The client never sees that function body. When an island or component imports from `src/actions/*`, the bundler swaps the import for a generated fetch wrapper instead of bundling the real file:
+
+```ts
+// what actually ships to the browser for `import { greet } from "../actions/greet"`
+export async function greet(...args: unknown[]): Promise<unknown> {
+  const res = await fetch("/__x/actions/greet/greet", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+```
+
+That swap happens in a `Bun.build()` plugin (`actionsRewritePlugin`) that intercepts any import resolving to a registered action file and rewrites its contents before the client bundler ever reads the real source so the db calls and secrets inside `greet.ts` are structurally excluded from the client bundle, not just hidden by convention. You can still import the same function directly inside a loader or API route, since those run server-side in the same process.
+
+### Client/server boundary in practice
+
+Getting this boundary right (making sure `DATABASE_URL` or `STRIPE_SECRET_KEY` never end up in a browser bundle) was the hardest part of building this. Two things enforce it:
+
+1. **Build-time interception**: the `actionsRewritePlugin` above means server-function bodies are never even parsed by the client-target bundler.
+2. **A leak scanner as a safety net**: after each island bundle is built, `assertNoEnvLeakage()` runs a regex scan (not an AST pass worth being precise about that) over the final bundled JS text, looking for `process.env.X`, `Bun.env.X`, or `import.meta.env.X`. Anything not prefixed `THEXJS_PUBLIC_` fails the build with an `EnvLeakageError`. It's a simple, fast check on the compiled output rather than a structural understanding of the code, so it catches the common cases but isn't meant to be un-fool-able (e.g. `Bun["e" + "nv"]` would slip past a naive regex) the interception above is what actually makes the leak impossible, the scanner just double-checks it.
+
+Island bundling itself happens in memory: for a route with islands, a scratch hydration entry file is written to a temp dir, bundled with `Bun.build({ target: "browser" })` (React/ReactDOM external), scanned, and the temp dir is deleted immediately after nothing lands in the project tree.
 
 ## Content collections
 
@@ -173,7 +199,7 @@ const html = await renderMarkdown(post.body);
 
 ## Middleware
 
-Drop a `_middleware.ts` in any pages folder — it runs for that folder and everything under it. Useful for auth checks, redirects, logging.
+Drop a `_middleware.ts` in any pages folder it runs for that folder and everything under it. Useful for auth checks, redirects, logging.
 
 ## Data layer
 
@@ -186,7 +212,7 @@ x build     # -> .x/ (static HTML + server bundle + manifest)
 x start     # run the production server from .x/
 ```
 
-Deploys to anywhere Bun runs — Docker, Fly.io, Railway, a VPS.
+Deploys to anywhere Bun runs Docker, Fly.io, Railway, a VPS.
 
 ## Config
 
@@ -209,4 +235,4 @@ export default defineConfig({
 - Repo: https://github.com/abdelkabirouadoukou/x
 - Install: `bun create thexjs-app@latest`
 
-MIT licensed. Not production-ready yet — this is a solo learning project, feedback and issues are welcome.
+MIT licensed. Not production-ready yet this is a solo learning project, feedback and issues are welcome.
