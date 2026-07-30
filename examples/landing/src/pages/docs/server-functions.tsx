@@ -12,9 +12,10 @@ export default function DocPage(_props: RouteProps) {
       </p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Server functions</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        Call server-side functions directly from the browser without writing REST endpoints. Server
-        functions live in <span className="text-foreground">src/actions/</span> and are invoked via
-        fetch.
+        Call server-side functions from the browser without writing REST endpoints. Server
+        functions live in <span className="text-foreground">src/actions/</span>. Import one into a
+        client component and call it like a normal function, or call it manually with{" "}
+        <span className="text-foreground">fetch</span> — both compile down to the same request.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Defining server functions</h2>
@@ -39,9 +40,58 @@ export async function sendEmail({ to, subject, body }: {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Calling from the browser</h2>
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Calling actions directly</h2>
       <p className="mt-3 text-muted-foreground">
-        Server functions are called by sending a POST request to{" "}
+        Import the function into a client component and call it like any other async function.
+        When you run <span className="text-foreground">x build</span>, the bundler swaps the
+        import for a generated fetch client before it reaches the browser, so the real
+        implementation, db calls and all, never gets bundled.
+      </p>
+      <CodeBlock
+        label="client component"
+        code={`"use client";
+
+import { useState } from "react";
+import { subscribeUser } from "../actions/subscribe";
+
+export default function SubscribeForm() {
+  const [status, setStatus] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const form = new FormData(e.target as HTMLFormElement);
+    const email = form.get("email") as string;
+
+    await subscribeUser(email);
+    setStatus("Subscribed!");
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <input
+        name="email"
+        type="email"
+        placeholder="you@example.com"
+        className="rounded-xl border border-border bg-card px-4 py-2"
+      />
+      <button type="submit" className="rounded-xl bg-primary px-4 py-2 text-primary-foreground">
+        Subscribe
+      </button>
+      {status && <p className="text-muted-foreground">{status}</p>}
+    </form>
+  );
+}`}
+      />
+      <p className="mt-3 text-sm text-muted-foreground">
+        Only files under <span className="text-foreground">actionsDir</span> get this treatment.
+        Import a regular server-only helper into client code and it bundles as-is; if it leaks a
+        secret, the build-time env isolation check catches it instead.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Calling manually with fetch</h2>
+      <p className="mt-3 text-muted-foreground">
+        This is what the direct-import style compiles down to, and it works the same way in dev
+        and in production: a POST request to{" "}
         <span className="text-foreground">/__x/actions/&lt;filename&gt;/&lt;functionName&gt;</span>.
         The arguments are sent as JSON in the request body.
       </p>
@@ -84,6 +134,10 @@ export default function GreetForm() {
   );
 }`}
       />
+      <p className="mt-3 text-sm text-muted-foreground">
+        Reach for this style directly when you're calling an action from outside an island, or
+        anywhere you'd rather see the request explicitly.
+      </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Server functions from loaders</h2>
       <p className="mt-3 text-muted-foreground">

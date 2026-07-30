@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun ../../packages/cli/src/index.ts dev",
-    "build": "bun ../../packages/cli/src/index.ts build",
-    "start": "bun ../../packages/cli/src/index.ts start",
-    "dev:direct": "bun --hot server.ts"
+    "dev": "x dev",
+    "build": "x build",
+    "start": "x start",
+    "dev:direct": "bun --hot server.ts",
+    "vercel-build": "x build --adapter vercel"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -24,6 +25,8 @@
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "@thexjs/cli": "workspace:*",
+    "@thexjs/adapter-vercel": "workspace:*"
   }
 }

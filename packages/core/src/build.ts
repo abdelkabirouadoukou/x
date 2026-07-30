@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
@@ -14,7 +14,13 @@ import {
   scanRoutes,
 } from "./router";
 import { assertNoEnvLeakage } from "./security/env-isolation";
-import { generateServerFunctionClient, registerServerFunctions } from "./server-functions";
+import { registerServerFunctions } from "./server-functions";
+import {
+  actionsRewritePlugin,
+  generateFallbackHydration,
+  generateHydrateEntry,
+  islandEntryId,
+} from "./island-bundle";
 
 export type RouteMode = "static" | "server";
 
@@ -279,13 +285,13 @@ async function bundleRouteIslands(
   islandsDir: string,
   actionModules: Map<string, { parentPath: string; fnNames: string[] }>,
 ): Promise<string[]> {
-  const entryId = `${basename(routeFilePath).replace(/\.(tsx|ts)$/, "")}-${hash(routeFilePath)}`;
+  const entryId = islandEntryId(routeFilePath);
   const outdir = join(islandsDir, entryId);
   mkdirSync(outdir, { recursive: true });
   const bundlePath = join(outdir, `${entryId}.js`);
 
   const routeRel = join(relative(outdir, join(routeFilePath, "..")), basename(routeFilePath));
-  const hydrateEntry = generateHydrateEntry(routeRel, islandNames);
+  const hydrateEntry = generateHydrateEntry(routeRel);
   const entryPath = join(outdir, `${entryId}.tsx`);
   writeFileSync(entryPath, hydrateEntry, "utf-8");
 
@@ -317,63 +323,6 @@ async function bundleRouteIslands(
   return [`/_islands/${entryId}/${entryId}.js`];
 }
 
-/**
- * A Bun.build() plugin that intercepts any import resolving to a file inside
- * `actionsDir` that was registered as a server-function module, and swaps
- * its source for a generated fetch()-based client (see
- * `generateServerFunctionClient`). This lets client/island code do:
- *
- *   import { subscribeUser } from "../actions/subscribe";
- *   await subscribeUser("dev@example.com");
- *
- * and have it silently become a POST to /__x/actions/... in the compiled
- * bundle — the real function body (db calls, secrets, etc.) is never read
- * by the client-target bundler, so it can't end up in the shipped JS.
- * Files under actionsDir that aren't registered action routes (e.g. shared
- * helpers) are left untouched and load normally.
- */
-function actionsRewritePlugin(
-  actionModules: Map<string, { parentPath: string; fnNames: string[] }>,
-): import("bun").BunPlugin {
-  return {
-    name: "x-actions-rewrite",
-    setup(build) {
-      if (actionModules.size === 0) return;
-      build.onLoad({ filter: /\.(ts|tsx)$/ }, (args) => {
-        const info = actionModules.get(args.path);
-        if (!info) return undefined;
-
-        const endpointBase =
-          info.parentPath === "/" ? "/__x/actions" : `/__x/actions${info.parentPath}`;
-        const contents = generateServerFunctionClient(args.path, info.fnNames, endpointBase);
-        return { contents, loader: "ts" };
-      });
-    },
-  };
-}
-
-function generateHydrateEntry(routeRelPath: string, _islandNames: string[]): string {
-  return `import React from "react";
-import { hydrateRoot } from "react-dom/client";
-import * as Route from "${routeRelPath}";
-
-document.querySelectorAll("[data-island]").forEach((el) => {
-  const name = el.getAttribute("data-island");
-  if (!name) return;
-  const Component = Route.islands?.[name];
-  if (!Component) return;
-  hydrateRoot(el, React.createElement(Component));
-});
-`;
-}
-
-function generateFallbackHydration(islandNames: string[]): string {
-  return `// x island hydration fallback — ${islandNames.join(", ")}
-document.querySelectorAll("[data-island]").forEach(function(el) {
-  el.setAttribute("data-island-hydrated", "false");
-});
-`;
-}
 
 function renderPageWithLayout(
   Component: ComponentType<{ params: Record<string, string> }>,
@@ -458,10 +407,4 @@ function relativeImportPath(fromDir: string, toFile: string): string {
   return rel.startsWith(".") ? rel : `./${rel}`;
 }
 
-function hash(str: string): string {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h).toString(36);
-}
+
