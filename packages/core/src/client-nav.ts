@@ -76,7 +76,7 @@ export const CLIENT_NAV_SCRIPT = `
     if (url.origin !== location.origin) return null;
     var here = new URL(location.href);
     if (url.pathname === here.pathname && url.search === here.search && url.hash) return null;
-    return url;
+    return anchor;
   }
 
   function setLoading(on) {
