@@ -14,7 +14,7 @@ import {
   scanRoutes,
 } from "./router";
 import { assertNoEnvLeakage } from "./security/env-isolation";
-import { registerServerFunctions } from "./server-functions";
+import { generateServerFunctionClient, registerServerFunctions } from "./server-functions";
 
 export type RouteMode = "static" | "server";
 
@@ -84,21 +84,38 @@ export async function build(options: BuildOptions): Promise<void> {
     routeEntries.push(...scanApiDir(legacyApiDir));
   }
 
-  // Scan actions
+  // Scan actions. Every action file is registered server-side (below) AND
+  // recorded in `actionModules`, keyed by its absolute file path. The island
+  // bundler uses that map to intercept any client-side import of an action
+  // file and swap it for a generated fetch() client instead — so a component
+  // can `import { subscribeUser } from "../actions/subscribe"` and call it
+  // directly, without the real (db-touching) implementation ever reaching
+  // the browser bundle.
+  const actionModules = new Map<string, { parentPath: string; fnNames: string[] }>();
   if (actionsDir && existsSync(actionsDir)) {
     for (const actionFile of scanRoutes(actionsDir)) {
       const mod = (await import(actionFile.filePath)) as Record<string, unknown>;
       const segments = actionFile.routePath.split("/").filter(Boolean);
       const parentPath = `/${segments.slice(0, -1).join("/")}`;
+      const fnNames: string[] = [];
+
       const actions = mod.actions as
         | Record<string, (...args: unknown[]) => Promise<unknown>>
         | undefined;
-      if (actions) registerServerFunctions(parentPath, actionFile.paramNames, actions);
+      if (actions) {
+        registerServerFunctions(parentPath, actionFile.paramNames, actions);
+        fnNames.push(...Object.keys(actions));
+      }
       for (const [key, value] of Object.entries(mod)) {
         if (key === "default" || key === "actions" || typeof value !== "function") continue;
         registerServerFunctions(parentPath, actionFile.paramNames, {
           [key]: value as (...args: unknown[]) => Promise<unknown>,
         });
+        fnNames.push(key);
+      }
+
+      if (fnNames.length > 0) {
+        actionModules.set(actionFile.filePath, { parentPath, fnNames });
       }
     }
   }
@@ -186,7 +203,7 @@ export async function build(options: BuildOptions): Promise<void> {
     let islandScripts: string[] = [];
     if (registry.entries.length > 0) {
       const uniqueNames = [...new Set(registry.entries.map((e) => e.name))];
-      islandScripts = await bundleRouteIslands(page.filePath, uniqueNames, islandsDir);
+      islandScripts = await bundleRouteIslands(page.filePath, uniqueNames, islandsDir, actionModules);
       console.log(
         `  [islands] ${uniqueNames.length} island(s) on ${page.entry.routePath} -> ${islandScripts.join(", ")}`,
       );
@@ -260,6 +277,7 @@ async function bundleRouteIslands(
   routeFilePath: string,
   islandNames: string[],
   islandsDir: string,
+  actionModules: Map<string, { parentPath: string; fnNames: string[] }>,
 ): Promise<string[]> {
   const entryId = `${basename(routeFilePath).replace(/\.(tsx|ts)$/, "")}-${hash(routeFilePath)}`;
   const outdir = join(islandsDir, entryId);
@@ -271,26 +289,67 @@ async function bundleRouteIslands(
   const entryPath = join(outdir, `${entryId}.tsx`);
   writeFileSync(entryPath, hydrateEntry, "utf-8");
 
-  const result = Bun.spawnSync([
-    "bun",
-    "build",
-    "--target=browser",
-    "--external",
-    "react",
-    "--external",
-    "react-dom",
-    "--outdir",
-    outdir,
-    entryPath,
-  ]);
+  try {
+    const result = await Bun.build({
+      entrypoints: [entryPath],
+      target: "browser",
+      external: ["react", "react-dom"],
+      plugins: [actionsRewritePlugin(actionModules)],
+    });
 
-  if (result.success) {
-    assertNoEnvLeakage(readFileSync(bundlePath, "utf-8"), bundlePath);
-    return [`/_islands/${entryId}/${entryId}.js`];
+    if (result.success) {
+      const outputs = result.outputs.filter((o) => o.kind === "entry-point");
+      const built = outputs[0] ?? result.outputs[0];
+      if (!built) throw new Error("bun build produced no output");
+      const code = await built.text();
+      assertNoEnvLeakage(code, bundlePath);
+      writeFileSync(bundlePath, code, "utf-8");
+      return [`/_islands/${entryId}/${entryId}.js`];
+    }
+    for (const log of result.logs) {
+      console.warn(`  [islands] build error: ${log.message}`);
+    }
+  } catch (err) {
+    console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
   }
 
   writeFileSync(bundlePath, generateFallbackHydration(islandNames), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
+}
+
+/**
+ * A Bun.build() plugin that intercepts any import resolving to a file inside
+ * `actionsDir` that was registered as a server-function module, and swaps
+ * its source for a generated fetch()-based client (see
+ * `generateServerFunctionClient`). This lets client/island code do:
+ *
+ *   import { subscribeUser } from "../actions/subscribe";
+ *   await subscribeUser("dev@example.com");
+ *
+ * and have it silently become a POST to /__x/actions/... in the compiled
+ * bundle — the real function body (db calls, secrets, etc.) is never read
+ * by the client-target bundler, so it can't end up in the shipped JS.
+ * Files under actionsDir that aren't registered action routes (e.g. shared
+ * helpers) are left untouched and load normally.
+ */
+function actionsRewritePlugin(
+  actionModules: Map<string, { parentPath: string; fnNames: string[] }>,
+): import("bun").BunPlugin {
+  return {
+    name: "x-actions-rewrite",
+    setup(build) {
+      if (actionModules.size === 0) return;
+      build.onLoad({ filter: /\.(ts|tsx)$/ }, (args) => {
+        const info = actionModules.get(args.path);
+        if (!info) return undefined;
+
+        const endpointBase =
+          info.parentPath === "/" ? "/__x/actions" : `/__x/actions${info.parentPath}`;
+        const contents = generateServerFunctionClient(args.path, info.fnNames, endpointBase);
+        return { contents, loader: "ts" };
+      });
+    },
+  };
 }
 
 function generateHydrateEntry(routeRelPath: string, _islandNames: string[]): string {
