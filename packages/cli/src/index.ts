@@ -247,7 +247,13 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
       xError("install it with: bun add -d @thexjs/adapter-vercel");
       process.exit(1);
     }
-    await buildVercelOutput({ ...rest, projectRoot: projectDir });
+    await buildVercelOutput({
+      ...rest,
+      ...(opts.security ? { security: opts.security } : {}),
+      ...(opts.observability ? { observability: opts.observability } : {}),
+      ...(opts.images ? { images: opts.images } : {}),
+      projectRoot: projectDir,
+    });
     const ms = Math.round(performance.now() - start);
     xSuccess(`build complete in ${ms}ms -> .vercel/output`);
     return;

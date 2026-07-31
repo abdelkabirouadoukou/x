@@ -159,6 +159,7 @@ export async function resolveBuildManifest(
     hasServerSurface: routes.length > 0 || actions.length > 0,
     security: options.security,
     observability: options.observability,
+    images: options.images,
   };
 }
 

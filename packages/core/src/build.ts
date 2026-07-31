@@ -400,6 +400,7 @@ function buildServerEntry(opts: Record<string, string>, configImportPath?: strin
     lines.push(
       "  ...(userConfig.observability ? { observability: userConfig.observability } : {}),",
     );
+    lines.push("  ...(userConfig.images ? { images: userConfig.images } : {}),");
   }
   lines.push(
     "});",

@@ -36,6 +36,7 @@ export function generateEntrySource(manifest: BuildManifest, entryDir: string): 
     "  withRequestLogging,",
     "  reportException,",
     "  logger,",
+    "  createImageProxyHandler,",
     '} from "@thexjs/core";',
     "",
   );
@@ -43,9 +44,11 @@ export function generateEntrySource(manifest: BuildManifest, entryDir: string): 
   // -- security & observability config --------------------------------------
   const securityOpts = JSON.stringify(manifest.security ?? {});
   const observabilityOpts = JSON.stringify(manifest.observability ?? {});
+  const imagesOpts = JSON.stringify(manifest.images ?? {});
   lines.push(
     `const __x_security = ${securityOpts};`,
     `const __x_observability = ${observabilityOpts};`,
+    `const __x_images = ${imagesOpts};`,
     "",
   );
 
@@ -59,6 +62,12 @@ export function generateEntrySource(manifest: BuildManifest, entryDir: string): 
   // -- rate limiter ----------------------------------------------------------
   lines.push(
     "const __x_rateLimiter = __x_security.rateLimit === false ? null : createRateLimiter(__x_security.rateLimit ?? {});",
+    "",
+  );
+
+  // -- remote image proxy (/_x/image) ---------------------------------------
+  lines.push(
+    "const __x_imageHandler = createImageProxyHandler(__x_images);",
     "",
   );
 
@@ -192,6 +201,9 @@ export function generateEntrySource(manifest: BuildManifest, entryDir: string): 
     "",
     "  const actionResult = await serverFnHandler(request);",
     "  if (actionResult !== null) return actionResult;",
+    "",
+    "  const proxiedImage = await __x_imageHandler(request);",
+    "  if (proxiedImage !== null) return proxiedImage;",
     "",
     "  for (const route of ROUTES) {",
     "    const params = extractParams(route.routePath, route.paramNames, url);",

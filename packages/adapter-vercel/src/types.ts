@@ -34,6 +34,11 @@ export interface VercelAdapterOptions {
     /** Structured JSON logging. Default: true. */
     logging?: boolean;
   };
+  /** Remote image proxy options for /_x/image. */
+  images?: {
+    /** Hostnames allowed to be proxied, e.g. ["cdn.example.com"]. */
+    remoteHosts?: string[];
+  };
 }
 
 /** A single file that needs to be transpiled from .ts/.tsx source into a
@@ -74,4 +79,6 @@ export interface BuildManifest {
   security?: VercelAdapterOptions["security"];
   /** Observability options serialized for the generated entry. */
   observability?: VercelAdapterOptions["observability"];
+  /** Remote image proxy options serialized for the generated entry. */
+  images?: VercelAdapterOptions["images"];
 }

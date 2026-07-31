@@ -8,3 +8,4 @@ server.ts
 .env
 .env.local
 dist/
+.vercel/

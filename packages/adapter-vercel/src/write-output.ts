@@ -11,18 +11,27 @@ export interface VercelConfigRoute {
 /** `.vercel/output/config.json` -- static assets first, then (only if the
  *  app has any server-mode pages / API routes / actions) fall back every
  *  remaining request to the render function. Apps that are 100% static
- *  (SSG only) get NO function at all -- filesystem routing is enough. */
+ *  (SSG only) get NO function at all -- filesystem routing is enough.
+ *
+ *  When the app allow-lists remote hosts for /_x/image, the native Vercel
+ *  `images` config is emitted too, which turns on the platform's Image
+ *  Optimization API at /_vercel/image for those same domains. */
 export function writeConfigJson(outputDir: string, manifest: BuildManifest): void {
   mkdirSync(outputDir, { recursive: true });
   const routes: VercelConfigRoute[] = [{ handle: "filesystem" }];
   if (manifest.hasServerSurface) {
     routes.push({ src: "/(.*)", dest: "/render" });
   }
-  writeFileSync(
-    join(outputDir, "config.json"),
-    JSON.stringify({ version: 3, routes }, null, 2),
-    "utf-8",
-  );
+  const config: Record<string, unknown> = { version: 3, routes };
+  const remoteHosts = manifest.images?.remoteHosts;
+  if (remoteHosts && remoteHosts.length > 0) {
+    config.images = {
+      sizes: [640, 750, 828, 1080, 1200],
+      domains: remoteHosts,
+      minimumCacheTTL: 60,
+    };
+  }
+  writeFileSync(join(outputDir, "config.json"), JSON.stringify(config, null, 2), "utf-8");
 }
 
 /** `.vercel/output/functions/render.func/.vc-config.json` */
