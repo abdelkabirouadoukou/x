@@ -53,7 +53,10 @@ export default function SettingsPage({ loaderData }: RouteProps) {
               />
             </div>
           </div>
-          <button className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+          >
             <Save className="h-4 w-4" />
             Save Changes
           </button>
@@ -95,7 +98,10 @@ export default function SettingsPage({ loaderData }: RouteProps) {
           <p className="text-sm text-muted-foreground mb-4">
             Permanently delete your account and all associated data.
           </p>
-          <button className="rounded-xl border border-destructive/50 bg-destructive/10 px-5 py-2.5 text-sm font-semibold text-destructive transition-all hover:bg-destructive/20">
+          <button
+            type="button"
+            className="rounded-xl border border-destructive/50 bg-destructive/10 px-5 py-2.5 text-sm font-semibold text-destructive transition-all hover:bg-destructive/20"
+          >
             Delete Account
           </button>
         </div>

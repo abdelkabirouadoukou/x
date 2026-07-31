@@ -16,6 +16,17 @@
       "recommended": true
     }
   },
+  "overrides": [
+    {
+      "include": ["**/lib/syntax.tsx"],
+      "linter": {
+        "rules": {
+          "style": { "noNonNullAssertion": "off" },
+          "suspicious": { "noArrayIndexKey": "off" }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double",

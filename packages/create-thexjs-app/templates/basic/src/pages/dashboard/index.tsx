@@ -45,6 +45,7 @@ export default function DashboardPage({ loaderData }: RouteProps) {
         </div>
       </div>
       <script
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: static hardcoded script, no user/runtime data interpolated
         dangerouslySetInnerHTML={{
           __html: `
 (function() {

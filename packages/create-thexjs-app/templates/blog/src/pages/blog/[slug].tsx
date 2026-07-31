@@ -49,6 +49,7 @@ export default function BlogPostPage({ loaderData }: RouteProps) {
       </div>
       <div
         className="prose prose-invert mt-8 max-w-none prose-headings:scroll-m-20 prose-headings:font-semibold prose-headings:tracking-tight prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:rounded prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-card prose-img:rounded-xl"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: `html` is pre-rendered from this site's own markdown content files (author-controlled, not user-submitted), matching the standard SSG blog-rendering pattern
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </article>

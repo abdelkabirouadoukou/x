@@ -99,6 +99,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
       </div>
 
       <script
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: static hardcoded script, no user/runtime data interpolated
         dangerouslySetInnerHTML={{
           __html: `
 (function(){
@@ -116,6 +117,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         }}
       />
       <style
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: static hardcoded stylesheet, no user/runtime data interpolated
         dangerouslySetInnerHTML={{
           __html: `
 @media (max-width:1023px){

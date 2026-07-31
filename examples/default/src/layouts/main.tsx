@@ -15,7 +15,12 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       <header className="relative z-10 flex h-16 items-center px-6 sm:px-10">
         <a href="/" className="group flex items-center gap-2.5" aria-label="Home">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface">
-            <svg viewBox="0 0 24 24" className="h-4 w-4 text-primary" fill="none">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4 text-primary"
+              fill="none"
+              aria-hidden="true"
+            >
               <polygon points="3,5 5,3 21,19 19,21" fill="currentColor" />
               <polygon points="19,5 21,3 5,21 3,19" fill="currentColor" opacity="0.45" />
             </svg>
