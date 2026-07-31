@@ -60,7 +60,7 @@ export async function buildVercelOutput(options: VercelAdapterOptions = {}): Pro
     await coreBuild({ ...rest, outDir: coreOutDir });
 
     console.log("[adapter-vercel] resolving server-mode routes...");
-    const manifestScratchDir = join(coreOutDir, "_vercel-routes");
+    const manifestScratchDir = join(outputDir, ".scratch-routes");
     const manifest = await resolveBuildManifest(options, manifestScratchDir);
 
     console.log(
@@ -83,5 +83,6 @@ export async function buildVercelOutput(options: VercelAdapterOptions = {}): Pro
     console.log(`[adapter-vercel] build complete -> ${outputDir}`);
   } finally {
     rmSync(coreOutDir, { recursive: true, force: true });
+    rmSync(join(outputDir, ".scratch-routes"), { recursive: true, force: true });
   }
 }
