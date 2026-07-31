@@ -131,14 +131,14 @@ const html = renderMarkdown(posts[0].body);`}
       <h2 className="mt-12 text-xl font-bold tracking-tight">Data layer</h2>
       <CodeBlock
         label="sqlite"
-        code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core";
+        code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
 
 const db = connectSQLite({ filename: "./data/dev.db" });
 await runSQLiteMigrations(db, "./data/migrations");`}
       />
       <CodeBlock
         label="postgres"
-        code={`import { connectPostgres, runPostgresMigrations } from "@thexjs/core";
+        code={`import { connectPostgres, runPostgresMigrations } from "@thexjs/core/data";
 
 const sql = connectPostgres({ url: process.env.DATABASE_URL! });
 await runPostgresMigrations(sql, "./data/migrations");`}

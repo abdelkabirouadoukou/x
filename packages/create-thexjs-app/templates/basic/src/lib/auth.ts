@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
-import { connectSQLite, runSQLiteMigrations } from "@thexjs/core";
+import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
 
 const SESSION_COOKIE = "x_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;

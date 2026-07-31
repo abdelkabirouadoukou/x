@@ -86,7 +86,7 @@ export function getServerFunctionHandler(
     }
 
     const parts = url.pathname.replace("/__x/actions/", "").split("/");
-    if (parts.length < 2) return null;
+    if (parts.length < 1) return null;
 
     const actionName = parts.pop();
     if (!actionName) return null;

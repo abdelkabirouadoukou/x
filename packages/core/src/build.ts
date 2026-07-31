@@ -3,6 +3,13 @@ import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { IslandProvider, createIslandRegistry } from "./island";
+import {
+  actionsRewritePlugin,
+  generateFallbackHydration,
+  generateHydrateEntry,
+  islandEntryId,
+  wrapIslandBundle,
+} from "./island-bundle";
 import { renderStaticPage } from "./render";
 import {
   type RouteEntry,
@@ -15,12 +22,6 @@ import {
 } from "./router";
 import { assertNoEnvLeakage } from "./security/env-isolation";
 import { registerServerFunctions } from "./server-functions";
-import {
-  actionsRewritePlugin,
-  generateFallbackHydration,
-  generateHydrateEntry,
-  islandEntryId,
-} from "./island-bundle";
 
 export type RouteMode = "static" | "server";
 
@@ -48,6 +49,7 @@ interface LoadedPage {
   filePath: string;
   Component: ComponentType<{ params: Record<string, string> }>;
   layoutModules: ComponentType<{ children: ReactNode }>[];
+  layoutFilePaths: string[];
 }
 
 export async function build(options: BuildOptions): Promise<void> {
@@ -169,7 +171,14 @@ export async function build(options: BuildOptions): Promise<void> {
       if (layoutMod.default) layoutModules.push(layoutMod.default);
     }
 
-    const page: LoadedPage = { entry, filePath: entry.filePath, mode, Component, layoutModules };
+    const page: LoadedPage = {
+      entry,
+      filePath: entry.filePath,
+      mode,
+      Component,
+      layoutModules,
+      layoutFilePaths: layoutChain.map((l) => l.filePath),
+    };
 
     if (mode === "static") {
       staticPages.push(page);
@@ -209,7 +218,13 @@ export async function build(options: BuildOptions): Promise<void> {
     let islandScripts: string[] = [];
     if (registry.entries.length > 0) {
       const uniqueNames = [...new Set(registry.entries.map((e) => e.name))];
-      islandScripts = await bundleRouteIslands(page.filePath, uniqueNames, islandsDir, actionModules);
+      islandScripts = await bundleRouteIslands(
+        page.filePath,
+        page.layoutFilePaths,
+        uniqueNames,
+        islandsDir,
+        actionModules,
+      );
       console.log(
         `  [islands] ${uniqueNames.length} island(s) on ${page.entry.routePath} -> ${islandScripts.join(", ")}`,
       );
@@ -246,7 +261,7 @@ export async function build(options: BuildOptions): Promise<void> {
     console.log(`  [content] ${content.routePath} -> ${outPath}`);
   }
 
-  if (serverPages.length > 0 || apiRoutes.length > 0) {
+  if (pagesDir || options.routesDir || options.contentDir) {
     const srvOpts: Record<string, string | undefined> = {
       pagesDir: pagesDir || options.routesDir || "",
     };
@@ -281,6 +296,7 @@ export async function build(options: BuildOptions): Promise<void> {
 
 async function bundleRouteIslands(
   routeFilePath: string,
+  layoutFilePaths: string[],
   islandNames: string[],
   islandsDir: string,
   actionModules: Map<string, { parentPath: string; fnNames: string[] }>,
@@ -290,8 +306,7 @@ async function bundleRouteIslands(
   mkdirSync(outdir, { recursive: true });
   const bundlePath = join(outdir, `${entryId}.js`);
 
-  const routeRel = join(relative(outdir, join(routeFilePath, "..")), basename(routeFilePath));
-  const hydrateEntry = generateHydrateEntry(routeRel);
+  const hydrateEntry = generateHydrateEntry(routeFilePath, layoutFilePaths);
   const entryPath = join(outdir, `${entryId}.tsx`);
   writeFileSync(entryPath, hydrateEntry, "utf-8");
 
@@ -299,7 +314,6 @@ async function bundleRouteIslands(
     const result = await Bun.build({
       entrypoints: [entryPath],
       target: "browser",
-      external: ["react", "react-dom"],
       plugins: [actionsRewritePlugin(actionModules)],
     });
 
@@ -309,7 +323,7 @@ async function bundleRouteIslands(
       if (!built) throw new Error("bun build produced no output");
       const code = await built.text();
       assertNoEnvLeakage(code, bundlePath);
-      writeFileSync(bundlePath, code, "utf-8");
+      writeFileSync(bundlePath, wrapIslandBundle(code), "utf-8");
       return [`/_islands/${entryId}/${entryId}.js`];
     }
     for (const log of result.logs) {
@@ -319,10 +333,9 @@ async function bundleRouteIslands(
     console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
   }
 
-  writeFileSync(bundlePath, generateFallbackHydration(islandNames), "utf-8");
+  writeFileSync(bundlePath, wrapIslandBundle(generateFallbackHydration(islandNames)), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
 }
-
 
 function renderPageWithLayout(
   Component: ComponentType<{ params: Record<string, string> }>,
@@ -330,7 +343,10 @@ function renderPageWithLayout(
   layoutModules: ComponentType<{ children: ReactNode }>[],
 ): ReactNode {
   let content: ReactNode = createElement(Component, { params });
-  for (const Layout of layoutModules) {
+  // layoutModules is ordered outermost-first (root layout first). Wrapping
+  // sequentially would leave the last layout outermost (inverted nesting),
+  // so wrap in reverse -- matching createApp's wrapWithLayouts.
+  for (const Layout of [...layoutModules].reverse()) {
     content = createElement(Layout, null, content);
   }
   return content;
@@ -388,6 +404,7 @@ function buildServerEntry(opts: Record<string, string>, configImportPath?: strin
     lines.push(
       "  ...(userConfig.observability ? { observability: userConfig.observability } : {}),",
     );
+    lines.push("  ...(userConfig.images ? { images: userConfig.images } : {}),");
   }
   lines.push(
     "});",
@@ -406,5 +423,3 @@ function relativeImportPath(fromDir: string, toFile: string): string {
     .replace(/\.(ts|js|mjs)$/, "");
   return rel.startsWith(".") ? rel : `./${rel}`;
 }
-
-

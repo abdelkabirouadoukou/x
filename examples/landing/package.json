@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "x dev",
+    "start": "x start",
     "build": "x build",
     "vercel-build": "x build --adapter vercel"
   },

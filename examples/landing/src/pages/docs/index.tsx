@@ -9,6 +9,7 @@ import {
   Globe,
   Layers,
   Layout,
+  MousePointerClick,
   Package,
   Rocket,
   Server,
@@ -95,6 +96,12 @@ const guideSections = [
     title: "Server Functions",
     desc: "Call server-side functions from the browser without REST.",
     href: "/docs/server-functions",
+  },
+  {
+    icon: MousePointerClick,
+    title: "Client Navigation & Images",
+    desc: "SPA-style navigation on every <a> tag by default, plus the remote image proxy.",
+    href: "/docs/client-navigation",
   },
   {
     icon: Layers,

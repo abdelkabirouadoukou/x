@@ -60,7 +60,11 @@ export async function resolveBuildManifest(
   const pagesDir = options.pagesDir || options.routesDir || join(projectRoot, "src", "pages");
   const apiDir = options.apiDir;
   const layoutsDir = options.layoutsDir || pagesDir;
-  const actionsDir = options.actionsDir;
+  const actionsDir =
+    options.actionsDir ??
+    (existsSync(join(projectRoot, "src", "actions"))
+      ? join(projectRoot, "src", "actions")
+      : undefined);
 
   const registry = new ModuleRegistry(scratchDir);
 
@@ -88,6 +92,7 @@ export async function resolveBuildManifest(
         routePath: entry.routePath,
         paramNames: entry.paramNames,
         isApi: true,
+        mode: "server",
         route: registry.ref(entry.filePath, "api"),
         layoutChain: [],
         middlewareChain: [],
@@ -101,6 +106,7 @@ export async function resolveBuildManifest(
     const mod = (await import(entry.filePath)) as {
       default?: unknown;
       mode?: "static" | "server";
+      revalidate?: number;
       actions?: unknown;
     };
     if (!mod.default && !mod.actions) continue;
@@ -117,6 +123,8 @@ export async function resolveBuildManifest(
       routePath: entry.routePath,
       paramNames: entry.paramNames,
       isApi: false,
+      mode: mod.mode ?? "server",
+      ...(mod.revalidate !== undefined ? { revalidate: mod.revalidate } : {}),
       route: registry.ref(entry.filePath, "page"),
       layoutChain: layoutChain.map((l) => registry.ref(l.filePath, "layout")),
       middlewareChain: mwChain.map((m) => registry.ref(m.filePath, "mw")),
@@ -157,6 +165,7 @@ export async function resolveBuildManifest(
     hasServerSurface: routes.length > 0 || actions.length > 0,
     security: options.security,
     observability: options.observability,
+    images: options.images,
   };
 }
 

@@ -1,5 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { build as coreBuild } from "@thexjs/core";
 import { bundleRenderFunction } from "./bundle-function";
@@ -47,7 +46,15 @@ export async function buildVercelOutput(options: VercelAdapterOptions = {}): Pro
   const outputDir = resolveOutputDir(options);
   const runtime = options.runtime ?? "nodejs20.x";
 
-  const coreOutDir = mkdtempSync(join(tmpdir(), "x-vercel-core-"));
+  // The core build scratch dir lives *inside* the project tree (under the
+  // output dir) rather than an OS tmpdir: island bundling writes its hydrate
+  // entry next to the build output, and Bun resolves bare imports (`react`,
+  // `react-dom/client`, ...) by walking up to `node_modules`. An OS tmpdir
+  // has no relationship to the project install, so every island bundle
+  // silently falls back to a no-op hydration stub. Inside the tree, the
+  // walk-up reaches the project's real node_modules and the islands bundle
+  // for real -- identical to `x dev` / `x start`.
+  const coreOutDir = join(outputDir, ".scratch-core");
   try {
     console.log("[adapter-vercel] running @thexjs/core build (static pages + islands)...");
     const rest: Record<string, string> = {};
@@ -60,7 +67,7 @@ export async function buildVercelOutput(options: VercelAdapterOptions = {}): Pro
     await coreBuild({ ...rest, outDir: coreOutDir });
 
     console.log("[adapter-vercel] resolving server-mode routes...");
-    const manifestScratchDir = join(coreOutDir, "_vercel-routes");
+    const manifestScratchDir = join(outputDir, ".scratch-routes");
     const manifest = await resolveBuildManifest(options, manifestScratchDir);
 
     console.log(
@@ -83,5 +90,6 @@ export async function buildVercelOutput(options: VercelAdapterOptions = {}): Pro
     console.log(`[adapter-vercel] build complete -> ${outputDir}`);
   } finally {
     rmSync(coreOutDir, { recursive: true, force: true });
+    rmSync(join(outputDir, ".scratch-routes"), { recursive: true, force: true });
   }
 }

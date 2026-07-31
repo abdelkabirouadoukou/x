@@ -1,6 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { basename, join, relative } from "node:path";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { assertNoEnvLeakage } from "./security/env-isolation";
 import { generateServerFunctionClient } from "./server-functions";
 
@@ -44,17 +43,38 @@ export function actionsRewritePlugin(
   };
 }
 
-export function generateHydrateEntry(routeRelPath: string): string {
+export function generateHydrateEntry(routeAbsPath: string, layoutAbsPaths: string[] = []): string {
+  const layoutImports = layoutAbsPaths
+    .map((p, i) => `import * as Layout${i} from "${p}";`)
+    .join("\n");
+  const lookupParts = ["Route.islands?.[name]"];
+  for (let i = 0; i < layoutAbsPaths.length; i++) {
+    lookupParts.push(`Layout${i}.islands?.[name]`);
+  }
+  const lookup = lookupParts.join(" ?? ");
+
   return `import React from "react";
 import { hydrateRoot } from "react-dom/client";
-import * as Route from "${routeRelPath}";
+import * as Route from "${routeAbsPath}";
+${layoutImports}
+
+function resolveIsland(name: string) {
+  return ${lookup};
+}
+
+// Islands whose render is non-deterministic (e.g. \`useState(() => ...)\` with
+// Math.random) can't be hydrated against their SSR output. React recovers by
+// re-rendering client-side, so the island is still fully interactive -- the
+// mismatch is benign, so swallow the recovery so it doesn't spam the console
+// or cascade into React's event system.
+function onRecoverableError() {}
 
 document.querySelectorAll("[data-island]").forEach((el) => {
   const name = el.getAttribute("data-island");
   if (!name) return;
-  const Component = Route.islands?.[name];
+  const Component = resolveIsland(name);
   if (!Component) return;
-  hydrateRoot(el, React.createElement(Component));
+  hydrateRoot(el, React.createElement(Component), { onRecoverableError });
 });
 `;
 }
@@ -80,6 +100,18 @@ export function islandEntryId(routeFilePath: string): string {
 }
 
 /**
+ * Wraps a self-contained island bundle in an IIFE so its top-level function
+ * declarations don't leak onto `window` when the bundle runs as a classic
+ * script. Without this, a minified React-DOM bundle's top-level
+ * `function dispatchEvent` silently replaces `window.dispatchEvent`, which
+ * breaks app code that dispatches synthetic events on `window` (e.g. a
+ * command palette trigger that re-dispatches the ⌘K keydown).
+ */
+export function wrapIslandBundle(code: string): string {
+  return `;(function () {\n${code}\n})();\n`;
+}
+
+/**
  * Bundles a route's island hydration entry into browser JS entirely in
  * memory. Bun.build() requires a real entrypoint file, so a scratch entry
  * file is written to a temp directory and removed immediately after —
@@ -89,21 +121,23 @@ export function islandEntryId(routeFilePath: string): string {
  */
 export async function buildIslandBundleInMemory(
   routeFilePath: string,
+  layoutFilePaths: string[],
   islandNames: string[],
   actionModules: Map<string, ActionModuleInfo>,
+  projectRoot: string,
 ): Promise<string> {
   const entryId = islandEntryId(routeFilePath);
-  const scratchDir = mkdtempSync(join(tmpdir(), "x-islands-"));
+  const scratchRoot = join(projectRoot, ".x", "islands-tmp");
+  mkdirSync(scratchRoot, { recursive: true });
+  const scratchDir = mkdtempSync(join(scratchRoot, "x-islands-"));
 
   try {
-    const routeRel = join(relative(scratchDir, join(routeFilePath, "..")), basename(routeFilePath));
     const entryPath = join(scratchDir, `${entryId}.tsx`);
-    writeFileSync(entryPath, generateHydrateEntry(routeRel), "utf-8");
+    writeFileSync(entryPath, generateHydrateEntry(routeFilePath, layoutFilePaths), "utf-8");
 
     const result = await Bun.build({
       entrypoints: [entryPath],
       target: "browser",
-      external: ["react", "react-dom"],
       plugins: [actionsRewritePlugin(actionModules)],
     });
 
@@ -111,19 +145,19 @@ export async function buildIslandBundleInMemory(
       for (const log of result.logs) {
         console.warn(`  [islands] build error: ${log.message}`);
       }
-      return generateFallbackHydration(islandNames);
+      return wrapIslandBundle(generateFallbackHydration(islandNames));
     }
 
     const outputs = result.outputs.filter((o) => o.kind === "entry-point");
     const built = outputs[0] ?? result.outputs[0];
-    if (!built) return generateFallbackHydration(islandNames);
+    if (!built) return wrapIslandBundle(generateFallbackHydration(islandNames));
 
     const code = await built.text();
     assertNoEnvLeakage(code, entryPath);
-    return code;
+    return wrapIslandBundle(code);
   } catch (err) {
     console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
-    return generateFallbackHydration(islandNames);
+    return wrapIslandBundle(generateFallbackHydration(islandNames));
   } finally {
     rmSync(scratchDir, { recursive: true, force: true });
   }

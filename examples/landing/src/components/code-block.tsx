@@ -67,18 +67,16 @@ export function CodeBlock({ label, code, lang = "tsx", variant = "code" }: CodeB
 
   return (
     <div
-      className={`code-block mt-6 overflow-hidden rounded-2xl border shadow-2xl ${
-        isTerminal
-          ? "border-[var(--terminal-border)] bg-[var(--terminal-bg)] shadow-[var(--terminal-glow)]"
-          : "border-border/50 bg-[#0a0e14] shadow-black/40"
-      }`}
+      className="code-block mt-6 overflow-hidden rounded-2xl border shadow-xl"
+      style={{
+        borderColor: "var(--terminal-border)",
+        backgroundColor: "var(--terminal-bg)",
+        boxShadow: "var(--terminal-glow)",
+      }}
     >
       <div
-        className={`flex items-center justify-between gap-3 border-b px-4 py-2.5 ${
-          isTerminal
-            ? "border-[var(--terminal-border)] bg-[var(--terminal-bar)]"
-            : "border-white/[0.06] bg-[#121820]"
-        }`}
+        className="flex items-center justify-between gap-3 border-b px-4 py-2.5"
+        style={{ borderColor: "var(--terminal-border)", backgroundColor: "var(--terminal-bar)" }}
       >
         <div className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
@@ -86,9 +84,8 @@ export function CodeBlock({ label, code, lang = "tsx", variant = "code" }: CodeB
           <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
         </div>
         <span
-          className={`truncate font-mono text-[11px] tracking-wide ${
-            isTerminal ? "text-[var(--terminal-label)]" : "text-[#7d8da6]"
-          }`}
+          className="truncate font-mono text-[11px] tracking-wide"
+          style={{ color: "var(--terminal-label)" }}
         >
           {label}
         </span>
@@ -99,7 +96,9 @@ export function CodeBlock({ label, code, lang = "tsx", variant = "code" }: CodeB
         <TerminalBody code={code} lang={lang} />
       ) : (
         <pre className="overflow-x-auto p-5 text-sm leading-relaxed">
-          <code className="font-mono text-[#e8edf5]">{highlight(code, lang)}</code>
+          <code className="font-mono" style={{ color: "var(--terminal-text)" }}>
+            {highlight(code, lang)}
+          </code>
         </pre>
       )}
     </div>

@@ -80,7 +80,7 @@ export function renderPage(node: ReactNode, options: RenderOptions = {}): string
     ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
   const islandScriptsHtml = islandScripts
-    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
+    ?.map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
     .join("\n    ");
 
   return htmlShell(
@@ -104,7 +104,7 @@ export function renderStaticPage(node: ReactNode, options: RenderOptions = {}): 
     ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
   const islandScriptsHtml = islandScripts
-    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
+    ?.map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
     .join("\n    ");
 
   return htmlShell(
@@ -130,7 +130,7 @@ export async function renderStreamingPage(
     ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
   const islandScriptsHtml = islandScripts
-    ?.map((src) => `<script type="module" data-island-script src="${escapeHtml(src)}"></script>`)
+    ?.map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
     .join("\n    ");
   const navScriptTag = buildNavScriptTag(options.clientNav);
   const liveReloadTag = buildLiveReloadTag(options.liveReload);

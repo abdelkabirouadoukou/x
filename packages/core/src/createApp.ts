@@ -4,13 +4,14 @@ import { type ComponentType, type ReactNode, createElement } from "react";
 import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { renderErrorOverlay } from "./error-overlay";
+import { type ImageProxyOptions, createImageProxyHandler } from "./images/proxy";
+import { type IslandEntry, IslandProvider, createIslandRegistry } from "./island";
+import { type ActionModuleInfo, buildIslandBundleInMemory, islandEntryId } from "./island-bundle";
 import { type MiddlewareFn, composeMiddleware } from "./middleware";
 import DefaultNotFound from "./not-found";
 import { type HealthCheckOptions, createHealthCheckHandler } from "./observability/health";
 import { withRequestLogging } from "./observability/logger";
 import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
-import { type IslandEntry, IslandProvider, createIslandRegistry } from "./island";
-import { type ActionModuleInfo, buildIslandBundleInMemory, islandEntryId } from "./island-bundle";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
 import {
@@ -76,6 +77,40 @@ export interface CreateAppOptions {
     /** /healthz and /readyz endpoints, served ahead of all other routing. */
     health?: HealthCheckOptions;
   };
+  /** Remote-image proxy at /_x/image?url=... — see ImageProxyOptions. Unset/empty remoteHosts means the route 404s. */
+  images?: ImageProxyOptions;
+  /**
+   * Pre-resolved routes/actions for runtimes that can't scan the filesystem
+   * or dynamically `import()` a `.tsx` file at request time (e.g. Vercel's
+   * Node.js functions). When set, `createApp` skips all scanning and dynamic
+   * imports and builds its handlers straight from this manifest — exactly
+   * the same request pipeline (health, rate limit, revalidation, server
+   * actions, static assets, islands, image proxy, routing, 404, security
+   * headers) as a normally-scanned app.
+   */
+  preloaded?: PreloadedAppManifest;
+}
+
+export interface PreloadedRoute {
+  /** Route metadata (path, param names, api flag). */
+  entry: RouteEntry;
+  mode: RouteMode;
+  /** ISR revalidate seconds for static-mode pages. */
+  revalidate?: number;
+  /** The route's module namespace (default, loader, middleware, actions, GET/POST...). */
+  module: Record<string, unknown>;
+  layoutModules: ComponentType<{ children: ReactNode }>[];
+  middlewareModules: MiddlewareFn[];
+  /** Layout source file paths, used as the island-bundle cache key on Bun. */
+  layoutFilePaths?: string[];
+  /** Pre-resolved island <script> URLs for server-mode pages. When omitted, islands are discovered/bundled at request time (Bun only). */
+  islandScripts?: string[];
+}
+
+export interface PreloadedAppManifest {
+  routes: PreloadedRoute[];
+  notFoundComponent?: ComponentType<RouteProps>;
+  notFoundLayout?: ComponentType<{ children: ReactNode }>;
 }
 
 export interface AppServeOptions {
@@ -106,8 +141,6 @@ interface ContentHandler {
   handler: (req: Request) => Promise<Response>;
 }
 
-const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
-
 function projectRootFromRoutesDir(routesDir: string): string {
   return join(routesDir, "..", "..");
 }
@@ -132,9 +165,13 @@ async function serveStaticAsset(publicDir: string | null, req: Request): Promise
   if (pathname === "/" || pathname.endsWith("/")) return null;
   const filePath = resolvePublicAsset(publicDir, pathname);
   if (!filePath) return null;
-  const file = Bun.file(filePath);
+  // Non-Bun runtimes (e.g. Vercel's Node.js functions) serve static assets
+  // from the platform's CDN ahead of the function -- nothing here to do.
+  const bun = (globalThis as { Bun?: { file(p: string): { exists(): Promise<boolean> } } }).Bun;
+  if (!bun) return null;
+  const file = bun.file(filePath);
   if (!(await file.exists())) return null;
-  return new Response(file);
+  return new Response(file as unknown as BodyInit);
 }
 
 function wrapWithLayouts(
@@ -185,6 +222,12 @@ function importDev(path: string, dev: boolean): Promise<Record<string, unknown>>
 export async function createApp(options: CreateAppOptions): Promise<AppServeOptions> {
   const dev = options.development ?? false;
   const primaryDir: string = options.pagesDir || options.routesDir || "src/pages";
+  const projectRoot = projectRootFromRoutesDir(primaryDir);
+  const resolvedActionsDir =
+    options.actionsDir ??
+    (existsSync(join(projectRoot, "src", "actions"))
+      ? join(projectRoot, "src", "actions")
+      : undefined);
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
   let publicDir: string | null = null;
@@ -207,15 +250,22 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
    */
   async function resolveIslandScripts(
     routeFilePath: string,
+    layoutFilePaths: string[],
     entries: IslandEntry[],
   ): Promise<string[]> {
     if (entries.length === 0) return [];
     const uniqueNames = [...new Set(entries.map((e) => e.name))].sort();
-    const cacheKey = `${routeFilePath}::${uniqueNames.join(",")}`;
+    const cacheKey = `${routeFilePath}::${layoutFilePaths.join("|")}::${uniqueNames.join(",")}`;
     const cached = islandBundleCache.get(cacheKey);
     if (cached) return cached;
 
-    const code = await buildIslandBundleInMemory(routeFilePath, uniqueNames, actionModules);
+    const code = await buildIslandBundleInMemory(
+      routeFilePath,
+      layoutFilePaths,
+      uniqueNames,
+      actionModules,
+      projectRoot,
+    );
     const entryId = islandEntryId(routeFilePath);
     const url = `/_islands/${entryId}/${entryId}.js`;
     islandFileCache.set(url, code);
@@ -245,6 +295,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       : createRateLimiter(options.security?.rateLimit ?? {});
   const securityHeadersOptions = options.security?.headers;
   const loggingEnabled = options.observability?.logging ?? true;
+  const imageProxyHandler = createImageProxyHandler(options.images);
 
   function withResponseHardening(res: Response): Response {
     return securityHeadersOptions === false
@@ -267,7 +318,224 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     });
   }
 
+  const makeApiHandler =
+    (route: RouteEntry, module: Record<string, unknown>): ((req: Request) => Promise<Response>) =>
+    async (req: Request) => {
+      try {
+        const method = req.method;
+        const handlerFn = module[method];
+        if (typeof handlerFn === "function") {
+          const result = await (handlerFn as (r: Request) => unknown)(req);
+          if (result instanceof Response) return result;
+          if (result === undefined || result === null) {
+            return new Response("OK", { status: 200 });
+          }
+          return Response.json(result);
+        }
+        return new Response(`Method ${method} not allowed`, { status: 405 });
+      } catch (err) {
+        reportException(err, { route: route.routePath, phase: "api" });
+        console.error("[x] API handler error:", err);
+        if (dev) {
+          return new Response(renderErrorOverlay(err), {
+            status: 500,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
+        }
+        return new Response("Internal server error", { status: 500 });
+      }
+    };
+
+  const makePageHandler = (opts: {
+    route: RouteEntry;
+    mode: RouteMode;
+    revalidate: number | undefined;
+    loader: ((args: LoaderArgs) => Promise<LoaderReturn>) | undefined;
+    Component: ComponentType<RouteProps>;
+    layoutModules: ComponentType<{ children: ReactNode }>[];
+    layoutFilePaths: string[];
+    middlewareModules: MiddlewareFn[];
+    islandScripts?: string[] | undefined;
+  }): ((req: Request) => Promise<Response>) => {
+    const {
+      route,
+      mode,
+      revalidate,
+      loader,
+      Component,
+      layoutModules,
+      layoutFilePaths,
+      middlewareModules,
+      islandScripts,
+    } = opts;
+    return async (req: Request) => {
+      try {
+        const params =
+          extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
+
+        const baseHandler = async (ctx: {
+          params: Record<string, string>;
+          request: Request;
+        }) => {
+          let loaderData: Record<string, unknown> = {};
+          if (loader) {
+            const result = await loader(ctx);
+            if (result instanceof Response) return result;
+            loaderData = result;
+          }
+
+          if (mode === "server") {
+            const registry = createIslandRegistry();
+            const content = createElement(
+              IslandProvider,
+              { registry },
+              wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
+            );
+            let scripts: string[] | undefined = islandScripts;
+            if (scripts === undefined) {
+              // Cheap discovery render: walks the tree so any <Island> in
+              // it registers itself, without committing to a response yet.
+              renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
+              scripts = await resolveIslandScripts(
+                route.filePath,
+                layoutFilePaths,
+                registry.entries,
+              );
+            }
+
+            const stream = await renderStreamingPage(content, {
+              stylesheet: stylesheetHref,
+              liveReload: dev,
+              islandScripts: scripts,
+            });
+            return new Response(stream, {
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            });
+          }
+
+          const cached = staticCache.get(route.routePath);
+          const revalidateSeconds = revalidate ?? 0;
+
+          if (
+            revalidateSeconds > 0 &&
+            cached &&
+            Date.now() - cached.timestamp < revalidateSeconds * 1000
+          ) {
+            return new Response(cached.html, {
+              headers: { "Content-Type": "text/html; charset=utf-8", "X-Revalidated": "hit" },
+            });
+          }
+
+          const registry = createIslandRegistry();
+          const content = createElement(
+            IslandProvider,
+            { registry },
+            wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
+          );
+          let scripts: string[] | undefined = islandScripts;
+          if (scripts === undefined) {
+            renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
+            scripts = await resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries);
+          }
+          const html = renderPage(content, {
+            stylesheet: stylesheetHref,
+            liveReload: dev,
+            islandScripts: scripts,
+          });
+
+          if (revalidateSeconds > 0) {
+            staticCache.set(route.routePath, { html, timestamp: Date.now() });
+          }
+
+          return new Response(html, {
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "X-Revalidated": revalidateSeconds > 0 ? "miss" : "none",
+            },
+          });
+        };
+
+        if (middlewareModules.length > 0) {
+          const composed = composeMiddleware(middlewareModules, baseHandler);
+          return composed(
+            { params, request: req },
+            async () => new Response("Not found", { status: 404 }),
+          );
+        }
+
+        return baseHandler({ params, request: req });
+      } catch (err) {
+        reportException(err, { route: route.routePath, phase: "ssr" });
+        console.error("[x] route handler error:", err);
+        if (dev) {
+          return new Response(renderErrorOverlay(err), {
+            status: 500,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          });
+        }
+        return new Response("Internal server error", { status: 500 });
+      }
+    };
+  };
+
   async function buildHandlers(): Promise<void> {
+    if (options.preloaded) {
+      const preloaded = options.preloaded;
+      const candidatePublicDir = join(projectRoot, "public");
+      publicDir = existsSync(candidatePublicDir) ? candidatePublicDir : null;
+      stylesheetHref =
+        publicDir && existsSync(join(publicDir, "styles.css")) ? "/styles.css" : undefined;
+      if (preloaded.notFoundComponent) notFoundComponent = preloaded.notFoundComponent;
+      if (preloaded.notFoundLayout) notFoundLayout = preloaded.notFoundLayout;
+
+      const loaded: RouteHandler[] = [];
+      for (const p of preloaded.routes) {
+        const actions = p.module.actions as
+          | Record<string, (...args: unknown[]) => Promise<unknown>>
+          | undefined;
+        if (actions) {
+          registerServerFunctions(p.entry.routePath, p.entry.paramNames, actions);
+        }
+
+        if (p.entry.isApi) {
+          loaded.push({
+            entry: p.entry,
+            mode: p.mode,
+            revalidate: undefined,
+            handler: makeApiHandler(p.entry, p.module),
+          });
+          continue;
+        }
+
+        const Component = p.module.default as ComponentType<RouteProps> | undefined;
+        if (!Component) continue;
+
+        const routeMiddleware = p.module.middleware as MiddlewareFn | undefined;
+        const middlewareModules = routeMiddleware
+          ? [...p.middlewareModules, routeMiddleware]
+          : p.middlewareModules;
+
+        loaded.push({
+          entry: p.entry,
+          mode: p.mode,
+          revalidate: p.revalidate,
+          handler: makePageHandler({
+            route: p.entry,
+            mode: p.mode,
+            revalidate: p.revalidate,
+            loader: p.module.loader as ((args: LoaderArgs) => Promise<LoaderReturn>) | undefined,
+            Component,
+            layoutModules: p.layoutModules,
+            layoutFilePaths: p.layoutFilePaths ?? [],
+            middlewareModules,
+            islandScripts: p.islandScripts,
+          }),
+        });
+      }
+      handlers = loaded;
+      return;
+    }
+
     resetServerFunctions();
     actionModules = new Map();
     islandBundleCache.clear();
@@ -297,8 +565,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const middlewareEntries = scanMiddleware(pagesDir);
 
     // Scan action files from a separate actionsDir if provided
-    if (options.actionsDir) {
-      const actionFiles = scanRoutes(options.actionsDir);
+    if (resolvedActionsDir) {
+      const actionFiles = scanRoutes(resolvedActionsDir);
       for (const actionFile of actionFiles) {
         const mod = (await importDev(actionFile.filePath, dev)) as Record<string, unknown>;
 
@@ -336,7 +604,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       }
     }
 
-    const projectRoot = projectRootFromRoutesDir(pagesDir);
     const candidatePublicDir = join(projectRoot, "public");
     publicDir = existsSync(candidatePublicDir) ? candidatePublicDir : null;
     stylesheetHref =
@@ -370,13 +637,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const mod = (await importDev(route.filePath, dev)) as Record<string, unknown>;
 
       if (route.isApi) {
-        const methodHandlers: Record<string, (req: Request) => unknown> = {};
-        for (const method of HTTP_METHODS) {
-          if (typeof mod[method] === "function") {
-            methodHandlers[method] = mod[method] as (req: Request) => unknown;
-          }
-        }
-
         const actions = mod.actions as
           | Record<string, (...args: unknown[]) => Promise<unknown>>
           | undefined;
@@ -388,31 +648,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           entry: route,
           mode: "server",
           revalidate: undefined,
-          handler: async (req: Request) => {
-            try {
-              const method = req.method;
-              const handlerFn = methodHandlers[method];
-              if (handlerFn) {
-                const result = await handlerFn(req);
-                if (result instanceof Response) return result;
-                if (result === undefined || result === null) {
-                  return new Response("OK", { status: 200 });
-                }
-                return Response.json(result);
-              }
-              return new Response(`Method ${method} not allowed`, { status: 405 });
-            } catch (err) {
-              reportException(err, { route: route.routePath, phase: "api" });
-              console.error("[x] API handler error:", err);
-              if (options.development) {
-                return new Response(renderErrorOverlay(err), {
-                  status: 500,
-                  headers: { "Content-Type": "text/html; charset=utf-8" },
-                });
-              }
-              return new Response("Internal server error", { status: 500 });
-            }
-          },
+          handler: makeApiHandler(route, mod),
         });
         continue;
       }
@@ -448,6 +684,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           layoutChain.unshift(rootLayout);
         }
       }
+      const layoutFilePaths = layoutChain.map((l) => l.filePath);
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
       for (const l of layoutChain) {
         const layoutMod = (await importDev(l.filePath, dev)) as {
@@ -474,104 +711,16 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         entry: route,
         mode,
         revalidate,
-        handler: async (req: Request) => {
-          try {
-            const params =
-              extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
-
-            const baseHandler = async (ctx: {
-              params: Record<string, string>;
-              request: Request;
-            }) => {
-              let loaderData: Record<string, unknown> = {};
-              if (loader) {
-                const result = await loader(ctx);
-                if (result instanceof Response) return result;
-                loaderData = result;
-              }
-
-              if (mode === "server") {
-                const registry = createIslandRegistry();
-                const content = createElement(
-                  IslandProvider,
-                  { registry },
-                  wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
-                );
-                // Cheap discovery render: walks the tree so any <Island> in
-                // it registers itself, without committing to a response yet.
-                renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-                const islandScripts = await resolveIslandScripts(route.filePath, registry.entries);
-
-                const stream = await renderStreamingPage(content, {
-                  stylesheet: stylesheetHref,
-                  liveReload: dev,
-                  islandScripts,
-                });
-                return new Response(stream, {
-                  headers: { "Content-Type": "text/html; charset=utf-8" },
-                });
-              }
-
-              const cached = staticCache.get(route.routePath);
-              const revalidateSeconds = revalidate ?? 0;
-
-              if (
-                revalidateSeconds > 0 &&
-                cached &&
-                Date.now() - cached.timestamp < revalidateSeconds * 1000
-              ) {
-                return new Response(cached.html, {
-                  headers: { "Content-Type": "text/html; charset=utf-8", "X-Revalidated": "hit" },
-                });
-              }
-
-              const registry = createIslandRegistry();
-              const content = createElement(
-                IslandProvider,
-                { registry },
-                wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
-              );
-              renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-              const islandScripts = await resolveIslandScripts(route.filePath, registry.entries);
-              const html = renderPage(content, {
-                stylesheet: stylesheetHref,
-                liveReload: dev,
-                islandScripts,
-              });
-
-              if (revalidateSeconds > 0) {
-                staticCache.set(route.routePath, { html, timestamp: Date.now() });
-              }
-
-              return new Response(html, {
-                headers: {
-                  "Content-Type": "text/html; charset=utf-8",
-                  "X-Revalidated": revalidateSeconds > 0 ? "miss" : "none",
-                },
-              });
-            };
-
-            if (middlewareModules.length > 0) {
-              const composed = composeMiddleware(middlewareModules, baseHandler);
-              return composed(
-                { params, request: req },
-                async () => new Response("Not found", { status: 404 }),
-              );
-            }
-
-            return baseHandler({ params, request: req });
-          } catch (err) {
-            reportException(err, { route: route.routePath, phase: "ssr" });
-            console.error("[x] route handler error:", err);
-            if (options.development) {
-              return new Response(renderErrorOverlay(err), {
-                status: 500,
-                headers: { "Content-Type": "text/html; charset=utf-8" },
-              });
-            }
-            return new Response("Internal server error", { status: 500 });
-          }
-        },
+        handler: makePageHandler({
+          route,
+          mode,
+          revalidate,
+          loader,
+          Component,
+          layoutModules,
+          layoutFilePaths,
+          middlewareModules,
+        }),
       });
     }
 
@@ -658,7 +807,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const srcDir = join(primaryDir, "..", "..", "src");
       const watchDirs = [
         ...new Set(
-          [primaryDir, options.apiDir, options.layoutsDir, options.actionsDir, srcDir].filter(
+          [primaryDir, options.apiDir, options.layoutsDir, resolvedActionsDir, srcDir].filter(
             Boolean,
           ),
         ),
@@ -697,14 +846,40 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
             };
             sseClients.add(send);
-            req.signal.addEventListener("abort", () => sseClients.delete(send));
+            console.log(`[x][reload] client connected (${sseClients.size} total)`);
+
+            // Bun.serve's default idleTimeout is 10s — a connection that
+            // just sits open waiting for a future file-change event goes
+            // idle and gets killed by Bun mid-stream, which is what was
+            // producing ERR_INCOMPLETE_CHUNKED_ENCODING in the browser (see
+            // the "[Bun.serve]: request timed out after 10 seconds" log
+            // lines). A heartbeat well under that window keeps the
+            // connection active so it never hits the idle timeout.
+            const heartbeat = setInterval(() => {
+              try {
+                send("hb", "");
+              } catch (err) {
+                console.log(`[x][reload] heartbeat failed, clearing interval: ${String(err)}`);
+                clearInterval(heartbeat);
+              }
+            }, 5000);
+
+            req.signal.addEventListener("abort", () => {
+              clearInterval(heartbeat);
+              sseClients.delete(send);
+              console.log(`[x][reload] client disconnected (${sseClients.size} total)`);
+            });
           },
         });
+        // NOTE: no "Connection" header here on purpose — it's a hop-by-hop
+        // header that Bun's HTTP server manages itself based on real socket
+        // state. Setting it manually on a chunked/streamed response was
+        // producing malformed chunked framing (ERR_INCOMPLETE_CHUNKED_ENCODING
+        // in Chrome) because it fights with whatever Bun actually writes.
         return new Response(body, {
           headers: {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
-            Connection: "keep-alive",
           },
         });
       }
@@ -720,6 +895,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
       const islandBundle = serveIslandBundle(req);
       if (islandBundle !== null) return islandBundle;
+
+      const proxiedImage = await imageProxyHandler(req);
+      if (proxiedImage !== null) return proxiedImage;
 
       for (const h of handlers) {
         const params = extractParams(h.entry.routePath, h.entry.paramNames, url);
@@ -773,6 +951,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const islandBundle = serveIslandBundle(req);
     if (islandBundle !== null) return islandBundle;
+
+    const proxiedImage = await imageProxyHandler(req);
+    if (proxiedImage !== null) return proxiedImage;
 
     for (const h of handlers) {
       const params = extractParams(h.entry.routePath, h.entry.paramNames, url);

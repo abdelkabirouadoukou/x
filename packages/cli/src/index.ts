@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { xError, xInfo, xSuccess, xWarn } from "./terminal.js";
 
 // Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
@@ -74,6 +74,7 @@ interface DetectedOptions {
   /** Passed through untouched from x.config.ts — may hold live values (functions, reporters). */
   security?: Record<string, unknown>;
   observability?: Record<string, unknown>;
+  images?: Record<string, unknown>;
 }
 
 function dropUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -103,16 +104,23 @@ function detectOptionsFromConfig(cfg: Record<string, unknown>): DetectedOptions 
       : existsSync(join(projectDir, "content"))
         ? join(projectDir, "content")
         : undefined;
+  const actionsDir =
+    typeof cfg.actionsDir === "string"
+      ? resolveDir(cfg.actionsDir)
+      : existsSync(join(projectDir, "src", "actions"))
+        ? join(projectDir, "src", "actions")
+        : undefined;
   return dropUndefined({
     routesDir: resolveDir(cfg.routesDir) || undefined,
     pagesDir: defaultPagesDir,
     apiDir: resolveDir(cfg.apiDir) || undefined,
     layoutsDir: resolveDir(cfg.layoutsDir) || undefined,
-    actionsDir: resolveDir(cfg.actionsDir) || undefined,
+    actionsDir,
     contentDir,
     port: (cfg.port as number) ?? 3000,
     security: (cfg.security as Record<string, unknown>) ?? undefined,
     observability: (cfg.observability as Record<string, unknown>) ?? undefined,
+    images: (cfg.images as Record<string, unknown>) ?? undefined,
   }) as unknown as DetectedOptions;
 }
 
@@ -123,8 +131,12 @@ function detectDefaultOptions(): DetectedOptions {
   const contentDir = existsSync(join(projectDir, "content"))
     ? join(projectDir, "content")
     : undefined;
+  const actionsDir = existsSync(join(projectDir, "src", "actions"))
+    ? join(projectDir, "src", "actions")
+    : undefined;
   return dropUndefined({
     pagesDir,
+    actionsDir,
     contentDir,
     port: 3000,
   }) as unknown as DetectedOptions;
@@ -146,7 +158,8 @@ async function detectOptions(): Promise<{ options: DetectedOptions; configPath: 
 
 async function cmdDev(): Promise<void> {
   const { options: opts } = await detectOptions();
-  const { createApp } = await import("@thexjs/core");
+  const corePath = Bun.resolveSync("@thexjs/core", projectDir);
+  const { createApp } = await import(corePath);
   const { port: _port, ...dirs } = opts;
 
   // Auto-compile Tailwind if a source entry exists
@@ -217,7 +230,13 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
     if (r.status !== 0) xWarn("Tailwind compilation failed.");
   }
 
-  const { port: _port, security: _security, observability: _observability, ...rest } = opts;
+  const {
+    port: _port,
+    security: _security,
+    observability: _observability,
+    images: _images,
+    ...rest
+  } = opts;
 
   if (adapterName === "vercel") {
     let buildVercelOutput: (options: Record<string, unknown>) => Promise<void>;
@@ -228,7 +247,13 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
       xError("install it with: bun add -d @thexjs/adapter-vercel");
       process.exit(1);
     }
-    await buildVercelOutput({ ...rest, projectRoot: projectDir });
+    await buildVercelOutput({
+      ...rest,
+      ...(opts.security ? { security: opts.security } : {}),
+      ...(opts.observability ? { observability: opts.observability } : {}),
+      ...(opts.images ? { images: opts.images } : {}),
+      projectRoot: projectDir,
+    });
     const ms = Math.round(performance.now() - start);
     xSuccess(`build complete in ${ms}ms -> .vercel/output`);
     return;
@@ -239,7 +264,8 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
     process.exit(1);
   }
 
-  const { build } = await import("@thexjs/core");
+  const corePath = Bun.resolveSync("@thexjs/core", projectDir);
+  const { build } = await import(corePath);
   const outDir = join(projectDir, ".x");
   await build({
     ...rest,
@@ -256,6 +282,11 @@ async function cmdStart(): Promise<void> {
   const serverEntry = join(outDir, "server", "index.ts");
 
   if (!existsSync(serverEntry)) {
+    const clientDir = join(outDir, "client");
+    if (existsSync(join(clientDir, "index.html"))) {
+      await serveStaticBuild(clientDir);
+      return;
+    }
     xError(`no built server found at ${serverEntry}`);
     xError('run "x build" first');
     process.exit(1);
@@ -277,6 +308,32 @@ async function cmdStart(): Promise<void> {
     "exit",
     (code) => process.exit(code ?? 1),
   );
+}
+
+async function serveStaticBuild(clientDir: string): Promise<void> {
+  const port = Number(process.env.PORT) || 3000;
+  xInfo(`static build detected — serving .x/client on http://localhost:${port}`);
+  Bun.serve({
+    port,
+    async fetch(req) {
+      const url = new URL(req.url);
+      let pathname: string;
+      try {
+        pathname = decodeURIComponent(url.pathname);
+      } catch {
+        return new Response("Bad request", { status: 400 });
+      }
+      if (pathname === "/") pathname = "/index.html";
+      const filePath = resolve(clientDir, pathname.startsWith("/") ? pathname.slice(1) : pathname);
+      if (!filePath.startsWith(resolve(clientDir) + sep)) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      const file = Bun.file(filePath);
+      if (await file.exists()) return new Response(file);
+      const index = Bun.file(join(clientDir, "index.html"));
+      return new Response(index);
+    },
+  });
 }
 
 function printVersion(): void {
@@ -315,6 +372,20 @@ async function main(): Promise<void> {
   if (command === "--version" || command === "-v") {
     printVersion();
     return;
+  }
+
+  // Production builds must resolve React (and any other NODE_ENV-conditional
+  // packages) to their production builds. Bun keys that off NODE_ENV at
+  // process spawn -- mutating process.env afterward has no effect on
+  // Bun.build -- so re-exec the build under NODE_ENV=production once.
+  if (command === "build" && process.env.NODE_ENV !== "production") {
+    const script = process.argv[1] ?? import.meta.path;
+    const res = spawnSync(process.execPath, [script, ...process.argv.slice(2)], {
+      stdio: "inherit",
+      cwd: process.cwd(),
+      env: { ...process.env, NODE_ENV: "production" },
+    });
+    process.exit(res.status ?? 1);
   }
 
   switch (command) {

@@ -23,7 +23,7 @@ export async function transpileModules(refs: CompiledModuleRef[]): Promise<void>
       target: "node",
       format: "esm",
       splitting: false,
-      external: ["react", "react-dom", "react-dom/*", "@thexjs/core"],
+      external: ["react", "react/*", "react-dom", "react-dom/*", "@thexjs/core", "@thexjs/core/*"],
     });
 
     if (!result.success || result.outputs.length === 0) {

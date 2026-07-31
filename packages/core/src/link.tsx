@@ -2,7 +2,7 @@ import type { AnchorHTMLAttributes, ReactNode } from "react";
 
 export interface LinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> {
   href: string;
-  children: ReactNode;
+  children?: ReactNode;
   /** Use client-side navigation instead of a full page load (default: true). */
   clientNav?: boolean;
   /** Prefetch the destination on hover/focus (default: true). Requires client nav. */

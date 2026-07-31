@@ -119,6 +119,28 @@ export default function UserPage({ loaderData }: RouteProps<typeof loader>) {
         <span className="text-foreground">"load"</span>.
       </p>
 
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Client navigation &amp; images</h2>
+      <p className="mt-3 text-muted-foreground">
+        Plain <span className="text-foreground">&lt;a&gt;</span> tags already get SPA-style
+        navigation and hover prefetch on every page — no router setup needed.{" "}
+        <span className="text-foreground">&lt;Link&gt;</span> is a typed convenience wrapper over
+        the same behavior, and <span className="text-foreground">createImageProxyHandler</span>{" "}
+        streams allow-listed remote images through your own origin so a strict{" "}
+        <span className="text-foreground">img-src 'self'</span> CSP still works. Full details on{" "}
+        <a href="/docs/client-navigation" className="text-primary underline underline-offset-2">
+          the Client Navigation &amp; Images page
+        </a>
+        .
+      </p>
+      <CodeBlock
+        label="link + image proxy"
+        code={`import { Link, createImageProxyHandler } from "@thexjs/core";
+
+<Link href="/docs" prefetch>Docs</Link>
+
+const imageProxy = createImageProxyHandler({ remoteHosts: ["cdn.example.com"] });`}
+      />
+
       <h2 className="mt-12 text-xl font-bold tracking-tight">Content collections</h2>
       <CodeBlock
         label="markdown"
@@ -131,14 +153,14 @@ const html = renderMarkdown(posts[0].body);`}
       <h2 className="mt-12 text-xl font-bold tracking-tight">Data layer</h2>
       <CodeBlock
         label="sqlite"
-        code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core";
+        code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
 
 const db = connectSQLite({ filename: "./data/dev.db" });
 await runSQLiteMigrations(db, "./data/migrations");`}
       />
       <CodeBlock
         label="postgres"
-        code={`import { connectPostgres, runPostgresMigrations } from "@thexjs/core";
+        code={`import { connectPostgres, runPostgresMigrations } from "@thexjs/core/data";
 
 const sql = connectPostgres({ url: process.env.DATABASE_URL! });
 await runPostgresMigrations(sql, "./data/migrations");`}
@@ -151,6 +173,9 @@ await runPostgresMigrations(sql, "./data/migrations");`}
 renderPage, renderStaticPage            Lower-level rendering
 scanRoutes, scanPages, scanApiDir       Routing internals
 Island, IslandProvider                  Selective hydration
+Link, CLIENT_NAV_SCRIPT                 Client-side navigation
+DefaultNotFound, renderErrorOverlay     404 page & dev error overlay
+createImageProxyHandler                 Remote image proxy (/_x/image)
 scanContent, renderMarkdown             Markdown content
 composeMiddleware, MiddlewareFn         Route middleware
 registerServerFunctions                 Server function internals

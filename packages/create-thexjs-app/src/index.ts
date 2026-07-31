@@ -55,7 +55,8 @@ function printBanner(): void {
 
 function printTemplateList(): void {
   for (const name of TEMPLATE_NAMES) {
-    const meta = TEMPLATES[name]!;
+    const meta = TEMPLATES[name];
+    if (!meta) continue;
     const tag = meta.recommended ? dimText(" (recommended)") : "";
     console.log(`    ${name.padEnd(8)} ${meta.description}${tag}`);
   }
@@ -91,7 +92,7 @@ async function main(): Promise<void> {
     console.error(`\n[create-thexjs-app] Unknown template "${templateArg}".`);
     process.exit(1);
   }
-  const meta = TEMPLATES[templateArg]!;
+  const meta = TEMPLATES[templateArg] as (typeof TEMPLATES)[string];
   const templateDir = join(TEMPLATES_ROOT, templateArg);
 
   step(`Scaffolding "${slug}" from the "${templateArg}" template...`);
