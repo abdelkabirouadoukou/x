@@ -1,8 +1,8 @@
 import { ArrowRight, BookOpen, FileJson, Globe, Layers, Shield, Sparkles, Zap } from "lucide-react";
 import { TerminalBlock } from "../components/code-block";
 import RouteResolver from "../components/route-resolver";
-import RouteRush from "../components/route-rush";
 import ShipIt from "../components/ship-it";
+import { StardanceBadge } from "../components/stardance-badge";
 
 const features = [
   {
@@ -78,11 +78,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="mt-8 inline-flex items-center gap-2 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
             >
-              <img
-                src="/_x/image?url=https%3A%2F%2Fstardance.hackclub.com%2Fassets%2Flanding%2Fheader%2Fstardance-logo-df399a7f.png"
-                alt="Stardance"
-                className="h-3.5 w-auto opacity-80"
-              />
+              <StardanceBadge variant="inline" />
               Built solo, age 18, for Hack Club Stardance
             </a>
           </div>
@@ -179,18 +175,23 @@ $ cd my-app && bun run dev
       </section>
 
       <section className="mx-auto mt-28 max-w-6xl px-6">
-        <div className="mx-auto max-w-2xl text-center">
+        <a
+          href="/play"
+          className="ticket-card group relative block overflow-hidden rounded-3xl border border-border bg-card px-8 py-10 text-center transition-colors hover:border-primary/40 sm:px-16 sm:py-14"
+        >
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
-            Know the file tree?
+            Learn by playing
           </p>
-          <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">Route Rush</h2>
-          <p className="mt-4 text-muted-foreground">
-            Six routes. Pick the file that serves each one before you second-guess yourself.
+          <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">The x Arcade</h2>
+          <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
+            Three tiny games that only make sense once you know how the framework thinks: route
+            matching, the client/server boundary, and static vs. server rendering.
           </p>
-        </div>
-        <div className="mx-auto mt-10 max-w-xl">
-          <RouteRush />
-        </div>
+          <span className="mt-8 inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-all group-hover:bg-primary/90">
+            Open the arcade
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </a>
       </section>
 
       <section className="mx-auto mt-28 max-w-4xl px-6">

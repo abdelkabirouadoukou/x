@@ -28,6 +28,7 @@ const sidebarSections = [
       { href: "/docs/layouts", label: "Layouts" },
       { href: "/docs/api-routes", label: "API Routes" },
       { href: "/docs/server-functions", label: "Server Functions" },
+      { href: "/docs/client-navigation", label: "Client Navigation & Images" },
       { href: "/docs/content-collections", label: "Content Collections" },
       { href: "/docs/middleware", label: "Middleware" },
       { href: "/docs/data-layer", label: "Data Layer" },

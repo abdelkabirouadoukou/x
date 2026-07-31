@@ -210,15 +210,21 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
    */
   async function resolveIslandScripts(
     routeFilePath: string,
+    layoutFilePaths: string[],
     entries: IslandEntry[],
   ): Promise<string[]> {
     if (entries.length === 0) return [];
     const uniqueNames = [...new Set(entries.map((e) => e.name))].sort();
-    const cacheKey = `${routeFilePath}::${uniqueNames.join(",")}`;
+    const cacheKey = `${routeFilePath}::${layoutFilePaths.join("|")}::${uniqueNames.join(",")}`;
     const cached = islandBundleCache.get(cacheKey);
     if (cached) return cached;
 
-    const code = await buildIslandBundleInMemory(routeFilePath, uniqueNames, actionModules);
+    const code = await buildIslandBundleInMemory(
+      routeFilePath,
+      layoutFilePaths,
+      uniqueNames,
+      actionModules,
+    );
     const entryId = islandEntryId(routeFilePath);
     const url = `/_islands/${entryId}/${entryId}.js`;
     islandFileCache.set(url, code);
@@ -452,6 +458,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           layoutChain.unshift(rootLayout);
         }
       }
+      const layoutFilePaths = layoutChain.map((l) => l.filePath);
       const layoutModules: ComponentType<{ children: ReactNode }>[] = [];
       for (const l of layoutChain) {
         const layoutMod = (await importDev(l.filePath, dev)) as {
@@ -504,7 +511,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
                 // Cheap discovery render: walks the tree so any <Island> in
                 // it registers itself, without committing to a response yet.
                 renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-                const islandScripts = await resolveIslandScripts(route.filePath, registry.entries);
+                const islandScripts = await resolveIslandScripts(
+                  route.filePath,
+                  layoutFilePaths,
+                  registry.entries,
+                );
 
                 const stream = await renderStreamingPage(content, {
                   stylesheet: stylesheetHref,
@@ -536,7 +547,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
                 wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
               );
               renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-              const islandScripts = await resolveIslandScripts(route.filePath, registry.entries);
+              const islandScripts = await resolveIslandScripts(
+                route.filePath,
+                layoutFilePaths,
+                registry.entries,
+              );
               const html = renderPage(content, {
                 stylesheet: stylesheetHref,
                 liveReload: dev,

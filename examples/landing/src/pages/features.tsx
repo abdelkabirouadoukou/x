@@ -4,8 +4,11 @@ import {
   Box,
   Code2,
   FileJson,
+  Gamepad2,
   Globe,
+  ImageIcon,
   Layers,
+  MousePointerClick,
   RefreshCw,
   Server,
   Shield,
@@ -75,9 +78,24 @@ const allFeatures = [
     desc: "Interactive client components hydrate in place. The rest of the page is static HTML. Minimal JavaScript, maximum performance.",
   },
   {
+    icon: MousePointerClick,
+    title: "Client-side navigation, by default",
+    desc: "Every <a> tag already gets SPA-style transitions and hover prefetch — no router setup. Opt out per-link with data-no-nav, or use the typed <Link> component.",
+  },
+  {
+    icon: ImageIcon,
+    title: "Remote image proxy",
+    desc: "Stream allow-listed remote images through your own origin at /_x/image. Keeps img-src 'self' in your CSP even with external image sources — no client-side cross-origin requests.",
+  },
+  {
     icon: RefreshCw,
     title: "Database integration",
     desc: "Built-in SQLite and PostgreSQL support with migrations. Query databases directly from loaders and server functions with prepared statements.",
+  },
+  {
+    icon: Gamepad2,
+    title: "Learn by playing",
+    desc: "The x Arcade turns routing, env isolation, and rendering modes into three tiny games — a different way in than reading docs top to bottom.",
   },
   {
     icon: ArrowRight,
@@ -139,6 +157,12 @@ export default function FeaturesPage() {
               className="inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-background px-6 text-sm font-medium text-foreground transition-all hover:bg-muted"
             >
               Read the docs
+            </a>
+            <a
+              href="/play"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-background px-6 text-sm font-medium text-foreground transition-all hover:bg-muted"
+            >
+              <Gamepad2 className="h-4 w-4" /> Try the arcade
             </a>
           </div>
         </div>

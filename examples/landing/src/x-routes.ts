@@ -17,11 +17,13 @@ export type RouteMap = {
   "/docs/packages/env": Record<string, never>;
   "/docs/packages/adapter-vercel": Record<string, never>;
   "/docs/packages/core": Record<string, never>;
+  "/docs/client-navigation": Record<string, never>;
   "/docs/pages": Record<string, never>;
   "/docs/introduction": Record<string, never>;
   "/docs/security": Record<string, never>;
   "/docs/getting-started": Record<string, never>;
   "/docs/middleware": Record<string, never>;
+  "/play": Record<string, never>;
 };
 
 export function href<T extends keyof RouteMap & string>(

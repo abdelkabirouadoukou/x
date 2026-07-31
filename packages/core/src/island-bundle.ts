@@ -44,15 +44,32 @@ export function actionsRewritePlugin(
   };
 }
 
-export function generateHydrateEntry(routeRelPath: string): string {
+export function generateHydrateEntry(
+  routeRelPath: string,
+  layoutRelPaths: string[] = [],
+): string {
+  const layoutImports = layoutRelPaths
+    .map((p, i) => `import * as Layout${i} from "${p}";`)
+    .join("\n");
+  const lookupParts = ["Route.islands?.[name]"];
+  for (let i = 0; i < layoutRelPaths.length; i++) {
+    lookupParts.push(`Layout${i}.islands?.[name]`);
+  }
+  const lookup = lookupParts.join(" ?? ");
+
   return `import React from "react";
 import { hydrateRoot } from "react-dom/client";
 import * as Route from "${routeRelPath}";
+${layoutImports}
+
+function resolveIsland(name: string) {
+  return ${lookup};
+}
 
 document.querySelectorAll("[data-island]").forEach((el) => {
   const name = el.getAttribute("data-island");
   if (!name) return;
-  const Component = Route.islands?.[name];
+  const Component = resolveIsland(name);
   if (!Component) return;
   hydrateRoot(el, React.createElement(Component));
 });
@@ -89,6 +106,7 @@ export function islandEntryId(routeFilePath: string): string {
  */
 export async function buildIslandBundleInMemory(
   routeFilePath: string,
+  layoutFilePaths: string[],
   islandNames: string[],
   actionModules: Map<string, ActionModuleInfo>,
 ): Promise<string> {
@@ -97,8 +115,11 @@ export async function buildIslandBundleInMemory(
 
   try {
     const routeRel = join(relative(scratchDir, join(routeFilePath, "..")), basename(routeFilePath));
+    const layoutRels = layoutFilePaths.map((layoutPath) =>
+      join(relative(scratchDir, join(layoutPath, "..")), basename(layoutPath)),
+    );
     const entryPath = join(scratchDir, `${entryId}.tsx`);
-    writeFileSync(entryPath, generateHydrateEntry(routeRel), "utf-8");
+    writeFileSync(entryPath, generateHydrateEntry(routeRel, layoutRels), "utf-8");
 
     const result = await Bun.build({
       entrypoints: [entryPath],

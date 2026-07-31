@@ -52,7 +52,7 @@ bun run dev
 
 Pick the `default` template when prompted (just a blank home page), then the dev server runs at `http://localhost:3000`.
 
-Other templates: `basic` (pages + API + auth + dashboard), `blog` (markdown content collections), `saas` (dashboard + data layer), `landing` (the docs site itself).
+Other templates: `basic` (pages + API + auth + dashboard), `blog` (markdown content collections), `saas` (dashboard + data layer), `landing` (the docs site itself, including a `/play` arcade of tiny games — route matching, env-leak protection, static-vs-server calls — for anyone who'd rather poke at the framework than read about it).
 
 ## What's inside
 
@@ -195,6 +195,18 @@ Markdown + frontmatter in, pages out:
 ```ts
 const posts = await scanContent("posts");
 const html = await renderMarkdown(post.body);
+```
+
+## Client navigation & images
+
+Every `<a>` tag gets SPA-style client-side navigation and hover prefetch automatically — no router setup, opt out per-link with `data-no-nav` / `data-no-prefetch`, or use the typed `<Link>` wrapper. A built-in `/_x/image` proxy streams allow-listed remote images through your own origin so a strict `img-src 'self'` CSP still works with external images:
+
+```tsx
+import { Link, createImageProxyHandler } from "@thexjs/core";
+
+<Link href="/docs">Docs</Link>
+
+const imageProxy = createImageProxyHandler({ remoteHosts: ["cdn.example.com"] });
 ```
 
 ## Middleware

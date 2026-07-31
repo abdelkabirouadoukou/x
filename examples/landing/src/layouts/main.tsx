@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
+import { CommandPalette, CommandPaletteTrigger } from "../components/command-palette";
+import { EasterEgg } from "../components/easter-egg";
 import { Logo } from "../components/logo";
+import { StardanceBadge } from "../components/stardance-badge";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -18,12 +21,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               x
             </span>
           </a>
-          <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
+          <nav className="flex items-center gap-4 text-sm font-medium text-muted-foreground sm:gap-6">
             <a href="/docs" className="transition-colors hover:text-foreground">
               Docs
             </a>
             <a href="/features" className="transition-colors hover:text-foreground">
               Features
+            </a>
+            <a href="/play" className="transition-colors hover:text-foreground">
+              Play
             </a>
             <a
               href="https://github.com/abdelkabirouadoukou/x"
@@ -33,9 +39,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             >
               GitHub
             </a>
+            <CommandPaletteTrigger />
             <a
               href="/docs/installation"
-              className="inline-flex h-8 items-center rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="stamp-press inline-flex h-8 items-center rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Install
             </a>
@@ -70,16 +77,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-3 text-xs font-medium transition-colors hover:border-primary/40 hover:text-primary"
             >
-              <img
-                src="/_x/image?url=https%3A%2F%2Fstardance.hackclub.com%2Fassets%2Flanding%2Fheader%2Fstardance-logo-df399a7f.png"
-                alt="Stardance"
-                className="h-4 w-auto"
-              />
+              <StardanceBadge variant="chip" />
               Built solo for Hack Club Stardance
             </a>
           </div>
         </div>
       </footer>
+
+      <CommandPalette />
+      <EasterEgg />
     </div>
   );
 }
