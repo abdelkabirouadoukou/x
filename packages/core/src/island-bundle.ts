@@ -62,12 +62,19 @@ function resolveIsland(name: string) {
   return ${lookup};
 }
 
+// Islands whose render is non-deterministic (e.g. \`useState(() => ...)\` with
+// Math.random) can't be hydrated against their SSR output. React recovers by
+// re-rendering client-side, so the island is still fully interactive -- the
+// mismatch is benign, so swallow the recovery so it doesn't spam the console
+// or cascade into React's event system.
+function onRecoverableError() {}
+
 document.querySelectorAll("[data-island]").forEach((el) => {
   const name = el.getAttribute("data-island");
   if (!name) return;
   const Component = resolveIsland(name);
   if (!Component) return;
-  hydrateRoot(el, React.createElement(Component));
+  hydrateRoot(el, React.createElement(Component), { onRecoverableError });
 });
 `;
 }

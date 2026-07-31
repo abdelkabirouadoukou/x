@@ -342,7 +342,10 @@ function renderPageWithLayout(
   layoutModules: ComponentType<{ children: ReactNode }>[],
 ): ReactNode {
   let content: ReactNode = createElement(Component, { params });
-  for (const Layout of layoutModules) {
+  // layoutModules is ordered outermost-first (root layout first). Wrapping
+  // sequentially would leave the last layout outermost (inverted nesting),
+  // so wrap in reverse -- matching createApp's wrapWithLayouts.
+  for (const Layout of [...layoutModules].reverse()) {
     content = createElement(Layout, null, content);
   }
   return content;
