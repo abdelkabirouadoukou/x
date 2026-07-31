@@ -8,6 +8,7 @@ import {
   generateFallbackHydration,
   generateHydrateEntry,
   islandEntryId,
+  wrapIslandBundle,
 } from "./island-bundle";
 import { renderStaticPage } from "./render";
 import {
@@ -322,7 +323,7 @@ async function bundleRouteIslands(
       if (!built) throw new Error("bun build produced no output");
       const code = await built.text();
       assertNoEnvLeakage(code, bundlePath);
-      writeFileSync(bundlePath, code, "utf-8");
+      writeFileSync(bundlePath, wrapIslandBundle(code), "utf-8");
       return [`/_islands/${entryId}/${entryId}.js`];
     }
     for (const log of result.logs) {
@@ -332,7 +333,7 @@ async function bundleRouteIslands(
     console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
   }
 
-  writeFileSync(bundlePath, generateFallbackHydration(islandNames), "utf-8");
+  writeFileSync(bundlePath, wrapIslandBundle(generateFallbackHydration(islandNames)), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
 }
 

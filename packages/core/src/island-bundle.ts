@@ -100,6 +100,18 @@ export function islandEntryId(routeFilePath: string): string {
 }
 
 /**
+ * Wraps a self-contained island bundle in an IIFE so its top-level function
+ * declarations don't leak onto `window` when the bundle runs as a classic
+ * script. Without this, a minified React-DOM bundle's top-level
+ * `function dispatchEvent` silently replaces `window.dispatchEvent`, which
+ * breaks app code that dispatches synthetic events on `window` (e.g. a
+ * command palette trigger that re-dispatches the ⌘K keydown).
+ */
+export function wrapIslandBundle(code: string): string {
+  return `;(function () {\n${code}\n})();\n`;
+}
+
+/**
  * Bundles a route's island hydration entry into browser JS entirely in
  * memory. Bun.build() requires a real entrypoint file, so a scratch entry
  * file is written to a temp directory and removed immediately after —
@@ -133,19 +145,19 @@ export async function buildIslandBundleInMemory(
       for (const log of result.logs) {
         console.warn(`  [islands] build error: ${log.message}`);
       }
-      return generateFallbackHydration(islandNames);
+      return wrapIslandBundle(generateFallbackHydration(islandNames));
     }
 
     const outputs = result.outputs.filter((o) => o.kind === "entry-point");
     const built = outputs[0] ?? result.outputs[0];
-    if (!built) return generateFallbackHydration(islandNames);
+    if (!built) return wrapIslandBundle(generateFallbackHydration(islandNames));
 
     const code = await built.text();
     assertNoEnvLeakage(code, entryPath);
-    return code;
+    return wrapIslandBundle(code);
   } catch (err) {
     console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
-    return generateFallbackHydration(islandNames);
+    return wrapIslandBundle(generateFallbackHydration(islandNames));
   } finally {
     rmSync(scratchDir, { recursive: true, force: true });
   }

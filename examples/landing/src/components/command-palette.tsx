@@ -208,9 +208,18 @@ export function CommandPaletteTrigger({ className = "" }: { className?: string }
   return (
     <button
       type="button"
-      onClick={() =>
-        window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
-      }
+      onClick={() => {
+        // Opening the palette is implemented as a synthetic `keydown` on
+        // `window` (the CommandPalette island listens for real ⌘K there), which
+        // updates a *different* React root. Dispatching it synchronously while
+        // React is still dispatching this click leaves React's event system in
+        // a re-entrant state and can crash it (getEventTarget with an undefined
+        // nativeEvent). Defer to the next task so this click dispatch finishes
+        // first.
+        setTimeout(() => {
+          window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+        }, 0);
+      }}
       className={`inline-flex h-8 items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground ${className}`}
     >
       <Search className="h-3.5 w-3.5" />

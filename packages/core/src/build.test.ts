@@ -151,6 +151,26 @@ describe("island code-splitting", () => {
     }
   });
 
+  test("island bundle is wrapped in an IIFE so it can't leak globals onto window", async () => {
+    await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
+
+    const islandsDir = join(OUT_DIR, "client/_islands");
+    const entries = readdirSync(islandsDir);
+
+    expect(entries.length).toBeGreaterThan(0);
+
+    for (const entry of entries) {
+      const entryDir = join(islandsDir, entry);
+      const files = readdirSync(entryDir);
+      for (const file of files) {
+        if (!file.endsWith(".js")) continue;
+        const js = readFileSync(join(entryDir, file), "utf-8");
+        expect(js.trimStart().startsWith(";(function () {")).toBe(true);
+        expect(js.trimEnd().endsWith("})();")).toBe(true);
+      }
+    }
+  });
+
   test("island bundle contains hydration logic", async () => {
     await build({ routesDir: ROUTES_DIR, outDir: OUT_DIR });
 
