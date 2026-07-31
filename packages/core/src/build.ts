@@ -260,7 +260,7 @@ export async function build(options: BuildOptions): Promise<void> {
     console.log(`  [content] ${content.routePath} -> ${outPath}`);
   }
 
-  if (serverPages.length > 0 || apiRoutes.length > 0) {
+  if (pagesDir || options.routesDir || options.contentDir) {
     const srvOpts: Record<string, string | undefined> = {
       pagesDir: pagesDir || options.routesDir || "",
     };

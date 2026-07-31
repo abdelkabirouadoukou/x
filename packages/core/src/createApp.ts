@@ -189,6 +189,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   const dev = options.development ?? false;
   const primaryDir: string = options.pagesDir || options.routesDir || "src/pages";
   const projectRoot = projectRootFromRoutesDir(primaryDir);
+  const resolvedActionsDir =
+    options.actionsDir ??
+    (existsSync(join(projectRoot, "src", "actions")) ? join(projectRoot, "src", "actions") : undefined);
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
   let publicDir: string | null = null;
@@ -309,8 +312,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const middlewareEntries = scanMiddleware(pagesDir);
 
     // Scan action files from a separate actionsDir if provided
-    if (options.actionsDir) {
-      const actionFiles = scanRoutes(options.actionsDir);
+    if (resolvedActionsDir) {
+      const actionFiles = scanRoutes(resolvedActionsDir);
       for (const actionFile of actionFiles) {
         const mod = (await importDev(actionFile.filePath, dev)) as Record<string, unknown>;
 
@@ -678,7 +681,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const srcDir = join(primaryDir, "..", "..", "src");
       const watchDirs = [
         ...new Set(
-          [primaryDir, options.apiDir, options.layoutsDir, options.actionsDir, srcDir].filter(
+          [primaryDir, options.apiDir, options.layoutsDir, resolvedActionsDir, srcDir].filter(
             Boolean,
           ),
         ),

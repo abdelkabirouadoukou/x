@@ -104,12 +104,18 @@ function detectOptionsFromConfig(cfg: Record<string, unknown>): DetectedOptions 
       : existsSync(join(projectDir, "content"))
         ? join(projectDir, "content")
         : undefined;
+  const actionsDir =
+    typeof cfg.actionsDir === "string"
+      ? resolveDir(cfg.actionsDir)
+      : existsSync(join(projectDir, "src", "actions"))
+        ? join(projectDir, "src", "actions")
+        : undefined;
   return dropUndefined({
     routesDir: resolveDir(cfg.routesDir) || undefined,
     pagesDir: defaultPagesDir,
     apiDir: resolveDir(cfg.apiDir) || undefined,
     layoutsDir: resolveDir(cfg.layoutsDir) || undefined,
-    actionsDir: resolveDir(cfg.actionsDir) || undefined,
+    actionsDir,
     contentDir,
     port: (cfg.port as number) ?? 3000,
     security: (cfg.security as Record<string, unknown>) ?? undefined,
@@ -125,8 +131,12 @@ function detectDefaultOptions(): DetectedOptions {
   const contentDir = existsSync(join(projectDir, "content"))
     ? join(projectDir, "content")
     : undefined;
+  const actionsDir = existsSync(join(projectDir, "src", "actions"))
+    ? join(projectDir, "src", "actions")
+    : undefined;
   return dropUndefined({
     pagesDir,
+    actionsDir,
     contentDir,
     port: 3000,
   }) as unknown as DetectedOptions;
