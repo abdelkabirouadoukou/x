@@ -148,7 +148,8 @@ async function detectOptions(): Promise<{ options: DetectedOptions; configPath: 
 
 async function cmdDev(): Promise<void> {
   const { options: opts } = await detectOptions();
-  const { createApp } = await import("@thexjs/core");
+  const corePath = Bun.resolveSync("@thexjs/core", projectDir);
+  const { createApp } = await import(corePath);
   const { port: _port, ...dirs } = opts;
 
   // Auto-compile Tailwind if a source entry exists
@@ -247,7 +248,8 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
     process.exit(1);
   }
 
-  const { build } = await import("@thexjs/core");
+  const corePath = Bun.resolveSync("@thexjs/core", projectDir);
+  const { build } = await import(corePath);
   const outDir = join(projectDir, ".x");
   await build({
     ...rest,

@@ -22,7 +22,7 @@ export default function DocPage(_props: RouteProps) {
       </p>
       <CodeBlock
         label="src/lib/db.ts"
-        code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core";
+        code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
 
 const db = connectSQLite("data/app.db");
 
@@ -98,7 +98,7 @@ export default function Users({ loaderData }: RouteProps<typeof loader>) {
       </p>
       <CodeBlock
         label="src/lib/db.ts"
-        code={`import { connectPostgres, runPostgresMigrations } from "@thexjs/core";
+        code={`import { connectPostgres, runPostgresMigrations } from "@thexjs/core/data";
 
 const db = connectPostgres({
   connectionString: process.env.DATABASE_URL,

@@ -1,8 +1,11 @@
+import { Island } from "@thexjs/core";
 import type { ReactNode } from "react";
 import { CommandPalette, CommandPaletteTrigger } from "../components/command-palette";
 import { EasterEgg } from "../components/easter-egg";
 import { Logo } from "../components/logo";
 import { StardanceBadge } from "../components/stardance-badge";
+
+export const islands = { CommandPalette, CommandPaletteTrigger, EasterEgg };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -39,7 +42,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             >
               GitHub
             </a>
-            <CommandPaletteTrigger />
+            <Island name="CommandPaletteTrigger" client="idle">
+              <CommandPaletteTrigger />
+            </Island>
             <a
               href="/docs/installation"
               className="stamp-press inline-flex h-8 items-center rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
@@ -84,8 +89,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </div>
       </footer>
 
-      <CommandPalette />
-      <EasterEgg />
+      <Island name="CommandPalette" client="idle">
+        <CommandPalette />
+      </Island>
+      <Island name="EasterEgg" client="idle">
+        <EasterEgg />
+      </Island>
     </div>
   );
 }

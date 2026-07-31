@@ -1,8 +1,11 @@
+import { Island } from "@thexjs/core";
 import { ArrowRight, BookOpen, FileJson, Globe, Layers, Shield, Sparkles, Zap } from "lucide-react";
 import { TerminalBlock } from "../components/code-block";
 import RouteResolver from "../components/route-resolver";
 import ShipIt from "../components/ship-it";
 import { StardanceBadge } from "../components/stardance-badge";
+
+export const islands = { RouteResolver, ShipIt };
 
 const features = [
   {
@@ -88,7 +91,9 @@ export default function HomePage() {
               Try it — type a file path
             </p>
             <div className="mt-3">
-              <RouteResolver />
+              <Island name="RouteResolver" client="visible">
+                <RouteResolver />
+              </Island>
             </div>
           </div>
         </div>
@@ -157,7 +162,9 @@ $ cd my-app && bun run dev
       <section className="mx-auto mt-28 max-w-6xl px-6">
         <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
           <div className="order-2 lg:order-1">
-            <ShipIt />
+            <Island name="ShipIt" client="visible">
+              <ShipIt />
+            </Island>
           </div>
           <div className="order-1 lg:order-2">
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">

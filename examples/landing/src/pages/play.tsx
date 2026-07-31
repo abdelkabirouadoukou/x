@@ -1,9 +1,11 @@
+import { Island } from "@thexjs/core";
 import { BookOpen, FileJson, ShieldCheck, Split } from "lucide-react";
 import LeakCheck from "../components/leak-check";
 import ModeCall from "../components/mode-call";
 import RouteRush from "../components/route-rush";
 
 export const mode = "static";
+export const islands = { RouteRush, LeakCheck, ModeCall };
 
 const games = [
   {
@@ -11,21 +13,33 @@ const games = [
     title: "Route Rush",
     tagline: "File-based routing, under time pressure",
     body: "Six routes, six file trees. Pick the file that would actually serve each one.",
-    node: <RouteRush />,
+    node: (
+      <Island name="RouteRush" client="visible">
+        <RouteRush />
+      </Island>
+    ),
   },
   {
     icon: ShieldCheck,
     title: "Leak Check",
     tagline: "The env-isolation feature, as a reflex game",
     body: "Only THEXJS_PUBLIC_-prefixed vars are safe for the browser. Everything else needs to stay server-side — same rule the build-time leak scanner enforces for real.",
-    node: <LeakCheck />,
+    node: (
+      <Island name="LeakCheck" client="visible">
+        <LeakCheck />
+      </Island>
+    ),
   },
   {
     icon: Split,
     title: "Mode Call",
     tagline: "static vs. server, scenario by scenario",
     body: "Read the page description, call the rendering mode. The reasoning is more useful than the score.",
-    node: <ModeCall />,
+    node: (
+      <Island name="ModeCall" client="visible">
+        <ModeCall />
+      </Island>
+    ),
   },
 ];
 

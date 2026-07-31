@@ -47,7 +47,11 @@ function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    const ai = a[i];
+    const aj = a[j];
+    if (ai === undefined || aj === undefined) continue;
+    a[i] = aj;
+    a[j] = ai;
   }
   return a;
 }
@@ -61,7 +65,7 @@ export default function ModeCall() {
   const current = run[round];
 
   function pick(choice: "static" | "server") {
-    if (picked) return;
+    if (picked || !current) return;
     setPicked(choice);
     if (choice === current.answer) setScore((s) => s + 1);
   }
@@ -101,7 +105,7 @@ export default function ModeCall() {
       </div>
 
       <div className="p-5">
-        {!done ? (
+        {!done && current ? (
           <>
             <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
               static or server?

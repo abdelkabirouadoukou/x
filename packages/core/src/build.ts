@@ -48,6 +48,7 @@ interface LoadedPage {
   filePath: string;
   Component: ComponentType<{ params: Record<string, string> }>;
   layoutModules: ComponentType<{ children: ReactNode }>[];
+  layoutFilePaths: string[];
 }
 
 export async function build(options: BuildOptions): Promise<void> {
@@ -169,7 +170,14 @@ export async function build(options: BuildOptions): Promise<void> {
       if (layoutMod.default) layoutModules.push(layoutMod.default);
     }
 
-    const page: LoadedPage = { entry, filePath: entry.filePath, mode, Component, layoutModules };
+    const page: LoadedPage = {
+      entry,
+      filePath: entry.filePath,
+      mode,
+      Component,
+      layoutModules,
+      layoutFilePaths: layoutChain.map((l) => l.filePath),
+    };
 
     if (mode === "static") {
       staticPages.push(page);
@@ -209,7 +217,13 @@ export async function build(options: BuildOptions): Promise<void> {
     let islandScripts: string[] = [];
     if (registry.entries.length > 0) {
       const uniqueNames = [...new Set(registry.entries.map((e) => e.name))];
-      islandScripts = await bundleRouteIslands(page.filePath, uniqueNames, islandsDir, actionModules);
+      islandScripts = await bundleRouteIslands(
+        page.filePath,
+        page.layoutFilePaths,
+        uniqueNames,
+        islandsDir,
+        actionModules,
+      );
       console.log(
         `  [islands] ${uniqueNames.length} island(s) on ${page.entry.routePath} -> ${islandScripts.join(", ")}`,
       );
@@ -281,6 +295,7 @@ export async function build(options: BuildOptions): Promise<void> {
 
 async function bundleRouteIslands(
   routeFilePath: string,
+  layoutFilePaths: string[],
   islandNames: string[],
   islandsDir: string,
   actionModules: Map<string, { parentPath: string; fnNames: string[] }>,
@@ -291,7 +306,10 @@ async function bundleRouteIslands(
   const bundlePath = join(outdir, `${entryId}.js`);
 
   const routeRel = join(relative(outdir, join(routeFilePath, "..")), basename(routeFilePath));
-  const hydrateEntry = generateHydrateEntry(routeRel);
+  const layoutRels = layoutFilePaths.map((layoutPath) =>
+    join(relative(outdir, join(layoutPath, "..")), basename(layoutPath)),
+  );
+  const hydrateEntry = generateHydrateEntry(routeRel, layoutRels);
   const entryPath = join(outdir, `${entryId}.tsx`);
   writeFileSync(entryPath, hydrateEntry, "utf-8");
 

@@ -101,9 +101,3 @@ export {
   type HealthCheck,
   type ReadinessResult,
 } from "./observability/health";
-export {
-  connectSQLite,
-  connectPostgres,
-  runSQLiteMigrations,
-  runPostgresMigrations,
-} from "./data/index";

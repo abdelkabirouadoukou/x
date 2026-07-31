@@ -41,7 +41,7 @@ export default function LeakCheck() {
   const spawn = useCallback(() => {
     const isSafe = Math.random() < 0.55;
     const pool = isSafe ? SAFE : SECRET;
-    const name = pool[Math.floor(Math.random() * pool.length)];
+    const name = pool[Math.floor(Math.random() * pool.length)] ?? pool[0] ?? "UNKNOWN";
     idRef.current += 1;
     setItems((prev) => [
       ...prev,
