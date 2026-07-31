@@ -90,6 +90,7 @@ export async function resolveBuildManifest(
         routePath: entry.routePath,
         paramNames: entry.paramNames,
         isApi: true,
+        mode: "server",
         route: registry.ref(entry.filePath, "api"),
         layoutChain: [],
         middlewareChain: [],
@@ -103,6 +104,7 @@ export async function resolveBuildManifest(
     const mod = (await import(entry.filePath)) as {
       default?: unknown;
       mode?: "static" | "server";
+      revalidate?: number;
       actions?: unknown;
     };
     if (!mod.default && !mod.actions) continue;
@@ -119,6 +121,8 @@ export async function resolveBuildManifest(
       routePath: entry.routePath,
       paramNames: entry.paramNames,
       isApi: false,
+      mode: mod.mode ?? "server",
+      ...(mod.revalidate !== undefined ? { revalidate: mod.revalidate } : {}),
       route: registry.ref(entry.filePath, "page"),
       layoutChain: layoutChain.map((l) => registry.ref(l.filePath, "layout")),
       middlewareChain: mwChain.map((m) => registry.ref(m.filePath, "mw")),

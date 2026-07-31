@@ -57,6 +57,8 @@ export interface ResolvedRoute {
   routePath: string;
   paramNames: string[];
   isApi: boolean;
+  mode: "static" | "server";
+  revalidate?: number;
   route: CompiledModuleRef;
   layoutChain: CompiledModuleRef[];
   middlewareChain: CompiledModuleRef[];
