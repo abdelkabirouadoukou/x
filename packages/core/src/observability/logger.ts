@@ -50,17 +50,23 @@ export function withRequestLogging(
 
     try {
       const res = await handler(req);
-      write("info", "request completed", {
+      const isStream = res.headers.get("content-type")?.includes("text/event-stream");
+      console.log(
+        `[x][request] ${req.method} ${route} -> ${res.status}${isStream ? " (stream opened, not closed)" : ""}`,
+      );
+      write("info", isStream ? "stream opened" : "request completed", {
         requestId,
         route,
         method: req.method,
         status: res.status,
         durationMs: Math.round(performance.now() - start),
       });
+      // Mutate in place instead of `new Response(res.body, ...)` — for a
+      // streamed body (SSE) that reconstruction re-parents the live
+      // ReadableStream on every request for no reason and was compounding
+      // the chunked-encoding framing bug in the /__x/reload endpoint.
       if (!res.headers.has("x-request-id")) {
-        const headers = new Headers(res.headers);
-        headers.set("x-request-id", requestId);
-        return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+        res.headers.set("x-request-id", requestId);
       }
       return res;
     } catch (err) {

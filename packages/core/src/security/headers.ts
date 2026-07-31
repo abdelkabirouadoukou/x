@@ -55,12 +55,25 @@ export function applySecurityHeaders(
   options: SecurityHeadersOptions = {},
 ): Response {
   const extra = buildSecurityHeaders(options);
-  const headers = new Headers(res.headers);
-  // Headers.entries() exists at runtime in Bun but isn't in the DOM lib types.
+  // Mutate res.headers in place rather than `new Response(res.body, ...)`.
+  // Reconstructing the Response re-parents the underlying ReadableStream on
+  // every single request — harmless for a normal one-shot body, but for a
+  // long-lived stream (e.g. the /__x/reload SSE endpoint) it was needlessly
+  // re-wrapping the same live stream twice per request (here and again in
+  // withRequestLogging), which was contributing to broken chunked framing.
+  // A constructed Response's headers are mutable, so this is safe.
+  // Headers.entries()/.keys() exist at runtime in Bun but aren't in the DOM
+  // lib types tsup builds against, so cast the same way the loop below does
+  // instead of calling them directly (that mismatch is what broke the DTS build).
+  let appliedCount = 0;
   for (const [key, value] of (
     extra as unknown as { entries(): IterableIterator<[string, string]> }
   ).entries()) {
-    if (!headers.has(key)) headers.set(key, value);
+    if (!res.headers.has(key)) {
+      res.headers.set(key, value);
+      appliedCount++;
+    }
   }
-  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+  console.log(`[x][security] applied ${appliedCount} security header(s) to ${res.url || "response"}`);
+  return res;
 }

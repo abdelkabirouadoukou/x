@@ -13,6 +13,7 @@ import { type IslandEntry, IslandProvider, createIslandRegistry } from "./island
 import { type ActionModuleInfo, buildIslandBundleInMemory, islandEntryId } from "./island-bundle";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
+import { type ImageProxyOptions, createImageProxyHandler } from "./images/proxy";
 import {
   type LayoutEntry,
   type NotFoundEntry,
@@ -76,6 +77,8 @@ export interface CreateAppOptions {
     /** /healthz and /readyz endpoints, served ahead of all other routing. */
     health?: HealthCheckOptions;
   };
+  /** Remote-image proxy at /_x/image?url=... — see ImageProxyOptions. Unset/empty remoteHosts means the route 404s. */
+  images?: ImageProxyOptions;
 }
 
 export interface AppServeOptions {
@@ -245,6 +248,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       : createRateLimiter(options.security?.rateLimit ?? {});
   const securityHeadersOptions = options.security?.headers;
   const loggingEnabled = options.observability?.logging ?? true;
+  const imageProxyHandler = createImageProxyHandler(options.images);
 
   function withResponseHardening(res: Response): Response {
     return securityHeadersOptions === false
@@ -697,14 +701,40 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
             };
             sseClients.add(send);
-            req.signal.addEventListener("abort", () => sseClients.delete(send));
+            console.log(`[x][reload] client connected (${sseClients.size} total)`);
+
+            // Bun.serve's default idleTimeout is 10s — a connection that
+            // just sits open waiting for a future file-change event goes
+            // idle and gets killed by Bun mid-stream, which is what was
+            // producing ERR_INCOMPLETE_CHUNKED_ENCODING in the browser (see
+            // the "[Bun.serve]: request timed out after 10 seconds" log
+            // lines). A heartbeat well under that window keeps the
+            // connection active so it never hits the idle timeout.
+            const heartbeat = setInterval(() => {
+              try {
+                send("hb", "");
+              } catch (err) {
+                console.log(`[x][reload] heartbeat failed, clearing interval: ${String(err)}`);
+                clearInterval(heartbeat);
+              }
+            }, 5000);
+
+            req.signal.addEventListener("abort", () => {
+              clearInterval(heartbeat);
+              sseClients.delete(send);
+              console.log(`[x][reload] client disconnected (${sseClients.size} total)`);
+            });
           },
         });
+        // NOTE: no "Connection" header here on purpose — it's a hop-by-hop
+        // header that Bun's HTTP server manages itself based on real socket
+        // state. Setting it manually on a chunked/streamed response was
+        // producing malformed chunked framing (ERR_INCOMPLETE_CHUNKED_ENCODING
+        // in Chrome) because it fights with whatever Bun actually writes.
         return new Response(body, {
           headers: {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
-            Connection: "keep-alive",
           },
         });
       }
@@ -720,6 +750,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
       const islandBundle = serveIslandBundle(req);
       if (islandBundle !== null) return islandBundle;
+
+      const proxiedImage = await imageProxyHandler(req);
+      if (proxiedImage !== null) return proxiedImage;
 
       for (const h of handlers) {
         const params = extractParams(h.entry.routePath, h.entry.paramNames, url);
@@ -773,6 +806,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const islandBundle = serveIslandBundle(req);
     if (islandBundle !== null) return islandBundle;
+
+    const proxiedImage = await imageProxyHandler(req);
+    if (proxiedImage !== null) return proxiedImage;
 
     for (const h of handlers) {
       const params = extractParams(h.entry.routePath, h.entry.paramNames, url);

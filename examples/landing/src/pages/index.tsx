@@ -1,5 +1,8 @@
-import { ArrowRight, BookOpen, Code2, FileJson, Globe, Layers, Shield, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, FileJson, Globe, Layers, Shield, Sparkles, Zap } from "lucide-react";
 import { TerminalBlock } from "../components/code-block";
+import RouteResolver from "../components/route-resolver";
+import RouteRush from "../components/route-rush";
+import ShipIt from "../components/ship-it";
 
 const features = [
   {
@@ -28,7 +31,7 @@ const features = [
     desc: "End-to-end TypeScript. Loaders, params, server functions — all typed from the framework to your components.",
   },
   {
-    icon: Code2,
+    icon: Sparkles,
     title: "Island architecture",
     desc: "Interactive components hydrate in place. Minimal client JS — only what you mark as an island loads.",
   },
@@ -39,24 +42,13 @@ export const mode = "static";
 export default function HomePage() {
   return (
     <div className="pb-32">
-      <section className="relative overflow-hidden px-6 pt-16 pb-24 sm:pt-20">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-30"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, #1a2233 1px, transparent 1px), linear-gradient(to bottom, #1a2233 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-            maskImage: "radial-gradient(ellipse 80% 70% at 50% 0%, black 10%, transparent 100%)",
-          }}
-        />
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 animate-pulse-glow rounded-full bg-primary/10 blur-3xl" />
-
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
+      <section className="route-grid relative overflow-hidden px-6 pt-16 pb-20 sm:pt-20">
+        <div className="relative z-10 mx-auto grid max-w-6xl items-start gap-14 lg:grid-cols-[1fr_1fr] lg:gap-10">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">
               Bun-native fullstack
             </p>
-            <h1 className="mt-5 text-[clamp(2.4rem,6vw,4.25rem)] font-extrabold leading-[1.02]">
+            <h1 className="mt-5 text-[clamp(2.4rem,6vw,4.1rem)] font-bold uppercase leading-[1.04]">
               Files in.
               <br />
               <span className="text-primary">Routes out.</span>
@@ -68,25 +60,88 @@ export default function HomePage() {
             <div className="mt-9 flex flex-wrap gap-3">
               <a
                 href="/docs/installation"
-                className="group inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.98]"
+                className="group inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
               >
                 Install x
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </a>
               <a
                 href="/docs/introduction"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card/60 px-5 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-muted"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-5 text-sm font-medium transition-colors hover:bg-muted"
               >
                 <BookOpen className="h-4 w-4" /> Introduction
               </a>
             </div>
+            <a
+              href="https://stardance.hackclub.com/projects/41081"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex items-center gap-2 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              <img
+                src="/_x/image?url=https%3A%2F%2Fstardance.hackclub.com%2Fassets%2Flanding%2Fheader%2Fstardance-logo-df399a7f.png"
+                alt="Stardance"
+                className="h-3.5 w-auto opacity-80"
+              />
+              Built solo, age 18, for Hack Club Stardance
+            </a>
           </div>
 
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-secondary/5 blur-2xl" />
-            <TerminalBlock
-              label="~/my-app — zsh"
-              code={`$ bun create thexjs-app@latest my-app
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+              Try it — type a file path
+            </p>
+            <div className="mt-3">
+              <RouteResolver />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 pt-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">Why x</p>
+          <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">
+            Everything in one place
+          </h2>
+          <p className="mt-4 text-muted-foreground">
+            Most frameworks split the stack. x keeps routing, rendering, API, and build tooling in
+            one runtime.
+          </p>
+        </div>
+        <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((f) => (
+            <article
+              key={f.title}
+              className="group rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/30"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/60 text-primary transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
+                <f.icon className="h-4 w-4" />
+              </div>
+              <h3 className="mt-4 font-semibold">{f.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto mt-28 max-w-6xl px-6">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+              Zero config
+            </p>
+            <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">
+              One command to a running server
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              Scaffold, install, and run. No separate API service to wire up, no bundler config to
+              tune before the first page renders.
+            </p>
+          </div>
+          <TerminalBlock
+            label="~/my-app — zsh"
+            code={`$ bun create thexjs-app@latest my-app
 
   Available templates:
 
@@ -99,39 +154,48 @@ export default function HomePage() {
 
 $ cd my-app && bun run dev
   [x] dev server running at http://localhost:3000`}
-            />
+          />
+        </div>
+      </section>
+
+      <section className="mx-auto mt-28 max-w-6xl px-6">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
+          <div className="order-2 lg:order-1">
+            <ShipIt />
+          </div>
+          <div className="order-1 lg:order-2">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+              Deploy speed
+            </p>
+            <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">
+              Reflexes vs. a cold start
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              Most stacks make you wait for the build. Start one, then ship the instant it's
+              ready — see how close you can get to zero.
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6">
+      <section className="mx-auto mt-28 max-w-6xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">Why x</p>
-          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Everything in one place</h2>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+            Know the file tree?
+          </p>
+          <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">Route Rush</h2>
           <p className="mt-4 text-muted-foreground">
-            Most frameworks split the stack. x keeps routing, rendering, API, and build tooling in
-            one runtime.
+            Six routes. Pick the file that serves each one before you second-guess yourself.
           </p>
         </div>
-        <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <article
-              key={f.title}
-              className="group rounded-2xl border border-border/80 bg-card/50 p-6 transition-colors hover:border-primary/25 hover:bg-card"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/50 text-primary transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
-                <f.icon className="h-4 w-4" />
-              </div>
-              <h3 className="mt-4 font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-            </article>
-          ))}
+        <div className="mx-auto mt-10 max-w-xl">
+          <RouteRush />
         </div>
       </section>
 
       <section className="mx-auto mt-28 max-w-4xl px-6">
-        <div className="rounded-3xl border border-border/80 bg-card/40 p-10 text-center sm:p-14">
-          <h2 className="text-3xl font-bold sm:text-4xl">Ready to build?</h2>
+        <div className="rounded-3xl border border-border bg-card p-10 text-center sm:p-14">
+          <h2 className="text-3xl font-bold uppercase sm:text-4xl">Ready to build?</h2>
           <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
             Read the docs, scaffold a project, and ship from a single home page or a full-stack
             starter.
@@ -139,7 +203,7 @@ $ cd my-app && bun run dev
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a
               href="/docs"
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
             >
               <BookOpen className="h-4 w-4" /> Read the docs
             </a>

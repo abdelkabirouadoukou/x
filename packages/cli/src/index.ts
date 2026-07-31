@@ -74,6 +74,7 @@ interface DetectedOptions {
   /** Passed through untouched from x.config.ts — may hold live values (functions, reporters). */
   security?: Record<string, unknown>;
   observability?: Record<string, unknown>;
+  images?: Record<string, unknown>;
 }
 
 function dropUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -113,6 +114,7 @@ function detectOptionsFromConfig(cfg: Record<string, unknown>): DetectedOptions 
     port: (cfg.port as number) ?? 3000,
     security: (cfg.security as Record<string, unknown>) ?? undefined,
     observability: (cfg.observability as Record<string, unknown>) ?? undefined,
+    images: (cfg.images as Record<string, unknown>) ?? undefined,
   }) as unknown as DetectedOptions;
 }
 
@@ -217,7 +219,13 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
     if (r.status !== 0) xWarn("Tailwind compilation failed.");
   }
 
-  const { port: _port, security: _security, observability: _observability, ...rest } = opts;
+  const {
+    port: _port,
+    security: _security,
+    observability: _observability,
+    images: _images,
+    ...rest
+  } = opts;
 
   if (adapterName === "vercel") {
     let buildVercelOutput: (options: Record<string, unknown>) => Promise<void>;

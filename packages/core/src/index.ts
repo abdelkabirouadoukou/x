@@ -68,6 +68,7 @@ export {
   applySecurityHeaders,
   type SecurityHeadersOptions,
 } from "./security/headers";
+export { createImageProxyHandler, type ImageProxyOptions } from "./images/proxy";
 export {
   createRateLimiter,
   rateLimitMiddleware,

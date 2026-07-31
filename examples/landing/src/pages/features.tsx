@@ -92,8 +92,10 @@ export default function FeaturesPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-20">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Features</p>
-        <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+        <p className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+          Features
+        </p>
+        <h1 className="mt-4 text-4xl font-bold uppercase tracking-tight sm:text-5xl">
           Everything you need to build for the web
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
@@ -102,10 +104,13 @@ export default function FeaturesPage() {
         </p>
       </div>
 
-      <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-16 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {allFeatures.map((f) => (
-          <div key={f.title} className="bg-card p-8 transition-colors hover:bg-card/80">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div
+            key={f.title}
+            className="rounded-2xl border border-border bg-card p-7 transition-colors hover:border-primary/30"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-muted/60 text-primary">
               <f.icon className="h-5 w-5" />
             </div>
             <h3 className="mt-5 text-lg font-semibold">{f.title}</h3>
@@ -115,21 +120,23 @@ export default function FeaturesPage() {
       </div>
 
       <div className="mt-16">
-        <div className="rounded-3xl border border-primary/20 bg-gradient-to-b from-primary/5 to-transparent p-12 text-center sm:p-20">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to build with x?</h2>
+        <div className="rounded-3xl border border-border bg-card p-12 text-center sm:p-20">
+          <h2 className="text-3xl font-bold uppercase tracking-tight sm:text-4xl">
+            Ready to build with x?
+          </h2>
           <p className="mt-4 text-lg text-muted-foreground">
             One command, one process, everything you need.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a
               href="/docs/getting-started"
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
             >
               Get started <ArrowRight className="h-4 w-4" />
             </a>
             <a
               href="/docs"
-              className="inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-card px-6 text-sm font-medium text-foreground transition-all hover:bg-muted"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-background px-6 text-sm font-medium text-foreground transition-all hover:bg-muted"
             >
               Read the docs
             </a>

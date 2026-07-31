@@ -1,27 +1,21 @@
 import type { ReactNode } from "react";
-
-function LogoMark() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-      <title>x logo</title>
-      <polygon points="3,5 5,3 21,19 19,21" fill="currentColor" />
-      <polygon points="19,5 21,3 5,21 3,19" fill="currentColor" opacity="0.45" />
-    </svg>
-  );
-}
+import { Logo } from "../components/logo";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="fixed top-0 z-[99] w-full border-b border-border/50 bg-background/70 backdrop-blur-xl">
+      <header className="fixed top-0 z-[99] w-full border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
           <a
             href="/"
-            className="group flex items-center gap-2.5 text-primary transition-opacity hover:opacity-90"
+            className="group flex items-center gap-2.5 text-primary transition-opacity hover:opacity-80"
             aria-label="x home"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card">
-              <LogoMark />
+              <Logo className="h-4.5 w-4.5" />
+            </span>
+            <span className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-foreground">
+              x
             </span>
           </a>
           <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
@@ -48,14 +42,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </nav>
         </div>
       </header>
+
       <main className="flex-1 pt-14">{children}</main>
-      <footer className="border-t border-border/50">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-10 text-sm text-muted-foreground sm:flex-row">
-          <p>
-            <span className="font-display font-bold text-foreground">x</span> — fullstack framework
-            for Bun
+
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-display font-semibold text-foreground">x</span> — fullstack
+            framework for Bun
           </p>
-          <div className="flex gap-5">
+
+          <div className="flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
             <a href="/docs" className="transition-colors hover:text-foreground">
               Documentation
             </a>
@@ -66,6 +63,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               className="transition-colors hover:text-foreground"
             >
               GitHub
+            </a>
+            <a
+              href="https://stardance.hackclub.com/projects/41081"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-3 text-xs font-medium transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <img
+                src="/_x/image?url=https%3A%2F%2Fstardance.hackclub.com%2Fassets%2Flanding%2Fheader%2Fstardance-logo-df399a7f.png"
+                alt="Stardance"
+                className="h-4 w-auto"
+              />
+              Built solo for Hack Club Stardance
             </a>
           </div>
         </div>
