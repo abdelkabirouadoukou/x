@@ -8,7 +8,9 @@ export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Guides</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Client Navigation &amp; Images</h1>
+      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+        Client Navigation &amp; Images
+      </h1>
       <p className="mt-4 text-lg text-muted-foreground">
         Every plain <span className="text-foreground">&lt;a&gt;</span> tag on an x site already
         navigates client-side — no router setup required. This page covers that behavior, the{" "}
@@ -67,14 +69,14 @@ export default function DocPage(_props: RouteProps) {
       <p className="mt-3 text-muted-foreground">
         <span className="text-foreground">createImageProxyHandler</span> mounts a{" "}
         <span className="text-foreground">GET /_x/image</span> route that fetches an allow-listed
-        remote image server-side and streams it back from your own origin. The browser never makes
-        a cross-origin image request, so a strict{" "}
+        remote image server-side and streams it back from your own origin. The browser never makes a
+        cross-origin image request, so a strict{" "}
         <span className="text-foreground">img-src 'self'</span> CSP (see{" "}
         <a href="/docs/security" className="text-primary underline underline-offset-2">
           Security
         </a>
-        ) still works even with remote images. This page's own Stardance badge is proxied through
-        it right now.
+        ) still works even with remote images. This page's own Stardance badge is proxied through it
+        right now.
       </p>
       <CodeBlock
         label="createApp.ts / x.config.ts wiring"
@@ -90,19 +92,20 @@ const imageProxy = createImageProxyHandler({
       />
       <p className="mt-4 text-muted-foreground">
         It's a proxy, not an optimizer — no resizing or format conversion happens. Only hosts in{" "}
-        <span className="text-foreground">remoteHosts</span> are ever fetched (this is what
-        prevents the route from becoming an open SSRF relay), only a fixed set of image content
-        types are allowed through, and successful responses are served with a one-day, immutable{" "}
+        <span className="text-foreground">remoteHosts</span> are ever fetched (this is what prevents
+        the route from becoming an open SSRF relay), only a fixed set of image content types are
+        allowed through, and successful responses are served with a one-day, immutable{" "}
         <span className="text-foreground">Cache-Control</span> header.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Dev error overlay</h2>
       <p className="mt-3 text-muted-foreground">
-        When a loader, page, or API route throws during <span className="text-foreground">x dev</span>,{" "}
+        When a loader, page, or API route throws during{" "}
+        <span className="text-foreground">x dev</span>,{" "}
         <span className="text-foreground">renderErrorOverlay</span> renders a full-screen overlay
-        with the error message, stack trace, and the route that triggered it — instead of a bare
-        500 response. It's dev-only: production builds never ship the overlay, they return a plain
-        error response.
+        with the error message, stack trace, and the route that triggered it — instead of a bare 500
+        response. It's dev-only: production builds never ship the overlay, they return a plain error
+        response.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">404 handling</h2>

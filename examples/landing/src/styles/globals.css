@@ -110,8 +110,7 @@
 
 /* Survey-grid backdrop used behind the hero, not a radial glow */
 .route-grid {
-  background-image:
-    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+  background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 32px 32px;
 }
@@ -178,14 +177,14 @@ body::before {
   pointer-events: none;
   opacity: 0.5;
   mix-blend-mode: multiply;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.025) 0px, transparent 1px, transparent 2px),
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.02) 0px, transparent 1px, transparent 3px),
+  background-image: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.025) 0px,
+      transparent 1px,
+      transparent 2px
+    ), repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.02) 0px, transparent 1px, transparent 3px),
     repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.015) 0px, transparent 1px, transparent 4px);
-  background-size:
-    3px 3px,
-    5px 5px,
-    7px 7px;
+  background-size: 3px 3px, 5px 5px, 7px 7px;
 }
 
 /* Themed selection + scrollbar so even the browser chrome feels like x,
@@ -218,13 +217,27 @@ html {
    callout so it doesn't blend into the other bordered cards on the page. */
 .ticket-card {
   --notch: 16px;
-  mask-image:
-    radial-gradient(circle var(--notch) at 0 50%, transparent calc(var(--notch) - 1px), #000 var(--notch)),
-    radial-gradient(circle var(--notch) at 100% 50%, transparent calc(var(--notch) - 1px), #000 var(--notch));
+  mask-image: radial-gradient(
+      circle var(--notch) at 0 50%,
+      transparent calc(var(--notch) - 1px),
+      #000 var(--notch)
+    ),
+    radial-gradient(
+      circle var(--notch) at 100% 50%,
+      transparent calc(var(--notch) - 1px),
+      #000 var(--notch)
+    );
   mask-composite: intersect;
-  -webkit-mask-image:
-    radial-gradient(circle var(--notch) at 0 50%, transparent calc(var(--notch) - 1px), #000 var(--notch)),
-    radial-gradient(circle var(--notch) at 100% 50%, transparent calc(var(--notch) - 1px), #000 var(--notch));
+  -webkit-mask-image: radial-gradient(
+      circle var(--notch) at 0 50%,
+      transparent calc(var(--notch) - 1px),
+      #000 var(--notch)
+    ),
+    radial-gradient(
+      circle var(--notch) at 100% 50%,
+      transparent calc(var(--notch) - 1px),
+      #000 var(--notch)
+    );
   -webkit-mask-composite: source-in, source-in;
 }
 /* Stamped-button feel: a slightly heavier press than the default active:scale
@@ -291,9 +304,7 @@ html {
   height: 3px;
   border-radius: 999px;
   background: #fff;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.6),
-    0 0 12px 3px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), 0 0 12px 3px rgba(255, 255, 255, 0.8);
   pointer-events: none;
   opacity: 0;
 }

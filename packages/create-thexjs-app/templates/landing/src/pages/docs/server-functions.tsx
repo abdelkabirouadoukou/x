@@ -10,9 +10,9 @@ export default function DocPage(_props: RouteProps) {
       </p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Server functions</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        Call server-side functions from the browser without writing REST endpoints. Server
-        functions live in <span className="text-foreground">src/actions/</span>. Import one into a
-        client component and call it like a normal function, or call it manually with{" "}
+        Call server-side functions from the browser without writing REST endpoints. Server functions
+        live in <span className="text-foreground">src/actions/</span>. Import one into a client
+        component and call it like a normal function, or call it manually with{" "}
         <span className="text-foreground">fetch</span> — both compile down to the same request.
       </p>
 
@@ -40,10 +40,10 @@ export async function sendEmail({ to, subject, body }: {
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Calling actions directly</h2>
       <p className="mt-3 text-muted-foreground">
-        Import the function into a client component and call it like any other async function.
-        When you run <span className="text-foreground">x build</span>, the bundler swaps the
-        import for a generated fetch client before it reaches the browser, so the real
-        implementation, db calls and all, never gets bundled.
+        Import the function into a client component and call it like any other async function. When
+        you run <span className="text-foreground">x build</span>, the bundler swaps the import for a
+        generated fetch client before it reaches the browser, so the real implementation, db calls
+        and all, never gets bundled.
       </p>
       <CodeBlock
         label="client component"
@@ -88,8 +88,8 @@ export default function SubscribeForm() {
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Calling manually with fetch</h2>
       <p className="mt-3 text-muted-foreground">
-        This is what the direct-import style compiles down to, and it works the same way in dev
-        and in production: a POST request to{" "}
+        This is what the direct-import style compiles down to, and it works the same way in dev and
+        in production: a POST request to{" "}
         <span className="text-foreground">/__x/actions/&lt;filename&gt;/&lt;functionName&gt;</span>.
         The arguments are sent as JSON in the request body.
       </p>

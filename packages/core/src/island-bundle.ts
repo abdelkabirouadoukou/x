@@ -1,6 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { basename, join, relative } from "node:path";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { assertNoEnvLeakage } from "./security/env-isolation";
 import { generateServerFunctionClient } from "./server-functions";
 
@@ -44,22 +43,19 @@ export function actionsRewritePlugin(
   };
 }
 
-export function generateHydrateEntry(
-  routeRelPath: string,
-  layoutRelPaths: string[] = [],
-): string {
-  const layoutImports = layoutRelPaths
+export function generateHydrateEntry(routeAbsPath: string, layoutAbsPaths: string[] = []): string {
+  const layoutImports = layoutAbsPaths
     .map((p, i) => `import * as Layout${i} from "${p}";`)
     .join("\n");
   const lookupParts = ["Route.islands?.[name]"];
-  for (let i = 0; i < layoutRelPaths.length; i++) {
+  for (let i = 0; i < layoutAbsPaths.length; i++) {
     lookupParts.push(`Layout${i}.islands?.[name]`);
   }
   const lookup = lookupParts.join(" ?? ");
 
   return `import React from "react";
 import { hydrateRoot } from "react-dom/client";
-import * as Route from "${routeRelPath}";
+import * as Route from "${routeAbsPath}";
 ${layoutImports}
 
 function resolveIsland(name: string) {
@@ -109,22 +105,20 @@ export async function buildIslandBundleInMemory(
   layoutFilePaths: string[],
   islandNames: string[],
   actionModules: Map<string, ActionModuleInfo>,
+  projectRoot: string,
 ): Promise<string> {
   const entryId = islandEntryId(routeFilePath);
-  const scratchDir = mkdtempSync(join(tmpdir(), "x-islands-"));
+  const scratchRoot = join(projectRoot, ".x", "islands-tmp");
+  mkdirSync(scratchRoot, { recursive: true });
+  const scratchDir = mkdtempSync(join(scratchRoot, "x-islands-"));
 
   try {
-    const routeRel = join(relative(scratchDir, join(routeFilePath, "..")), basename(routeFilePath));
-    const layoutRels = layoutFilePaths.map((layoutPath) =>
-      join(relative(scratchDir, join(layoutPath, "..")), basename(layoutPath)),
-    );
     const entryPath = join(scratchDir, `${entryId}.tsx`);
-    writeFileSync(entryPath, generateHydrateEntry(routeRel, layoutRels), "utf-8");
+    writeFileSync(entryPath, generateHydrateEntry(routeFilePath, layoutFilePaths), "utf-8");
 
     const result = await Bun.build({
       entrypoints: [entryPath],
       target: "browser",
-      external: ["react", "react-dom"],
       plugins: [actionsRewritePlugin(actionModules)],
     });
 

@@ -42,9 +42,7 @@ export class EnvLeakageError extends Error {
     public readonly keys: string[],
   ) {
     super(
-      `[x] server-only environment variable(s) leaked into client bundle "${file}": ` +
-        `${keys.join(", ")}. Only "${PUBLIC_ENV_PREFIX}*" variables may be referenced in ` +
-        "client-shipped code — move this access into a loader, server function, or API route.",
+      `[x] server-only environment variable(s) leaked into client bundle "${file}": ${keys.join(", ")}. Only "${PUBLIC_ENV_PREFIX}*" variables may be referenced in client-shipped code — move this access into a loader, server function, or API route.`,
     );
     this.name = "EnvLeakageError";
   }

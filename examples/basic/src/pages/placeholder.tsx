@@ -87,7 +87,10 @@ export default function PlaceholderPage() {
               </td>
               <td className="text-right p-3">
                 <button
-                  type="button" id="fetch-all" className="fetch-btn text-primary hover:underline text-xs">
+                  type="button"
+                  id="fetch-all"
+                  className="fetch-btn text-primary hover:underline text-xs"
+                >
                   Fetch All
                 </button>
               </td>

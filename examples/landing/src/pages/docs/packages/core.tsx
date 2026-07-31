@@ -127,10 +127,7 @@ export default function UserPage({ loaderData }: RouteProps<typeof loader>) {
         the same behavior, and <span className="text-foreground">createImageProxyHandler</span>{" "}
         streams allow-listed remote images through your own origin so a strict{" "}
         <span className="text-foreground">img-src 'self'</span> CSP still works. Full details on{" "}
-        <a
-          href="/docs/client-navigation"
-          className="text-primary underline underline-offset-2"
-        >
+        <a href="/docs/client-navigation" className="text-primary underline underline-offset-2">
           the Client Navigation &amp; Images page
         </a>
         .

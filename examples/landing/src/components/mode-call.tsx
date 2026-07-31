@@ -154,7 +154,9 @@ export default function ModeCall() {
           </>
         ) : (
           <div className="py-2 text-center">
-            <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Run complete</p>
+            <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+              Run complete
+            </p>
             <p className="mt-2 font-display text-3xl font-bold text-foreground">
               {score} / {run.length}
             </p>

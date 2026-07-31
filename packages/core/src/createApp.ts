@@ -4,16 +4,16 @@ import { type ComponentType, type ReactNode, createElement } from "react";
 import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { renderErrorOverlay } from "./error-overlay";
+import { type ImageProxyOptions, createImageProxyHandler } from "./images/proxy";
+import { type IslandEntry, IslandProvider, createIslandRegistry } from "./island";
+import { type ActionModuleInfo, buildIslandBundleInMemory, islandEntryId } from "./island-bundle";
 import { type MiddlewareFn, composeMiddleware } from "./middleware";
 import DefaultNotFound from "./not-found";
 import { type HealthCheckOptions, createHealthCheckHandler } from "./observability/health";
 import { withRequestLogging } from "./observability/logger";
 import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
-import { type IslandEntry, IslandProvider, createIslandRegistry } from "./island";
-import { type ActionModuleInfo, buildIslandBundleInMemory, islandEntryId } from "./island-bundle";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
-import { type ImageProxyOptions, createImageProxyHandler } from "./images/proxy";
 import {
   type LayoutEntry,
   type NotFoundEntry,
@@ -188,6 +188,7 @@ function importDev(path: string, dev: boolean): Promise<Record<string, unknown>>
 export async function createApp(options: CreateAppOptions): Promise<AppServeOptions> {
   const dev = options.development ?? false;
   const primaryDir: string = options.pagesDir || options.routesDir || "src/pages";
+  const projectRoot = projectRootFromRoutesDir(primaryDir);
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
   let publicDir: string | null = null;
@@ -224,6 +225,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       layoutFilePaths,
       uniqueNames,
       actionModules,
+      projectRoot,
     );
     const entryId = islandEntryId(routeFilePath);
     const url = `/_islands/${entryId}/${entryId}.js`;
@@ -346,7 +348,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       }
     }
 
-    const projectRoot = projectRootFromRoutesDir(pagesDir);
     const candidatePublicDir = join(projectRoot, "public");
     publicDir = existsSync(candidatePublicDir) ? candidatePublicDir : null;
     stylesheetHref =

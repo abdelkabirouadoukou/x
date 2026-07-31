@@ -25,7 +25,10 @@ const EXAMPLES = [
 ];
 
 function resolvePath(raw: string): Resolved {
-  let p = raw.trim().replace(/^src\//, "").replace(/^\.?\//, "");
+  let p = raw
+    .trim()
+    .replace(/^src\//, "")
+    .replace(/^\.?\//, "");
 
   if (p === "") return { kind: "skip", note: "start typing a path…" };
 
@@ -45,12 +48,12 @@ function resolvePath(raw: string): Resolved {
     return { kind: "notfound" };
   }
 
-  let route = "/" + p;
+  let route = `/${p}`;
   route = route.replace(/\/index$/, "") || "/";
   route = route.replace(/\[\.\.\.(\w+)\]/g, ":$1*");
   route = route.replace(/\[(\w+)\]/g, ":$1");
 
-  if (!route.startsWith("/")) route = "/" + route;
+  if (!route.startsWith("/")) route = `/${route}`;
 
   return isApi ? { kind: "api", route } : { kind: "page", route };
 }
@@ -62,7 +65,7 @@ export default function RouteResolver() {
 
   useEffect(() => {
     setServer({ status: "idle" });
-  }, [value]);
+  }, []);
 
   async function confirmWithServer() {
     setServer({ status: "loading" });
@@ -101,7 +104,13 @@ export default function RouteResolver() {
         />
 
         <div className="mt-4 flex items-center gap-3">
-          <svg width="28" height="24" viewBox="0 0 28 24" className="shrink-0 text-border" aria-hidden="true">
+          <svg
+            width="28"
+            height="24"
+            viewBox="0 0 28 24"
+            className="shrink-0 text-border"
+            aria-hidden="true"
+          >
             <path
               d="M2 12H24M24 12L18 6M24 12L18 18"
               stroke="currentColor"

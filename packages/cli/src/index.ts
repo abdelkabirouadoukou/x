@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { xError, xInfo, xSuccess, xWarn } from "./terminal.js";
 
 // Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
@@ -266,6 +266,11 @@ async function cmdStart(): Promise<void> {
   const serverEntry = join(outDir, "server", "index.ts");
 
   if (!existsSync(serverEntry)) {
+    const clientDir = join(outDir, "client");
+    if (existsSync(join(clientDir, "index.html"))) {
+      await serveStaticBuild(clientDir);
+      return;
+    }
     xError(`no built server found at ${serverEntry}`);
     xError('run "x build" first');
     process.exit(1);
@@ -287,6 +292,32 @@ async function cmdStart(): Promise<void> {
     "exit",
     (code) => process.exit(code ?? 1),
   );
+}
+
+async function serveStaticBuild(clientDir: string): Promise<void> {
+  const port = Number(process.env.PORT) || 3000;
+  xInfo(`static build detected — serving .x/client on http://localhost:${port}`);
+  Bun.serve({
+    port,
+    async fetch(req) {
+      const url = new URL(req.url);
+      let pathname: string;
+      try {
+        pathname = decodeURIComponent(url.pathname);
+      } catch {
+        return new Response("Bad request", { status: 400 });
+      }
+      if (pathname === "/") pathname = "/index.html";
+      const filePath = resolve(clientDir, pathname.startsWith("/") ? pathname.slice(1) : pathname);
+      if (!filePath.startsWith(resolve(clientDir) + sep)) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      const file = Bun.file(filePath);
+      if (await file.exists()) return new Response(file);
+      const index = Bun.file(join(clientDir, "index.html"));
+      return new Response(index);
+    },
+  });
 }
 
 function printVersion(): void {

@@ -74,6 +74,8 @@ export function applySecurityHeaders(
       appliedCount++;
     }
   }
-  console.log(`[x][security] applied ${appliedCount} security header(s) to ${res.url || "response"}`);
+  console.log(
+    `[x][security] applied ${appliedCount} security header(s) to ${res.url || "response"}`,
+  );
   return res;
 }

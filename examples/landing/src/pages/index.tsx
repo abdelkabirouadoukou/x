@@ -102,9 +102,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-6 pt-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">Why x</p>
-          <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">
-            Everything in one place
-          </h2>
+          <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">Everything in one place</h2>
           <p className="mt-4 text-muted-foreground">
             Most frameworks split the stack. x keeps routing, rendering, API, and build tooling in
             one runtime.
@@ -174,8 +172,8 @@ $ cd my-app && bun run dev
               Reflexes vs. a cold start
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Most stacks make you wait for the build. Start one, then ship the instant it's
-              ready — see how close you can get to zero.
+              Most stacks make you wait for the build. Start one, then ship the instant it's ready —
+              see how close you can get to zero.
             </p>
           </div>
         </div>

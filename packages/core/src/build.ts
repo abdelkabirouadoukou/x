@@ -3,6 +3,12 @@ import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { IslandProvider, createIslandRegistry } from "./island";
+import {
+  actionsRewritePlugin,
+  generateFallbackHydration,
+  generateHydrateEntry,
+  islandEntryId,
+} from "./island-bundle";
 import { renderStaticPage } from "./render";
 import {
   type RouteEntry,
@@ -15,12 +21,6 @@ import {
 } from "./router";
 import { assertNoEnvLeakage } from "./security/env-isolation";
 import { registerServerFunctions } from "./server-functions";
-import {
-  actionsRewritePlugin,
-  generateFallbackHydration,
-  generateHydrateEntry,
-  islandEntryId,
-} from "./island-bundle";
 
 export type RouteMode = "static" | "server";
 
@@ -305,11 +305,7 @@ async function bundleRouteIslands(
   mkdirSync(outdir, { recursive: true });
   const bundlePath = join(outdir, `${entryId}.js`);
 
-  const routeRel = join(relative(outdir, join(routeFilePath, "..")), basename(routeFilePath));
-  const layoutRels = layoutFilePaths.map((layoutPath) =>
-    join(relative(outdir, join(layoutPath, "..")), basename(layoutPath)),
-  );
-  const hydrateEntry = generateHydrateEntry(routeRel, layoutRels);
+  const hydrateEntry = generateHydrateEntry(routeFilePath, layoutFilePaths);
   const entryPath = join(outdir, `${entryId}.tsx`);
   writeFileSync(entryPath, hydrateEntry, "utf-8");
 
@@ -317,7 +313,6 @@ async function bundleRouteIslands(
     const result = await Bun.build({
       entrypoints: [entryPath],
       target: "browser",
-      external: ["react", "react-dom"],
       plugins: [actionsRewritePlugin(actionModules)],
     });
 
@@ -340,7 +335,6 @@ async function bundleRouteIslands(
   writeFileSync(bundlePath, generateFallbackHydration(islandNames), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
 }
-
 
 function renderPageWithLayout(
   Component: ComponentType<{ params: Record<string, string> }>,
@@ -424,5 +418,3 @@ function relativeImportPath(fromDir: string, toFile: string): string {
     .replace(/\.(ts|js|mjs)$/, "");
   return rel.startsWith(".") ? rel : `./${rel}`;
 }
-
-

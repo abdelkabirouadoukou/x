@@ -91,7 +91,8 @@ export default function ShipIt() {
           {phase === "building" && "Building… don't ship yet."}
           {phase === "ready" && "Now. Ship it."}
           {phase === "shipped" && verdict(elapsed ?? 0)}
-          {phase === "early" && "Shipped before the build finished. That's an outage, not a deploy."}
+          {phase === "early" &&
+            "Shipped before the build finished. That's an outage, not a deploy."}
         </p>
 
         {phase === "shipped" && elapsed !== null && (

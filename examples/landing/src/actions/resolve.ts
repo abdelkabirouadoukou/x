@@ -7,7 +7,10 @@
 export async function resolveRoute(rawPath: string) {
   const receivedAt = new Date().toISOString();
 
-  let p = rawPath.trim().replace(/^src\//, "").replace(/^\.?\//, "");
+  let p = rawPath
+    .trim()
+    .replace(/^src\//, "")
+    .replace(/^\.?\//, "");
 
   if (p === "") {
     return { route: null, kind: "empty" as const, receivedAt };
@@ -29,11 +32,11 @@ export async function resolveRoute(rawPath: string) {
     return { route: "*", kind: "notfound" as const, receivedAt };
   }
 
-  let route = "/" + p;
+  let route = `/${p}`;
   route = route.replace(/\/index$/, "") || "/";
   route = route.replace(/\[\.\.\.(\w+)\]/g, ":$1*");
   route = route.replace(/\[(\w+)\]/g, ":$1");
-  if (!route.startsWith("/")) route = "/" + route;
+  if (!route.startsWith("/")) route = `/${route}`;
 
   return {
     route,

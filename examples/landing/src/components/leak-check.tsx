@@ -128,7 +128,10 @@ export default function LeakCheck() {
         {!running && !done && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Click only the <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">THEXJS_PUBLIC_</code>{" "}
+              Click only the{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                THEXJS_PUBLIC_
+              </code>{" "}
               vars before they land. Everything else is a secret — let it fall.
             </p>
             <button
@@ -143,10 +146,14 @@ export default function LeakCheck() {
 
         {done && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-            <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Time's up</p>
+            <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+              Time's up
+            </p>
             <p className="font-display text-3xl font-bold text-foreground">{score} pts</p>
             <p className="text-sm text-muted-foreground">
-              {misses === 0 ? "Not one secret leaked. That's the whole point." : `${misses} secret(s) reached the client.`}
+              {misses === 0
+                ? "Not one secret leaked. That's the whole point."
+                : `${misses} secret(s) reached the client.`}
             </p>
             <button
               type="button"
