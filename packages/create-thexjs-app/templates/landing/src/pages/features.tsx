@@ -37,7 +37,7 @@ const allFeatures = [
   {
     icon: Server,
     title: "Server functions",
-    desc: "Call server-side functions from the browser without writing REST endpoints. Import them into a client component and call them directly, or by hand with fetch.",
+    desc: "Call server-side functions from the browser without writing REST endpoints. Just export async functions from src/actions/ and call them via fetch.",
   },
   {
     icon: Shield,

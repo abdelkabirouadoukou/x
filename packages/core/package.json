@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/core",
-  "version": "0.1.5",
+  "version": "0.1.3",
   "description": "Full-stack React framework core (router, SSR/SSG renderer, islands, server functions) for the x framework, built on Bun.",
   "keywords": [
     "react",
@@ -32,7 +32,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --target node18 --external bun:sqlite --external react --external react-dom --external react/jsx-runtime",
+    "build": "tsup src/index.ts --format esm --dts --clean --target node18 --external bun:sqlite --external react --external react-dom",
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
@@ -40,8 +40,11 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@thexjs/core": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "tsup": "^8.3.0"
   }
 }

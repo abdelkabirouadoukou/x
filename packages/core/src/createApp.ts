@@ -9,8 +9,6 @@ import DefaultNotFound from "./not-found";
 import { type HealthCheckOptions, createHealthCheckHandler } from "./observability/health";
 import { withRequestLogging } from "./observability/logger";
 import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
-import { type IslandEntry, IslandProvider, createIslandRegistry } from "./island";
-import { type ActionModuleInfo, buildIslandBundleInMemory, islandEntryId } from "./island-bundle";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
 import {
@@ -193,47 +191,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   let notFoundLayout: ComponentType<{ children: ReactNode }> | undefined;
   const serverFnHandler = getServerFunctionHandler(options.security?.csrf);
   const staticCache = new Map<string, StaticCacheEntry>();
-  let actionModules = new Map<string, ActionModuleInfo>();
-  const islandBundleCache = new Map<string, string[]>();
-  const islandFileCache = new Map<string, string>();
-
-  /**
-   * Bundles (or reuses a cached bundle of) the islands actually used by a
-   * rendered page. `entries` comes from a throwaway discovery render — the
-   * same content tree, rendered once to walk the component graph and see
-   * which <Island> names got registered, since usage can depend on
-   * loaderData. Bundling itself is cached per route file + island-name set,
-   * so repeat requests don't re-invoke Bun.build().
-   */
-  async function resolveIslandScripts(
-    routeFilePath: string,
-    entries: IslandEntry[],
-  ): Promise<string[]> {
-    if (entries.length === 0) return [];
-    const uniqueNames = [...new Set(entries.map((e) => e.name))].sort();
-    const cacheKey = `${routeFilePath}::${uniqueNames.join(",")}`;
-    const cached = islandBundleCache.get(cacheKey);
-    if (cached) return cached;
-
-    const code = await buildIslandBundleInMemory(routeFilePath, uniqueNames, actionModules);
-    const entryId = islandEntryId(routeFilePath);
-    const url = `/_islands/${entryId}/${entryId}.js`;
-    islandFileCache.set(url, code);
-    const scripts = [url];
-    islandBundleCache.set(cacheKey, scripts);
-    return scripts;
-  }
-
-  function serveIslandBundle(req: Request): Response | null {
-    if (req.method !== "GET" && req.method !== "HEAD") return null;
-    const pathname = new URL(req.url).pathname;
-    if (!pathname.startsWith("/_islands/")) return null;
-    const code = islandFileCache.get(pathname);
-    if (code === undefined) return null;
-    return new Response(code, {
-      headers: { "Content-Type": "application/javascript; charset=utf-8" },
-    });
-  }
 
   if (options.observability?.errorReporter) {
     setErrorReporter(options.observability.errorReporter);
@@ -269,9 +226,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
   async function buildHandlers(): Promise<void> {
     resetServerFunctions();
-    actionModules = new Map();
-    islandBundleCache.clear();
-    islandFileCache.clear();
     const pagesDir: string = primaryDir;
     const apiDir: string | undefined = options.apiDir;
     const layoutsDir: string = options.layoutsDir || pagesDir;
@@ -317,10 +271,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         const actions = mod.actions as
           | Record<string, (...args: unknown[]) => Promise<unknown>>
           | undefined;
-        const fnNames: string[] = [];
         if (actions) {
           registerServerFunctions(parentPath, actionFile.paramNames, actions);
-          fnNames.push(...Object.keys(actions));
         }
         // Individual named exports — each function is an action under parent path
         for (const [key, value] of Object.entries(mod)) {
@@ -328,10 +280,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           registerServerFunctions(parentPath, actionFile.paramNames, {
             [key]: value as (...args: unknown[]) => Promise<unknown>,
           });
-          fnNames.push(key);
-        }
-        if (fnNames.length > 0) {
-          actionModules.set(actionFile.filePath, { parentPath, fnNames });
         }
       }
     }
@@ -491,21 +439,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               }
 
               if (mode === "server") {
-                const registry = createIslandRegistry();
-                const content = createElement(
-                  IslandProvider,
-                  { registry },
-                  wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
-                );
-                // Cheap discovery render: walks the tree so any <Island> in
-                // it registers itself, without committing to a response yet.
-                renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-                const islandScripts = await resolveIslandScripts(route.filePath, registry.entries);
-
+                const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
                 const stream = await renderStreamingPage(content, {
                   stylesheet: stylesheetHref,
                   liveReload: dev,
-                  islandScripts,
                 });
                 return new Response(stream, {
                   headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -525,19 +462,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
                 });
               }
 
-              const registry = createIslandRegistry();
-              const content = createElement(
-                IslandProvider,
-                { registry },
-                wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
-              );
-              renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-              const islandScripts = await resolveIslandScripts(route.filePath, registry.entries);
-              const html = renderPage(content, {
-                stylesheet: stylesheetHref,
-                liveReload: dev,
-                islandScripts,
-              });
+              const content = wrapWithLayouts(Component, ctx.params, loaderData, layoutModules);
+              const html = renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
 
               if (revalidateSeconds > 0) {
                 staticCache.set(route.routePath, { html, timestamp: Date.now() });
@@ -718,9 +644,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const staticAsset = await serveStaticAsset(publicDir, req);
       if (staticAsset !== null) return staticAsset;
 
-      const islandBundle = serveIslandBundle(req);
-      if (islandBundle !== null) return islandBundle;
-
       for (const h of handlers) {
         const params = extractParams(h.entry.routePath, h.entry.paramNames, url);
         if (params !== null) {
@@ -770,9 +693,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const staticAsset = await serveStaticAsset(publicDir, req);
     if (staticAsset !== null) return staticAsset;
-
-    const islandBundle = serveIslandBundle(req);
-    if (islandBundle !== null) return islandBundle;
 
     for (const h of handlers) {
       const params = extractParams(h.entry.routePath, h.entry.paramNames, url);

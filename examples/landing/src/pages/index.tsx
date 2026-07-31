@@ -1,5 +1,5 @@
 import { ArrowRight, BookOpen, Code2, FileJson, Globe, Layers, Shield, Zap } from "lucide-react";
-import { TerminalBlock } from "../components/code-block";
+import { CodeBlock } from "../components/code-block";
 
 const features = [
   {
@@ -39,118 +39,153 @@ export const mode = "static";
 export default function HomePage() {
   return (
     <div className="pb-32">
-      <section className="relative overflow-hidden px-6 pt-16 pb-24 sm:pt-20">
+      {/* ── Hero ── */}
+      <section className="relative flex min-h-[92vh] flex-col items-center justify-center overflow-hidden px-6">
         <div
-          className="pointer-events-none absolute inset-0 opacity-30"
+          className="pointer-events-none absolute inset-0 opacity-[0.22]"
           style={{
             backgroundImage:
-              "linear-gradient(to right, #1a2233 1px, transparent 1px), linear-gradient(to bottom, #1a2233 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-            maskImage: "radial-gradient(ellipse 80% 70% at 50% 0%, black 10%, transparent 100%)",
+              "linear-gradient(to right, oklch(0.22 0.015 265) 1px, transparent 1px), linear-gradient(to bottom, oklch(0.22 0.015 265) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            maskImage: "radial-gradient(ellipse 75% 65% at 50% 35%, black 15%, transparent 100%)",
           }}
         />
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 animate-pulse-glow rounded-full bg-primary/10 blur-3xl" />
-
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">
-              Bun-native fullstack
-            </p>
-            <h1 className="mt-5 text-[clamp(2.4rem,6vw,4.25rem)] font-extrabold leading-[1.02]">
-              Files in.
-              <br />
-              <span className="text-primary">Routes out.</span>
-            </h1>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
-              x is a React framework where your folder structure is the router, your API lives
-              beside your pages, and everything runs in one Bun process.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <a
-                href="/docs/installation"
-                className="group inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.98]"
-              >
-                Install x
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
-              <a
-                href="/docs/introduction"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card/60 px-5 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-muted"
-              >
-                <BookOpen className="h-4 w-4" /> Introduction
-              </a>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-secondary/5 blur-2xl" />
-            <TerminalBlock
-              label="~/my-app — zsh"
-              code={`$ bun create thexjs-app@latest my-app
-
-  Available templates:
-
-    default  Blank slate — single home page. (recommended)
-    basic    Pages, API, auth, dashboard.
-    blog     Markdown content collections.
-    saas     Dashboard, pricing, data layer.
-
-  Choose a template (default): █
-
-$ cd my-app && bun run dev
-  [x] dev server running at http://localhost:3000`}
-            />
+        <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-12">
+          <div className="h-[480px] w-[480px] animate-pulse-glow rounded-full bg-primary/15 sm:h-[640px] sm:w-[640px]" />
+        </div>
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-primary/90">
+            Fullstack · Bun · React
+          </p>
+          <h1 className="mt-6 max-w-4xl text-5xl font-bold tracking-tight leading-[1.05] sm:text-7xl">
+            One runtime.
+            <br />
+            <span className="text-primary">Every layer.</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+            x is a fullstack framework for Bun — file-based routing, SSR, static export, API routes,
+            and server functions in a single process.
+          </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <a
+              href="/docs/installation"
+              className="group inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.97]"
+            >
+              Install x{" "}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </a>
+            <a
+              href="/docs/introduction"
+              className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-card/50 px-6 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:bg-muted active:scale-[0.97]"
+            >
+              <BookOpen className="h-4 w-4" /> Introduction
+            </a>
           </div>
         </div>
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background to-transparent" />
       </section>
 
+      {/* ── Features ── */}
       <section className="mx-auto max-w-6xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">Why x</p>
-          <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Everything in one place</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Why x</p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            Everything in one place
+          </h2>
           <p className="mt-4 text-muted-foreground">
-            Most frameworks split the stack. x keeps routing, rendering, API, and build tooling in
-            one runtime.
+            Most frameworks make you choose. x gives you everything — in one Bun process, zero
+            config.
           </p>
         </div>
-        <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
           {features.map((f) => (
-            <article
-              key={f.title}
-              className="group rounded-2xl border border-border/80 bg-card/50 p-6 transition-colors hover:border-primary/25 hover:bg-card"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/50 text-primary transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
-                <f.icon className="h-4 w-4" />
+            <div key={f.title} className="bg-card p-8 transition-colors hover:bg-card/80">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <f.icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-4 font-semibold">{f.title}</h3>
+              <h3 className="mt-5 text-lg font-semibold">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-            </article>
+            </div>
           ))}
         </div>
       </section>
 
-      <section className="mx-auto mt-28 max-w-4xl px-6">
-        <div className="rounded-3xl border border-border/80 bg-card/40 p-10 text-center sm:p-14">
-          <h2 className="text-3xl font-bold sm:text-4xl">Ready to build?</h2>
-          <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-            Read the docs, scaffold a project, and ship from a single home page or a full-stack
-            starter.
+      {/* ── Terminal / Quick start ── */}
+      <section className="mx-auto mt-32 max-w-4xl px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Quick start
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="/docs"
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
-            >
-              <BookOpen className="h-4 w-4" /> Read the docs
-            </a>
-            <a
-              href="https://github.com/abdelkabirouadoukou/x"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-11 items-center rounded-xl border border-border px-5 text-sm font-medium transition-colors hover:bg-muted"
-            >
-              GitHub
-            </a>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            Scaffold in one command
+          </h2>
+          <p className="mt-4 text-muted-foreground">
+            Create a project with the default template — a single home page, ready to edit.
+          </p>
+        </div>
+        <CodeBlock
+          label="~/project — bash"
+          lang="bash"
+          code={`$ bun create thexjs-app@latest my-app
+
+  Available templates:
+
+    default  Blank slate with a single home page. (recommended)
+    basic    Pages, API route, auth, and dashboard.
+    blog     Markdown content collections.
+    saas     Dashboard, pricing, and data layer.
+    landing  Marketing site with docs pages.
+
+  Choose a template (default): █
+
+$ cd my-app && bun run dev
+  dev server running at http://localhost:3000`}
+        />
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <a
+            href="/docs/installation"
+            className="group inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.97]"
+          >
+            Installation guide{" "}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </a>
+          <a
+            href="/docs/packages/core"
+            className="inline-flex h-11 items-center rounded-xl border border-border px-6 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            Package docs
+          </a>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="mx-auto mt-32 max-w-4xl px-6">
+        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/[0.07] via-primary/[0.03] to-background p-14 text-center sm:p-24">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to build?</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              One command, one process, everything you need. Start building with x today.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <a
+                href="/docs"
+                className="group inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-xl shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.97]"
+              >
+                <BookOpen className="h-4 w-4" /> Read the docs
+              </a>
+              <a
+                href="https://github.com/abdelkabirouadoukou/x"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-card/50 px-6 text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:bg-muted active:scale-[0.97]"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+                GitHub
+              </a>
+            </div>
           </div>
         </div>
       </section>

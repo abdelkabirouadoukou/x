@@ -1,6 +1,6 @@
 import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
-import { CodeBlock, TerminalBlock } from "../../components/code-block";
+import { CodeBlock } from "../../components/code-block";
 
 export const mode = "static";
 
@@ -23,7 +23,7 @@ export default function DocPage(_props: RouteProps) {
         — x uses <span className="text-foreground">Bun.serve</span>,{" "}
         <span className="text-foreground">Bun.file</span>, and other Bun-only APIs. Verify with:
       </p>
-      <TerminalBlock label="terminal — bun" code="bun --version" />
+      <CodeBlock label="terminal" lang="bash" code="bun --version" />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Create a new project</h2>
       <p className="mt-3 text-muted-foreground">
@@ -33,8 +33,9 @@ export default function DocPage(_props: RouteProps) {
         <span className="text-foreground">@thexjs/cli</span> versions, and runs{" "}
         <span className="text-foreground">bun install</span>.
       </p>
-      <TerminalBlock
-        label="~/projects — zsh"
+      <CodeBlock
+        label="terminal"
+        lang="bash"
         code={`bun create thexjs-app@latest my-app
 cd my-app
 bun run dev`}
@@ -46,15 +47,16 @@ bun run dev`}
         <span className="text-foreground">blog</span>, <span className="text-foreground">saas</span>
         , and <span className="text-foreground">landing</span>.
       </p>
-      <TerminalBlock
+      <CodeBlock
         label="template selection"
+        lang="bash"
         code={`Available templates:
 
-  default  Blank slate with a single home page. (recommended)
-  basic    Minimal starter: pages, API route, auth, dashboard.
-  blog     Markdown content collections.
-  saas     Dashboard, settings, pricing, auth, data layer.
-  landing  Marketing site with docs pages.
+    default  Blank slate with a single home page — the fastest way to start. (recommended)
+    basic    Minimal starter: pages, an API route, auth, and a dashboard.
+    blog     Markdown content collections, post listing, and post pages.
+    saas     Dashboard, settings, pricing, auth, and a data layer example.
+    landing  Marketing site with docs pages, styled with shadcn/Tailwind.
 
 Choose a template (default/basic/blog/saas/landing) (default):`}
       />
@@ -62,8 +64,9 @@ Choose a template (default/basic/blog/saas/landing) (default):`}
         Pass a template explicitly with <span className="text-foreground">--template</span> or{" "}
         <span className="text-foreground">-t</span>:
       </p>
-      <TerminalBlock
-        label="~/projects — zsh"
+      <CodeBlock
+        label="terminal"
+        lang="bash"
         code="bun create thexjs-app@latest my-app --template default"
       />
 

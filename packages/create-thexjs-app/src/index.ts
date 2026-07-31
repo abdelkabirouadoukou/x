@@ -5,7 +5,6 @@ import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_TEMPLATE, TEMPLATES, TEMPLATE_NAMES } from "./templates.js";
-import { banner, command, dim, dimText, step, success } from "./terminal.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Templates ship inside the published package at ../templates relative to dist/index.js
@@ -50,13 +49,16 @@ async function prompt(question: string, fallback?: string): Promise<string> {
 }
 
 function printBanner(): void {
-  banner();
+  console.log("");
+  console.log("  create-thexjs-app");
+  console.log("  ------------------");
+  console.log("");
 }
 
 function printTemplateList(): void {
   for (const name of TEMPLATE_NAMES) {
     const meta = TEMPLATES[name]!;
-    const tag = meta.recommended ? dimText(" (recommended)") : "";
+    const tag = meta.recommended ? " (recommended)" : "";
     console.log(`    ${name.padEnd(8)} ${meta.description}${tag}`);
   }
 }
@@ -94,11 +96,11 @@ async function main(): Promise<void> {
   const meta = TEMPLATES[templateArg]!;
   const templateDir = join(TEMPLATES_ROOT, templateArg);
 
-  step(`Scaffolding "${slug}" from the "${templateArg}" template...`);
+  console.log(`\n[create-thexjs-app] Scaffolding "${slug}" from the "${templateArg}" template...`);
   mkdirSync(targetDir, { recursive: true });
   cpSync(templateDir, targetDir, { recursive: true });
 
-  step("Resolving latest @thexjs package versions...");
+  console.log("[create-thexjs-app] Resolving latest @thexjs package versions...");
   const coreVersion = (await fetchLatestVersion("@thexjs/core")) ?? FALLBACK_CORE_VERSION;
   const cliVersion = (await fetchLatestVersion("@thexjs/cli")) ?? FALLBACK_CORE_VERSION;
 
@@ -122,11 +124,11 @@ async function main(): Promise<void> {
   };
   writeFileSync(join(targetDir, "package.json"), `${JSON.stringify(pkgJson, null, 2)}\n`);
 
-  success(`Created ${slug}/`);
+  console.log(`[create-thexjs-app] Created ${slug}/`);
 
   const hasBun = spawnSync("bun", ["--version"], { stdio: "ignore" }).status === 0;
   if (hasBun) {
-    step("Installing dependencies with bun install...");
+    console.log("[create-thexjs-app] Installing dependencies with bun install...");
     const result = spawnSync("bun", ["install"], { cwd: targetDir, stdio: "inherit" });
     if (result.status !== 0) {
       console.warn("[create-thexjs-app] bun install failed — you can retry manually.");
@@ -139,11 +141,11 @@ async function main(): Promise<void> {
   }
 
   console.log("");
-  dim("Done! Next steps:");
+  console.log("  Done! Next steps:");
   console.log("");
-  command(`cd ${slug}`);
-  if (!hasBun) command("bun install");
-  command("bun run dev");
+  console.log(`    cd ${slug}`);
+  if (!hasBun) console.log("    bun install");
+  console.log("    bun run dev");
   console.log("");
 }
 

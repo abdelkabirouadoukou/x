@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { type ComponentType, type ReactNode, createElement } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
@@ -15,12 +15,6 @@ import {
 } from "./router";
 import { assertNoEnvLeakage } from "./security/env-isolation";
 import { registerServerFunctions } from "./server-functions";
-import {
-  actionsRewritePlugin,
-  generateFallbackHydration,
-  generateHydrateEntry,
-  islandEntryId,
-} from "./island-bundle";
 
 export type RouteMode = "static" | "server";
 
@@ -90,38 +84,21 @@ export async function build(options: BuildOptions): Promise<void> {
     routeEntries.push(...scanApiDir(legacyApiDir));
   }
 
-  // Scan actions. Every action file is registered server-side (below) AND
-  // recorded in `actionModules`, keyed by its absolute file path. The island
-  // bundler uses that map to intercept any client-side import of an action
-  // file and swap it for a generated fetch() client instead — so a component
-  // can `import { subscribeUser } from "../actions/subscribe"` and call it
-  // directly, without the real (db-touching) implementation ever reaching
-  // the browser bundle.
-  const actionModules = new Map<string, { parentPath: string; fnNames: string[] }>();
+  // Scan actions
   if (actionsDir && existsSync(actionsDir)) {
     for (const actionFile of scanRoutes(actionsDir)) {
       const mod = (await import(actionFile.filePath)) as Record<string, unknown>;
       const segments = actionFile.routePath.split("/").filter(Boolean);
       const parentPath = `/${segments.slice(0, -1).join("/")}`;
-      const fnNames: string[] = [];
-
       const actions = mod.actions as
         | Record<string, (...args: unknown[]) => Promise<unknown>>
         | undefined;
-      if (actions) {
-        registerServerFunctions(parentPath, actionFile.paramNames, actions);
-        fnNames.push(...Object.keys(actions));
-      }
+      if (actions) registerServerFunctions(parentPath, actionFile.paramNames, actions);
       for (const [key, value] of Object.entries(mod)) {
         if (key === "default" || key === "actions" || typeof value !== "function") continue;
         registerServerFunctions(parentPath, actionFile.paramNames, {
           [key]: value as (...args: unknown[]) => Promise<unknown>,
         });
-        fnNames.push(key);
-      }
-
-      if (fnNames.length > 0) {
-        actionModules.set(actionFile.filePath, { parentPath, fnNames });
       }
     }
   }
@@ -209,7 +186,7 @@ export async function build(options: BuildOptions): Promise<void> {
     let islandScripts: string[] = [];
     if (registry.entries.length > 0) {
       const uniqueNames = [...new Set(registry.entries.map((e) => e.name))];
-      islandScripts = await bundleRouteIslands(page.filePath, uniqueNames, islandsDir, actionModules);
+      islandScripts = await bundleRouteIslands(page.filePath, uniqueNames, islandsDir);
       console.log(
         `  [islands] ${uniqueNames.length} island(s) on ${page.entry.routePath} -> ${islandScripts.join(", ")}`,
       );
@@ -283,46 +260,59 @@ async function bundleRouteIslands(
   routeFilePath: string,
   islandNames: string[],
   islandsDir: string,
-  actionModules: Map<string, { parentPath: string; fnNames: string[] }>,
 ): Promise<string[]> {
-  const entryId = islandEntryId(routeFilePath);
+  const entryId = `${basename(routeFilePath).replace(/\.(tsx|ts)$/, "")}-${hash(routeFilePath)}`;
   const outdir = join(islandsDir, entryId);
   mkdirSync(outdir, { recursive: true });
   const bundlePath = join(outdir, `${entryId}.js`);
 
   const routeRel = join(relative(outdir, join(routeFilePath, "..")), basename(routeFilePath));
-  const hydrateEntry = generateHydrateEntry(routeRel);
+  const hydrateEntry = generateHydrateEntry(routeRel, islandNames);
   const entryPath = join(outdir, `${entryId}.tsx`);
   writeFileSync(entryPath, hydrateEntry, "utf-8");
 
-  try {
-    const result = await Bun.build({
-      entrypoints: [entryPath],
-      target: "browser",
-      external: ["react", "react-dom"],
-      plugins: [actionsRewritePlugin(actionModules)],
-    });
+  const result = Bun.spawnSync([
+    "bun",
+    "build",
+    "--target=browser",
+    "--external",
+    "react",
+    "--external",
+    "react-dom",
+    "--outdir",
+    outdir,
+    entryPath,
+  ]);
 
-    if (result.success) {
-      const outputs = result.outputs.filter((o) => o.kind === "entry-point");
-      const built = outputs[0] ?? result.outputs[0];
-      if (!built) throw new Error("bun build produced no output");
-      const code = await built.text();
-      assertNoEnvLeakage(code, bundlePath);
-      writeFileSync(bundlePath, code, "utf-8");
-      return [`/_islands/${entryId}/${entryId}.js`];
-    }
-    for (const log of result.logs) {
-      console.warn(`  [islands] build error: ${log.message}`);
-    }
-  } catch (err) {
-    console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
+  if (result.success) {
+    assertNoEnvLeakage(readFileSync(bundlePath, "utf-8"), bundlePath);
+    return [`/_islands/${entryId}/${entryId}.js`];
   }
 
   writeFileSync(bundlePath, generateFallbackHydration(islandNames), "utf-8");
   return [`/_islands/${entryId}/${entryId}.js`];
 }
 
+function generateHydrateEntry(routeRelPath: string, islandNames: string[]): string {
+  return `import * as Route from "${routeRelPath}";
+
+document.querySelectorAll("[data-island]").forEach((el) => {
+  const name = el.getAttribute("data-island");
+  if (!name) return;
+  const Component = Route.islands?.[name];
+  if (!Component) return;
+  const root = ReactDOM.hydrateRoot(el, React.createElement(Component));
+});
+`;
+}
+
+function generateFallbackHydration(islandNames: string[]): string {
+  return `// x island hydration fallback — ${islandNames.join(", ")}
+document.querySelectorAll("[data-island]").forEach(function(el) {
+  el.setAttribute("data-island-hydrated", "false");
+});
+`;
+}
 
 function renderPageWithLayout(
   Component: ComponentType<{ params: Record<string, string> }>,
@@ -407,4 +397,10 @@ function relativeImportPath(fromDir: string, toFile: string): string {
   return rel.startsWith(".") ? rel : `./${rel}`;
 }
 
-
+function hash(str: string): string {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h).toString(36);
+}

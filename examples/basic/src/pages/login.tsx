@@ -55,16 +55,12 @@ export default function LoginPage({ loaderData }: RouteProps) {
       <h1 className="text-2xl font-bold text-center">Login</h1>
       <form method="POST" action="/login" onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="username" className="text-sm font-medium">
-            Username
-          </label>
-          <Input id="username" name="username" defaultValue="admin" required />
+          <label className="text-sm font-medium">Username</label>
+          <Input name="username" defaultValue="admin" required />
         </div>
         <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium">
-            Password
-          </label>
-          <Input id="password" name="password" type="password" defaultValue="admin" required />
+          <label className="text-sm font-medium">Password</label>
+          <Input name="password" type="password" defaultValue="admin" required />
         </div>
         {error && (
           <p id="login-error" className="text-sm text-destructive">

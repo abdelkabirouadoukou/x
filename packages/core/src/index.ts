@@ -40,7 +40,6 @@ export {
   type Frontmatter,
 } from "./content";
 export { Island, IslandProvider, type IslandMode, type IslandEntry } from "./island";
-export { Link, type LinkProps } from "./link";
 export {
   composeMiddleware,
   type MiddlewareContext,

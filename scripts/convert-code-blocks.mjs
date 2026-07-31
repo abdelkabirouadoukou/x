@@ -39,9 +39,9 @@ const replacements = {
           </code>
         </pre>
       </div>`,
-      `<CodeBlock label="terminal" lang="bash" code={\`bun create thexjs-app@latest my-app
+      `<CodeBlock label="terminal" lang="bash" code={\`bun create x my-app
 cd my-app
-bun run dev\`} />`,
+x dev\`} />`,
     ],
     // terminal 2 (manual setup)
     [
