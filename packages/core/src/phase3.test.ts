@@ -221,6 +221,11 @@ describe("renderStreamingPage", () => {
     });
     const html = await streamToString(stream);
     expect(html).toContain('src="/_islands/test.js"');
+    expect(html).toContain("data-island-script");
+    // Island bundles must load as classic scripts (no type="module"): ESM
+    // modules execute only once per document, so re-inserting the tag during
+    // client-side navigation (back/forward) would never re-run hydration.
+    expect(html).not.toContain('type="module"');
   });
 
   test("includes island props when provided", async () => {

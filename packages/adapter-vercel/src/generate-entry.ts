@@ -88,12 +88,8 @@ export function generateEntrySource(manifest: BuildManifest, entryDir: string): 
       isApi: r.isApi,
       filePath: r.route.sourcePath,
     };
-    const layoutMods = r.layoutChain
-      .map((l) => `${l.identifier}.default`)
-      .join(", ");
-    const mwMods = r.middlewareChain
-      .map((m) => `${m.identifier}.middleware`)
-      .join(", ");
+    const layoutMods = r.layoutChain.map((l) => `${l.identifier}.default`).join(", ");
+    const mwMods = r.middlewareChain.map((m) => `${m.identifier}.middleware`).join(", ");
     lines.push(
       "  {",
       `    entry: ${JSON.stringify(entryObj)},`,

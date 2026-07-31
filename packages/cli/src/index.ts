@@ -374,6 +374,20 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Production builds must resolve React (and any other NODE_ENV-conditional
+  // packages) to their production builds. Bun keys that off NODE_ENV at
+  // process spawn -- mutating process.env afterward has no effect on
+  // Bun.build -- so re-exec the build under NODE_ENV=production once.
+  if (command === "build" && process.env.NODE_ENV !== "production") {
+    const script = process.argv[1] ?? import.meta.path;
+    const res = spawnSync(process.execPath, [script, ...process.argv.slice(2)], {
+      stdio: "inherit",
+      cwd: process.cwd(),
+      env: { ...process.env, NODE_ENV: "production" },
+    });
+    process.exit(res.status ?? 1);
+  }
+
   switch (command) {
     case "dev":
       await cmdDev();

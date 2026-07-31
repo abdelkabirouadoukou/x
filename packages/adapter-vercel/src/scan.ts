@@ -62,7 +62,9 @@ export async function resolveBuildManifest(
   const layoutsDir = options.layoutsDir || pagesDir;
   const actionsDir =
     options.actionsDir ??
-    (existsSync(join(projectRoot, "src", "actions")) ? join(projectRoot, "src", "actions") : undefined);
+    (existsSync(join(projectRoot, "src", "actions"))
+      ? join(projectRoot, "src", "actions")
+      : undefined);
 
   const registry = new ModuleRegistry(scratchDir);
 

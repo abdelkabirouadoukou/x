@@ -225,7 +225,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   const projectRoot = projectRootFromRoutesDir(primaryDir);
   const resolvedActionsDir =
     options.actionsDir ??
-    (existsSync(join(projectRoot, "src", "actions")) ? join(projectRoot, "src", "actions") : undefined);
+    (existsSync(join(projectRoot, "src", "actions"))
+      ? join(projectRoot, "src", "actions")
+      : undefined);
   let handlers: RouteHandler[] = [];
   let contentHandlers: ContentHandler[] = [];
   let publicDir: string | null = null;
@@ -316,10 +318,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     });
   }
 
-  const makeApiHandler = (
-    route: RouteEntry,
-    module: Record<string, unknown>,
-  ): ((req: Request) => Promise<Response>) =>
+  const makeApiHandler =
+    (route: RouteEntry, module: Record<string, unknown>): ((req: Request) => Promise<Response>) =>
     async (req: Request) => {
       try {
         const method = req.method;
@@ -396,7 +396,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               // Cheap discovery render: walks the tree so any <Island> in
               // it registers itself, without committing to a response yet.
               renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-              scripts = await resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries);
+              scripts = await resolveIslandScripts(
+                route.filePath,
+                layoutFilePaths,
+                registry.entries,
+              );
             }
 
             const stream = await renderStreamingPage(content, {

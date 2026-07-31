@@ -1,5 +1,5 @@
-import { createRequire } from "node:module";
 import type { Database } from "bun:sqlite";
+import { createRequire } from "node:module";
 
 export interface SQLiteOptions {
   path?: string;

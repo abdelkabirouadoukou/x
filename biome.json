@@ -2,7 +2,14 @@
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "organizeImports": { "enabled": true },
   "files": {
-    "ignore": ["**/dist/**", "**/node_modules/**", "**/*.lock", "**/public/styles.css"]
+    "ignore": [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/*.lock",
+      "**/public/styles.css",
+      "**/.x/**",
+      "**/.vercel/**"
+    ]
   },
   "formatter": {
     "enabled": true,
