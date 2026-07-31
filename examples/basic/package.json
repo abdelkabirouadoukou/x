@@ -12,6 +12,8 @@
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@tailwindcss/cli": "^4.3.3",
+    "@thexjs/adapter-vercel": "^0.1.2",
+    "@thexjs/cli": "^0.1.6",
     "@thexjs/core": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -28,8 +30,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5.8.0",
-    "@thexjs/cli": "workspace:*",
-    "@thexjs/adapter-vercel": "workspace:*"
+    "typescript": "^5.8.0"
   }
 }

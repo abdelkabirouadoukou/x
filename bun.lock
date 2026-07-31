@@ -15,6 +15,8 @@
       "dependencies": {
         "@base-ui/react": "^1.6.0",
         "@tailwindcss/cli": "^4.3.3",
+        "@thexjs/adapter-vercel": "^0.1.2",
+        "@thexjs/cli": "^0.1.6",
         "@thexjs/core": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -28,8 +30,6 @@
       },
       "devDependencies": {
         "@tailwindcss/cli": "^4.3.3",
-        "@thexjs/adapter-vercel": "workspace:*",
-        "@thexjs/cli": "workspace:*",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
         "tailwindcss": "^4.3.3",
@@ -1118,6 +1118,10 @@
     "@tailwindcss/oxide-wasm32-wasi/@tybys/wasm-util": ["@tybys/wasm-util@0.10.3", "", { "dependencies": { "tslib": "^2.4.0" }, "bundled": true }, "sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg=="],
 
     "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", { "bundled": true }, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+
+    "@thexjs/example-basic/@thexjs/adapter-vercel": ["@thexjs/adapter-vercel@0.1.2", "", { "dependencies": { "@thexjs/core": "^0.1.0", "react": "^19.0.0" } }, "sha512-lSvu6KN+5VFi8u4sSrv/RfW71fphQADT6m7mkknoeJNFqDhWmYy5aS5nzldN2jHZz/K3w8KcF4OnklswXLBaJA=="],
+
+    "@thexjs/example-basic/@thexjs/cli": ["@thexjs/cli@0.1.6", "", { "dependencies": { "@thexjs/core": "^0.1.0" }, "peerDependencies": { "@thexjs/adapter-vercel": "^0.1.0" }, "optionalPeers": ["@thexjs/adapter-vercel"], "bin": { "x": "dist/index.js" } }, "sha512-MQK/+cRm1OVfOw0x2AQKYrmdYw5/cDamEUhNMlLvfOwTyh8xZPUBZ1wHTIu/zH0tOCS2YG4pjuDeLld/ZfXzGQ=="],
 
     "blog-example/lucide-react": ["lucide-react@0.511.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-VK5a2ydJ7xm8GvBeKLS9mu1pVK6ucef9780JVUjw6bAjJL/QXnd4Y0p7SPeOUMC27YhzNCZvm5d/QX0Tp3rc0w=="],
 
