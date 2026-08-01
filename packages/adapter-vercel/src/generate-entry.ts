@@ -115,6 +115,9 @@ export function generateEntrySource(manifest: BuildManifest, entryDir: string): 
     `  pagesDir: ${JSON.stringify(manifest.pagesDirLabel)},`,
     "  development: false,",
     "  port: parseInt(process.env.PORT || '3000', 10),",
+    ...(manifest.stylesheetHref
+      ? [`  stylesheetHref: ${JSON.stringify(manifest.stylesheetHref)},`]
+      : []),
     "  ...(Object.keys(__x_security).length > 0 ? { security: __x_security } : {}),",
     "  ...(Object.keys(__x_observability).length > 0 ? { observability: __x_observability } : {}),",
     "  ...(Object.keys(__x_images).length > 0 ? { images: __x_images } : {}),",

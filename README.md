@@ -245,6 +245,33 @@ export default defineConfig({
 
 Newest first.
 
+### 2026-08 — dependency audit clean + landing + Vercel styling
+
+- **Dependency audit is clean with zero ignores** — the two previously-accepted
+  advisories are fixed for real: root `overrides` force `esbuild` to `^0.28.1`
+  and `@hono/node-server` to `^2.0.5` (via `@modelcontextprotocol/sdk@^1.30.0`,
+  which supports it), and `shadcn` moved from `dependencies` to
+  `devDependencies` in `examples/basic` (it's a dev-time scaffolder). Both
+  `bun audit` and `bun audit --prod` now pass with no ignores; CI's
+  `--ignore` flags and rationale comment removed.
+- **Vercel styling bug fixed** — server-rendered pages deployed to Vercel were
+  missing their stylesheet: `createApp` resolved the CSS `<link>` at runtime via
+  `existsSync(public/styles.css)`, which always fails inside the serverless
+  sandbox (static assets live in `.vercel/output/static`, not the function
+  bundle). The resolved href is now baked at build time into the generated
+  server entry (`stylesheetHref` option) by both `x build` and the Vercel
+  adapter. Dev mode still falls back to the runtime probe.
+- **Landing font swap** — replaced Fraunces/IBM Plex Mono with
+  Space Grotesk (display) + Inter (body) + JetBrains Mono (code), all
+  self-hosted woff2 under `public/files/` (no Google Fonts request, strict CSP
+  `font-src 'self'`), removing the fontsource deps.
+- **Boarding Pass `-6undefined` seat bug** — signed `>>` shifts on an unsigned
+  seed produced negative indexes (`"ABCDEF"[-1]` → `undefined`) and negative
+  boarding times; switched to `>>>`.
+- **Lint/typecheck clean across the workspace** — fixed `noNonNullAssertion` ×2
+  and `noForEach` in the landing `route-trail`, gave the boarding-pass barcode
+  stable keys, and formatted everything.
+
 ### 2026-07 — production-readiness pass
 
 - **`x build --outDir <dir>` / `x start --outDir <dir>`** — CLI now writes the
@@ -271,7 +298,7 @@ Newest first.
 - **Docs** — added `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`,
   `CODE_OF_CONDUCT.md`, `.env.example`.
 - **CI** — pinned Bun 1.3.14, Linux + macOS matrix, dependency audit job
-  (two known dev-only advisories ignored with rationale).
+  (full graph + a separate production-graph audit with no ignores).
 
 ## Links
 

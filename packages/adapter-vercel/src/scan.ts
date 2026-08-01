@@ -163,6 +163,9 @@ export async function resolveBuildManifest(
     ...(notFound ? { notFound } : {}),
     ...(rootLayout ? { rootLayout } : {}),
     hasServerSurface: routes.length > 0 || actions.length > 0,
+    ...(existsSync(join(projectRoot, "public", "styles.css"))
+      ? { stylesheetHref: "/styles.css" }
+      : {}),
     security: options.security,
     observability: options.observability,
     images: options.images,

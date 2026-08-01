@@ -30,8 +30,8 @@ export default function RouteTrail() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (window.matchMedia("(pointer: coarse)").matches) return; // skip on touch
 
-    function onMove(e: PointerEvent) {
-      const rect = el!.getBoundingClientRect();
+    const onMove = (e: PointerEvent) => {
+      const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
@@ -49,7 +49,7 @@ export default function RouteTrail() {
       pin.style.left = `${x}px`;
       pin.style.top = `${y}px`;
       pin.style.transform = "translate(-50%, -50%)";
-      el!.appendChild(pin);
+      el.appendChild(pin);
       live.current.push(pin);
 
       if (live.current.length > MAX_LIVE_PINS) {
@@ -61,7 +61,7 @@ export default function RouteTrail() {
         pin.remove();
         live.current = live.current.filter((p) => p !== pin);
       }, PIN_LIFETIME_MS);
-    }
+    };
 
     // Listen on window rather than the (pointer-events-none) overlay itself —
     // the overlay must stay click-through so it never eats clicks on the
@@ -69,7 +69,7 @@ export default function RouteTrail() {
     window.addEventListener("pointermove", onMove);
     return () => {
       window.removeEventListener("pointermove", onMove);
-      live.current.forEach((p) => p.remove());
+      for (const p of live.current) p.remove();
       live.current = [];
     };
   }, []);

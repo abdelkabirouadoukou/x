@@ -105,7 +105,9 @@ export default function HomePage() {
 
       <section className="mx-auto max-w-6xl px-6 pt-8">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="folder-tab font-mono text-[11px] uppercase tracking-[0.22em] text-primary">Why x</span>
+          <span className="folder-tab font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+            Why x
+          </span>
           <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">Everything in one place</h2>
           <p className="ledger-rule mt-4 text-left text-muted-foreground">
             Most frameworks split the stack. x keeps routing, rendering, API, and build tooling in

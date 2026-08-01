@@ -3,12 +3,7 @@ export interface PostgresClient {
   (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown>;
 }
 
-export type PostgresSslMode =
-  | "disable"
-  | "prefer"
-  | "require"
-  | "verify-ca"
-  | "verify-full";
+export type PostgresSslMode = "disable" | "prefer" | "require" | "verify-ca" | "verify-full";
 
 export interface PostgresOptions {
   url?: string;
@@ -97,9 +92,7 @@ export function connectPostgres(options: PostgresOptions = {}): PostgresClient {
     // Providing a CA also turns on certificate verification (Bun escalates a
     // `ca`-bearing tls object to verify-full), so only attach it when a
     // verified mode is in effect.
-    ...(options.ca && sslMode !== "disable"
-      ? { tls: { ca: options.ca } }
-      : {}),
+    ...(options.ca && sslMode !== "disable" ? { tls: { ca: options.ca } } : {}),
   });
 
   const attempts = options.retryAttempts ?? 3;
@@ -116,12 +109,7 @@ export function connectPostgres(options: PostgresOptions = {}): PostgresClient {
   let primed: Promise<void> | null = null;
 
   const prime = () => {
-    primed ??= probeWithRetry(
-      client,
-      attempts,
-      options.retryDelayMs ?? 250,
-      options.onRetry,
-    );
+    primed ??= probeWithRetry(client, attempts, options.retryDelayMs ?? 250, options.onRetry);
     return primed;
   };
 

@@ -50,21 +50,10 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Two known advisories are accepted and documented; the job still fails on
-      # anything new:
-      #   - GHSA-frvp-7c67-39w9: @hono/node-server <2.0.5, Windows-only path
-      #     traversal in serve-static. Pulled in by the shadcn CLI (a dev-time
-      #     component scaffolder) via @modelcontextprotocol/sdk, pinned ^1.19.9.
-      #     Not part of the runtime server. Unfixable without a major-skipping
-      #     override.
-      #   - GHSA-g7r4-m6w7-qqqr: esbuild >=0.27.3 <0.28.1, dev-server arbitrary
-      #     file read on Windows. Dev-only build dependency of adapter-vercel
-      #     (tsup). Not shipped.
       - name: Audit dependencies
-        run: bun audit --ignore GHSA-frvp-7c67-39w9 --ignore GHSA-g7r4-m6w7-qqqr
+        run: bun audit
 
-      # The two ignores above apply to the full graph (dev + prod). Guard the
-      # production-only graph separately with NO ignores: if either advisory
-      # ever shows up in what's actually shipped, this step fails regardless.
+      # Guard the production-only graph separately: anything in what's actually
+      # shipped must be clean with NO ignores.
       - name: Audit production dependencies
         run: bun audit --prod

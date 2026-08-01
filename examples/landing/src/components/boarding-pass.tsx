@@ -37,18 +37,18 @@ function deriveTicket(name: string, route: string) {
   const seed = hashString(`${name}::${route}`);
   const gate = GATES[seed % GATES.length];
   const gateNumber = 1 + (seed % 24);
-  const seatRow = 1 + ((seed >> 3) % 34);
-  const seatLetter = "ABCDEF"[(seed >> 7) % 6];
-  const boarding = `${String(6 + ((seed >> 5) % 12)).padStart(2, "0")}:${String(
-    (seed >> 9) % 6 * 10,
+  const seatRow = 1 + ((seed >>> 3) % 34);
+  const seatLetter = "ABCDEF"[(seed >>> 7) % 6];
+  const boarding = `${String(6 + ((seed >>> 5) % 12)).padStart(2, "0")}:${String(
+    ((seed >>> 9) % 6) * 10,
   ).padStart(2, "0")}`;
   const segCount = route === "/" ? 1 : route.split("/").filter(Boolean).length;
   const isDynamic = /[:[]/.test(route);
 
   // A stable "barcode": bar widths derived from the hash, not decorative.
   const bars = Array.from({ length: 34 }, (_, i) => {
-    const v = (seed >> (i % 24)) ^ (i * 2654435761);
-    return 1 + (Math.abs(v) % 3);
+    const v = (seed >>> (i % 24)) ^ (i * 2654435761);
+    return { id: `bar-${i}-${1 + (Math.abs(v) % 3)}`, width: 1 + (Math.abs(v) % 3) };
   });
 
   return {
@@ -173,8 +173,8 @@ export default function BoardingPass() {
             {ticket.gate} · {ticket.seat}
           </p>
           <div className="barcode-bars">
-            {ticket.bars.map((w, i) => (
-              <span key={i} style={{ width: `${w}px` }} />
+            {ticket.bars.map((bar) => (
+              <span key={bar.id} style={{ width: `${bar.width}px` }} />
             ))}
           </div>
           <p className="font-mono text-[9px] text-muted-foreground">{ticket.confirmation}</p>

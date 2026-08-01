@@ -99,11 +99,9 @@ export default function PlayPage() {
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
             Not a game — a souvenir. Type a route the way you'd name a file under{" "}
-            <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs">
-              src/pages
-            </code>
-            , and get it back as a boarding pass: gate, seat, static-vs-SSR, all derived from what
-            you typed.
+            <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs">src/pages</code>,
+            and get it back as a boarding pass: gate, seat, static-vs-SSR, all derived from what you
+            typed.
           </p>
           <Island name="BoardingPass" client="visible">
             <BoardingPass />

@@ -77,6 +77,8 @@ export interface BuildManifest {
   notFound?: CompiledModuleRef;
   rootLayout?: CompiledModuleRef;
   hasServerSurface: boolean;
+  /** Resolved stylesheet <link> href for server-rendered pages (baked at build time). */
+  stylesheetHref?: string;
   /** Security options serialized for the generated entry. */
   security?: VercelAdapterOptions["security"];
   /** Observability options serialized for the generated entry. */
