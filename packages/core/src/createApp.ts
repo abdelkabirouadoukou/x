@@ -61,6 +61,14 @@ export interface CreateAppOptions {
   actionsDir?: string;
   port?: number;
   development?: boolean;
+  /**
+   * Resolved stylesheet <link> href (e.g. "/styles.css"), precomputed by the
+   * build. Runtimes that can't check the filesystem at request time (Vercel's
+   * Node.js functions) rely on this so server-rendered pages still emit the
+   * stylesheet tag. When unset, createApp falls back to a runtime probe of
+   * `public/styles.css`.
+   */
+  stylesheetHref?: string;
   security?: {
     /** CSRF protection for /__x/actions/* requests. Origin/Referer verification is always on unless disabled. */
     csrf?: CsrfOptions;
@@ -484,7 +492,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const candidatePublicDir = join(projectRoot, "public");
       publicDir = existsSync(candidatePublicDir) ? candidatePublicDir : null;
       stylesheetHref =
-        publicDir && existsSync(join(publicDir, "styles.css")) ? "/styles.css" : undefined;
+        options.stylesheetHref ??
+        (publicDir && existsSync(join(publicDir, "styles.css")) ? "/styles.css" : undefined);
       if (preloaded.notFoundComponent) notFoundComponent = preloaded.notFoundComponent;
       if (preloaded.notFoundLayout) notFoundLayout = preloaded.notFoundLayout;
 
@@ -607,7 +616,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const candidatePublicDir = join(projectRoot, "public");
     publicDir = existsSync(candidatePublicDir) ? candidatePublicDir : null;
     stylesheetHref =
-      publicDir && existsSync(join(publicDir, "styles.css")) ? "/styles.css" : undefined;
+      options.stylesheetHref ??
+      (publicDir && existsSync(join(publicDir, "styles.css")) ? "/styles.css" : undefined);
 
     const notFoundEntry = scanNotFound(pagesDir);
     if (notFoundEntry) {
@@ -833,7 +843,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       if (healthResult !== null) return healthResult;
 
       if (rateLimiter) {
-        const limited = rateLimitMiddleware(rateLimiter, req);
+        const limited = await rateLimitMiddleware(rateLimiter, req);
         if (limited !== null) return limited;
       }
 
@@ -936,7 +946,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     if (healthResult !== null) return healthResult;
 
     if (rateLimiter) {
-      const limited = rateLimitMiddleware(rateLimiter, req);
+      const limited = await rateLimitMiddleware(rateLimiter, req);
       if (limited !== null) return limited;
     }
 

@@ -65,17 +65,12 @@ export function applySecurityHeaders(
   // Headers.entries()/.keys() exist at runtime in Bun but aren't in the DOM
   // lib types tsup builds against, so cast the same way the loop below does
   // instead of calling them directly (that mismatch is what broke the DTS build).
-  let appliedCount = 0;
   for (const [key, value] of (
     extra as unknown as { entries(): IterableIterator<[string, string]> }
   ).entries()) {
     if (!res.headers.has(key)) {
       res.headers.set(key, value);
-      appliedCount++;
     }
   }
-  console.log(
-    `[x][security] applied ${appliedCount} security header(s) to ${res.url || "response"}`,
-  );
   return res;
 }

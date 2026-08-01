@@ -1,5 +1,10 @@
+import type { Database } from "bun:sqlite";
+// DEMO ONLY: hardcoded admin/admin credentials, plaintext password comparison,
+// no session expiry. This auth is a placeholder for demos — replace with real
+// credential storage (hashed passwords) before shipping anything production.
 import { randomUUID } from "node:crypto";
-import { join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
 
 const SESSION_COOKIE = "x_session";
@@ -12,9 +17,13 @@ export interface Session {
   username: string;
 }
 
-function getDb() {
+let db: Database | null = null;
+
+function getDb(): Database {
+  if (db) return db;
   const dbPath = join(import.meta.dir, "..", "..", "data", "dev.db");
-  const db = connectSQLite({ path: dbPath });
+  mkdirSync(dirname(dbPath), { recursive: true });
+  db = connectSQLite({ path: dbPath });
   runSQLiteMigrations(db, join(import.meta.dir, "migrations"));
   return db;
 }
@@ -33,6 +42,16 @@ export function createSession(username: string): Session {
   ] as unknown as string[]);
 
   return { id, token, user_id: userId, username };
+}
+
+// DEMO ONLY: the single source of truth for the credential check, shared by
+// the login API route and the login page's server fallback. Replace this with
+// real (hashed) password verification before shipping.
+export function authenticate(email: string, password: string): Session | null {
+  if (email === "admin" && password === "admin") {
+    return createSession(email);
+  }
+  return null;
 }
 
 export function getSession(token: string | undefined): Session | null {
@@ -61,10 +80,12 @@ export function parseSessionCookie(cookieHeader: string | null): string | undefi
   return undefined;
 }
 
+const SECURE_COOKIE_FLAG = process.env.NODE_ENV === "production" ? "; Secure" : "";
+
 export function setSessionCookie(token: string): string {
-  return `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_MAX_AGE}`;
+  return `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_MAX_AGE}${SECURE_COOKIE_FLAG}`;
 }
 
 export function clearSessionCookie(): string {
-  return `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
+  return `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${SECURE_COOKIE_FLAG}`;
 }

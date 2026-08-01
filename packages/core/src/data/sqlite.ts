@@ -1,5 +1,4 @@
 import type { Database } from "bun:sqlite";
-import { createRequire } from "node:module";
 
 export interface SQLiteOptions {
   path?: string;
@@ -7,11 +6,13 @@ export interface SQLiteOptions {
   foreignKeys?: boolean;
 }
 
-// `bun:sqlite` is a Bun builtin. Loading it through `require()` keeps the
-// import lazy so this module (and anything that imports `@thexjs/core/data`)
-// still loads on non-Bun runtimes like Vercel's Node.js functions — the
-// error only surfaces if someone actually calls connectSQLite() there.
-const require = createRequire(import.meta.url);
+// `bun:sqlite` is a Bun builtin. Loading it through `import.meta.require`
+// keeps the import lazy so this module (and anything that imports
+// `@thexjs/core/data`) still loads on non-Bun runtimes like Vercel's Node.js
+// functions — the error only surfaces if someone actually calls
+// connectSQLite() there. (Bun's `import.meta.require` also keeps this module
+// bundleable for the browser: no top-level `node:module` import.)
+const require = import.meta.require;
 
 function loadBunSQLite(): { Database: typeof Database } {
   try {

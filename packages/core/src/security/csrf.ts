@@ -15,6 +15,11 @@ const CSRF_COOKIE_NAME = "x_csrf_token";
 const CSRF_HEADER_NAME = "x-csrf-token";
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
+// Always sent over HTTPS in production deployments. The Secure flag prevents
+// the cookie from leaking over plain HTTP if a client ever hits the HTTP
+// endpoint directly.
+const SECURE_COOKIE_FLAG = process.env.NODE_ENV === "production" ? "; Secure" : "";
+
 export interface CsrfOptions {
   /** Origins considered same-site, e.g. ["https://example.com"]. */
   allowedOrigins?: string[];
@@ -106,7 +111,10 @@ export function withCsrfCookie(req: Request, res: Response): Response {
   if (readCookie(req, CSRF_COOKIE_NAME)) return res;
   const token = generateCsrfToken();
   const headers = new Headers(res.headers);
-  headers.append("Set-Cookie", `${CSRF_COOKIE_NAME}=${token}; Path=/; SameSite=Lax`);
+  headers.append(
+    "Set-Cookie",
+    `${CSRF_COOKIE_NAME}=${token}; Path=/; SameSite=Lax${SECURE_COOKIE_FLAG}`,
+  );
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 

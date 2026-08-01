@@ -16,6 +16,30 @@ const ENV_ACCESS_PATTERNS = [
   /\bBun\.env\.([A-Za-z_][A-Za-z0-9_]*)/g,
   /\bBun\.env\[["']([A-Za-z_][A-Za-z0-9_]*)["']\]/g,
   /\bimport\.meta\.env\.([A-Za-z_][A-Za-z0-9_]*)/g,
+  /\bimport\.meta\.env\[["']([A-Za-z_][A-Za-z0-9_]*)["']\]/g,
+];
+
+/**
+ * Patterns for env access that a naive key-scan can't pin to a literal name —
+ * dynamic keys (`process.env[key]`), string-concatenated keys
+ * (`process.env["ST" + "RIPE"]`), and bare/aliased env objects
+ * (`const e = process.env; e.KEY`). The key-scan can't name the exact
+ * variable, but any of these inside a client bundle is still a leak by policy,
+ * so they're flagged with a descriptive marker instead of silently passing.
+ */
+const SUSPICIOUS_ENV_PATTERNS: { re: RegExp; label: string }[] = [
+  {
+    re: /\b(?:process|Bun|import\.meta)\.env\s*\[[^"'`]/g,
+    label: "dynamic env key access",
+  },
+  {
+    re: /\b(?:process|Bun|import\.meta)\.env\[["'][^"']*["']\s*\+/g,
+    label: "concatenated env key access",
+  },
+  {
+    re: /\b(?:process|Bun)\.env\b(?!\s*(?:\.|\[))/g,
+    label: "bare process.env access (aliasing/mutation)",
+  },
 ];
 
 /**
@@ -32,6 +56,10 @@ export function findLeakedEnvKeys(code: string): string[] {
         found.add(key);
       }
     }
+  }
+  for (const { re, label } of SUSPICIOUS_ENV_PATTERNS) {
+    re.lastIndex = 0;
+    if (re.test(code)) found.add(`process.env (${label})`);
   }
   return [...found];
 }

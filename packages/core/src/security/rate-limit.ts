@@ -1,9 +1,11 @@
 /**
- * Lightweight in-memory rate limiter. Fixed-window counter keyed by client
- * IP by default. Good enough for a single-process Bun deployment or as a
- * first line of defense in front of brute-force/DDoS traffic; for multi-instance
- * deployments, front this with a shared store (Redis, etc.) via a custom `keyFn`
- * and store — this implementation intentionally has no external dependencies.
+ * Lightweight fixed-window rate limiter. In-memory by default, keyed by client
+ * IP — good enough for a single-process Bun deployment or as a first line of
+ * defense in front of brute-force/DDoS traffic. For multi-instance deployments
+ * (K8s, multiple replicas) pass a shared `store` (see `createRedisRateLimitStore`)
+ * so limits are enforced across processes. This implementation has no external
+ * dependencies: the Redis store lazy-imports Bun's built-in `bun:redis` only
+ * when it's actually used.
  */
 
 export interface RateLimitOptions {
@@ -13,6 +15,8 @@ export interface RateLimitOptions {
   windowMs?: number;
   /** Derives the rate-limit bucket key from a request. Default: client IP from standard headers. */
   keyFn?: (req: Request) => string;
+  /** Optional shared store (e.g. Redis) for multi-instance deployments. */
+  store?: RateLimitStore;
 }
 
 export interface RateLimitResult {
@@ -20,6 +24,15 @@ export interface RateLimitResult {
   limit: number;
   remaining: number;
   resetAt: number;
+}
+
+/**
+ * A shared backend for rate-limit counters. Implementations must atomically
+ * increment the counter for `key` (creating a fresh window of `windowMs`
+ * when the key is new) and return the new count plus when the window resets.
+ */
+export interface RateLimitStore {
+  incr(key: string, windowMs: number): Promise<{ count: number; resetAt: number }>;
 }
 
 interface Bucket {
@@ -39,10 +52,16 @@ export function createRateLimiter(options: RateLimitOptions = {}) {
   const limit = options.limit ?? 60;
   const windowMs = options.windowMs ?? 60_000;
   const keyFn = options.keyFn ?? defaultKeyFn;
+  const store = options.store;
   const buckets = new Map<string, Bucket>();
 
-  function check(req: Request): RateLimitResult {
+  async function check(req: Request): Promise<RateLimitResult> {
     const key = keyFn(req);
+    if (store) {
+      const { count, resetAt } = await store.incr(key, windowMs);
+      return { ok: count <= limit, limit, remaining: Math.max(0, limit - count), resetAt };
+    }
+
     const now = Date.now();
     let bucket = buckets.get(key);
 
@@ -56,7 +75,11 @@ export function createRateLimiter(options: RateLimitOptions = {}) {
     return { ok, limit, remaining: Math.max(0, limit - bucket.count), resetAt: bucket.resetAt };
   }
 
-  /** Periodically call to prevent unbounded growth of the bucket map. Safe to skip in tests. */
+  /**
+   * Drops expired buckets from the in-memory map. Runs automatically on an
+   * interval once per window (no-op when a shared store is used); call
+   * `dispose()` to stop it, e.g. when tearing down in tests.
+   */
   function sweep(): void {
     const now = Date.now();
     for (const [key, bucket] of buckets) {
@@ -64,18 +87,22 @@ export function createRateLimiter(options: RateLimitOptions = {}) {
     }
   }
 
-  return { check, sweep, buckets };
+  const timer = setInterval(sweep, Math.max(windowMs, 1000));
+  // Don't keep the process (or a test run) alive just for sweeping.
+  timer.unref?.();
+
+  return { check, sweep, buckets, dispose: () => clearInterval(timer) };
 }
 
 /**
  * Convenience middleware-style handler: returns a 429 Response when the
  * limit is exceeded, or null when the request should proceed.
  */
-export function rateLimitMiddleware(
+export async function rateLimitMiddleware(
   limiter: ReturnType<typeof createRateLimiter>,
   req: Request,
-): Response | null {
-  const result = limiter.check(req);
+): Promise<Response | null> {
+  const result = await limiter.check(req);
   if (result.ok) return null;
 
   const retryAfterSeconds = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
@@ -87,4 +114,68 @@ export function rateLimitMiddleware(
       "X-RateLimit-Remaining": String(result.remaining),
     },
   });
+}
+
+/**
+ * Shared rate-limit store backed by Redis, so limits are enforced across
+ * multiple server instances. Uses Bun's built-in `bun:redis` (no npm
+ * dependency) and connects lazily on first use. Pass the result as
+ * `store` in `createRateLimiter`/`security.rateLimit`.
+ */
+export function createRedisRateLimitStore(options: { url?: string } = {}): RateLimitStore {
+  type RedisClientLike = { sendCommand(...args: string[]): Promise<unknown> };
+  let client: RedisClientLike | null = null;
+  let connecting: Promise<RedisClientLike> | null = null;
+
+  async function connect(): Promise<RedisClientLike> {
+    // Loaded lazily through import.meta.require (like bun:sqlite) so this
+    // module still type-checks and loads on runtimes where bun:redis isn't
+    // available — the failure only surfaces if someone actually uses the Redis
+    // store — and so the browser bundle never sees a `node:module` import.
+    const require = import.meta.require;
+    const mod = require("bun:redis") as {
+      RedisClient: new (opts?: { url?: string }) => {
+        connect(): Promise<unknown>;
+        sendCommand(...args: string[]): Promise<unknown>;
+      };
+    };
+    const instance = options.url
+      ? new mod.RedisClient({ url: options.url })
+      : new mod.RedisClient();
+    await instance.connect();
+    return instance;
+  }
+
+  function getClient(): Promise<RedisClientLike> {
+    if (client) return Promise.resolve(client);
+    if (!connecting) {
+      // Clear `connecting` on failure so a transient blip (Redis briefly
+      // unreachable at boot) doesn't poison every later request with the same
+      // rejected promise — the store keeps retrying on each subsequent call.
+      connecting = connect().then(
+        (c) => {
+          client = c;
+          return c;
+        },
+        (err) => {
+          connecting = null;
+          throw err;
+        },
+      );
+    }
+    return connecting;
+  }
+
+  return {
+    async incr(key, windowMs) {
+      const c = await getClient();
+      const redisKey = `x:ratelimit:${key}`;
+      const ttlSeconds = Math.max(1, Math.ceil(windowMs / 1000));
+      const count = Number(await c.sendCommand("INCR", redisKey));
+      if (count === 1) {
+        await c.sendCommand("EXPIRE", redisKey, String(ttlSeconds));
+      }
+      return { count, resetAt: Date.now() + windowMs };
+    },
+  };
 }

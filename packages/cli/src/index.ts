@@ -10,10 +10,12 @@ function parseArgv(argv: string[]): {
   command: string | undefined;
   cwd: string | undefined;
   adapter: string | undefined;
+  outDir: string | undefined;
 } {
   const rest: string[] = [];
   let cwd: string | undefined;
   let adapter: string | undefined;
+  let outDir: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] as string;
@@ -43,15 +45,33 @@ function parseArgv(argv: string[]): {
       adapter = value;
       continue;
     }
+    if (arg === "--outDir") {
+      const next = argv[++i];
+      if (!next || next.startsWith("--")) {
+        xError('"--outDir" requires a path, e.g. "--outDir dist"');
+        process.exit(1);
+      }
+      outDir = next;
+      continue;
+    }
+    if (arg.startsWith("--outDir=")) {
+      const value = arg.slice("--outDir=".length);
+      if (!value) {
+        xError('"--outDir=" requires a path, e.g. "--outDir=dist"');
+        process.exit(1);
+      }
+      outDir = value;
+      continue;
+    }
     rest.push(arg);
   }
 
   if (rest[0] === "run") rest.shift();
 
-  return { command: rest[0], cwd, adapter };
+  return { command: rest[0], cwd, adapter, outDir };
 }
 
-const { command, cwd, adapter } = parseArgv(Bun.argv.slice(2));
+const { command, cwd, adapter, outDir: outDirFlag } = parseArgv(Bun.argv.slice(2));
 const projectDir = cwd ? resolve(process.cwd(), cwd) : process.cwd();
 
 function findConfig(): string | null {
@@ -210,6 +230,19 @@ async function cmdDev(): Promise<void> {
     process.exit(1);
   }
   xSuccess(`dev server running at http://localhost:${port}`);
+
+  let shuttingDown = false;
+  function shutdown(signal: string): void {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    xInfo(`received ${signal} - shutting down`);
+    server?.stop(true);
+    const exit = () => process.exit(0);
+    const drainTimer = setTimeout(exit, 3000);
+    drainTimer.unref?.();
+  }
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 async function cmdBuild(adapterName: string | undefined): Promise<void> {
@@ -266,7 +299,7 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
 
   const corePath = Bun.resolveSync("@thexjs/core", projectDir);
   const { build } = await import(corePath);
-  const outDir = join(projectDir, ".x");
+  const outDir = resolve(projectDir, outDirFlag ?? ".x");
   await build({
     ...rest,
     outDir,
@@ -278,7 +311,7 @@ async function cmdBuild(adapterName: string | undefined): Promise<void> {
 }
 
 async function cmdStart(): Promise<void> {
-  const outDir = join(projectDir, ".x");
+  const outDir = resolve(projectDir, outDirFlag ?? ".x");
   const serverEntry = join(outDir, "server", "index.ts");
 
   if (!existsSync(serverEntry)) {
@@ -312,7 +345,9 @@ async function cmdStart(): Promise<void> {
 
 async function serveStaticBuild(clientDir: string): Promise<void> {
   const port = Number(process.env.PORT) || 3000;
-  xInfo(`static build detected — serving .x/client on http://localhost:${port}`);
+  xInfo(
+    `static build detected — serving ${relative(projectDir, clientDir)} on http://localhost:${port}`,
+  );
   Bun.serve({
     port,
     async fetch(req) {
@@ -360,6 +395,7 @@ Commands:
 Options:
   --cwd <dir>          Run as if started inside <dir> (default: current directory)
   --adapter <name>     "build" target adapter, e.g. "vercel" (default: Bun server -> .x/)
+  --outDir <dir>       Output directory for "build"/"start" (default: .x)
   -h, --help           Show this help message
   -v, --version        Print the CLI version
 

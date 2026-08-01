@@ -56,15 +56,18 @@ x start
 
 # x run dev  also works (alias)
 # x build --adapter vercel  emits .vercel/output (requires @thexjs/adapter-vercel)
+# x build --outDir dist  writes the build to ./dist (Dockerfile/DEPLOY.md use this)
 # --cwd <dir>  run as if from another directory
 ```
 
 ## Build output
 
-- `x build` writes to `.x/` (configurable via `outDir`)
+- `x build` writes to `.x/` (configurable via `--outDir` or `outDir`)
 - `.x/client/` — static HTML, island JS chunks, public assets
-- `.x/server/index.ts` — generated server entry (run with `x start` or `bun .x/server/index.js`)
+- `.x/server/index.ts` — generated server entry (run with `x start` or `bun .x/server/index.ts`)
 - `x start` runs the production server from `.x/server/`
+- The generated server entry handles `SIGTERM`/`SIGINT` gracefully (stops
+  accepting connections, flushes the error reporter, drains for 3s, exits)
 
 ## File-based routing conventions
 

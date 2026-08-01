@@ -1,11 +1,12 @@
 import { Island } from "@thexjs/core";
-import { BookOpen, FileJson, ShieldCheck, Split } from "lucide-react";
+import { BookOpen, FileJson, ShieldCheck, Split, Ticket } from "lucide-react";
+import BoardingPass from "../components/boarding-pass";
 import LeakCheck from "../components/leak-check";
 import ModeCall from "../components/mode-call";
 import RouteRush from "../components/route-rush";
 
 export const mode = "static";
-export const islands = { RouteRush, LeakCheck, ModeCall };
+export const islands = { RouteRush, LeakCheck, ModeCall, BoardingPass };
 
 const games = [
   {
@@ -54,8 +55,8 @@ export default function PlayPage() {
           The x Arcade
         </h1>
         <p className="mt-4 text-muted-foreground">
-          Three small games built out of the same ideas the framework runs on. None of them take
-          more than a minute — play one, or all three.
+          Three small games built out of the same ideas the framework runs on, plus one souvenir.
+          None of them take more than a minute — play one, or all four.
         </p>
       </div>
 
@@ -79,6 +80,33 @@ export default function PlayPage() {
             {g.node}
           </section>
         ))}
+      </div>
+
+      <div className="mx-auto mt-16 max-w-2xl">
+        <section>
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/60 text-primary">
+              <Ticket className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="font-display text-xl font-bold uppercase tracking-tight">
+                Boarding Pass
+              </h2>
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                a route, printed as a ticket
+              </p>
+            </div>
+          </div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Not a game — a souvenir. Type a route the way you'd name a file under{" "}
+            <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs">src/pages</code>,
+            and get it back as a boarding pass: gate, seat, static-vs-SSR, all derived from what you
+            typed.
+          </p>
+          <Island name="BoardingPass" client="visible">
+            <BoardingPass />
+          </Island>
+        </section>
       </div>
 
       <div className="mx-auto mt-20 max-w-xl text-center">
