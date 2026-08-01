@@ -42,6 +42,10 @@ jobs:
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
+          # changeset:version = `changeset version && bun run lint:fix`, so the
+          # versioning PR is never blocked by biome formatting of the rewritten
+          # package.json files (JSON.stringify writes multi-line arrays).
+          version: bun run changeset:version
           publish: bunx @changesets/cli publish
           title: "chore: version packages"
           commit: "chore: version packages"
