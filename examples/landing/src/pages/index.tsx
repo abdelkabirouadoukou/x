@@ -2,10 +2,11 @@ import { Island } from "@thexjs/core";
 import { ArrowRight, BookOpen, FileJson, Globe, Layers, Shield, Sparkles, Zap } from "lucide-react";
 import { TerminalBlock } from "../components/code-block";
 import RouteResolver from "../components/route-resolver";
+import RouteTrail from "../components/route-trail";
 import ShipIt from "../components/ship-it";
 import { StardanceBadge } from "../components/stardance-badge";
 
-export const islands = { RouteResolver, ShipIt };
+export const islands = { RouteResolver, ShipIt, RouteTrail };
 
 const features = [
   {
@@ -46,11 +47,14 @@ export default function HomePage() {
   return (
     <div className="pb-32">
       <section className="route-grid relative overflow-hidden px-6 pt-16 pb-20 sm:pt-20">
+        <Island name="RouteTrail" client="idle">
+          <RouteTrail />
+        </Island>
         <div className="relative z-10 mx-auto grid max-w-6xl items-start gap-14 lg:grid-cols-[1fr_1fr] lg:gap-10">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">
+            <span className="folder-tab font-mono text-[11px] uppercase tracking-[0.28em] text-primary">
               Bun-native fullstack
-            </p>
+            </span>
             <h1 className="mt-5 text-[clamp(2.4rem,6vw,4.1rem)] font-bold uppercase leading-[1.04]">
               Files in.
               <br />
@@ -101,9 +105,11 @@ export default function HomePage() {
 
       <section className="mx-auto max-w-6xl px-6 pt-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">Why x</p>
+          <span className="folder-tab font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+            Why x
+          </span>
           <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">Everything in one place</h2>
-          <p className="mt-4 text-muted-foreground">
+          <p className="ledger-rule mt-4 text-left text-muted-foreground">
             Most frameworks split the stack. x keeps routing, rendering, API, and build tooling in
             one runtime.
           </p>
@@ -112,7 +118,7 @@ export default function HomePage() {
           {features.map((f) => (
             <article
               key={f.title}
-              className="group rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/30"
+              className="crop-marks group rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/30 [&::before]:opacity-0 [&::after]:opacity-0 hover:[&::before]:opacity-100 hover:[&::after]:opacity-100 [&::before]:transition-opacity [&::after]:transition-opacity"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/60 text-primary transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
                 <f.icon className="h-4 w-4" />
@@ -127,9 +133,9 @@ export default function HomePage() {
       <section className="mx-auto mt-28 max-w-6xl px-6">
         <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+            <span className="folder-tab font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
               Zero config
-            </p>
+            </span>
             <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">
               One command to a running server
             </h2>
@@ -165,9 +171,9 @@ $ cd my-app && bun run dev
             </Island>
           </div>
           <div className="order-1 lg:order-2">
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+            <span className="folder-tab font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
               Deploy speed
-            </p>
+            </span>
             <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">
               Reflexes vs. a cold start
             </h2>
@@ -184,9 +190,9 @@ $ cd my-app && bun run dev
           href="/play"
           className="ticket-card group relative block overflow-hidden rounded-3xl border border-border bg-card px-8 py-10 text-center transition-colors hover:border-primary/40 sm:px-16 sm:py-14"
         >
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
+          <span className="folder-tab font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
             Learn by playing
-          </p>
+          </span>
           <h2 className="mt-4 text-3xl font-bold uppercase sm:text-4xl">The x Arcade</h2>
           <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
             Three tiny games that only make sense once you know how the framework thinks: route

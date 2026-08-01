@@ -1,7 +1,60 @@
+import type { LoaderArgs, RouteProps } from "@thexjs/core";
 import { LogIn } from "lucide-react";
+import { useState } from "react";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { createSession, setSessionCookie } from "../lib/auth";
 import { cn } from "../lib/utils";
 
-export default function LoginPage() {
+export async function loader({ request }: LoaderArgs) {
+  if (request.method === "POST") {
+    const formData = await request.formData();
+    const username = formData.get("email") as string | null;
+    const password = formData.get("password") as string | null;
+    if (username === "admin" && password === "admin") {
+      const session = createSession(username);
+      return new Response(null, {
+        status: 302,
+        headers: { Location: "/dashboard", "Set-Cookie": setSessionCookie(session.token) },
+      });
+    }
+    return { error: "Invalid credentials" };
+  }
+  return {};
+}
+
+export default function LoginPage({ loaderData }: RouteProps) {
+  const [error, setError] = useState((loaderData?.error as string) ?? "");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const form = e.currentTarget;
+    const data = {
+      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      password: (form.elements.namedItem("password") as HTMLInputElement).value,
+    };
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        window.location.href = "/dashboard";
+      } else {
+        const err = (await res.json()) as { error?: string };
+        setError(err.error || "Login failed");
+      }
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -15,7 +68,7 @@ export default function LoginPage() {
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
           </div>
-          <form className="space-y-5">
+          <form method="POST" action="/login" onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label
                 htmlFor="email"
@@ -23,11 +76,16 @@ export default function LoginPage() {
               >
                 Email
               </label>
-              <input
+              <Input
                 id="email"
+                name="email"
                 type="email"
+                defaultValue="admin"
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                className={cn(
+                  "h-10 rounded-xl border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground",
+                )}
+                required
               />
             </div>
             <div>
@@ -37,20 +95,35 @@ export default function LoginPage() {
               >
                 Password
               </label>
-              <input
+              <Input
                 id="password"
+                name="password"
                 type="password"
+                defaultValue="admin"
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                className="h-10 rounded-xl border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground"
+                required
               />
             </div>
-            <button
+            {error && (
+              <p id="login-error" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            <Button
               type="submit"
-              className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25"
+              disabled={loading}
+              className="h-10 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25"
             >
-              Sign in
-            </button>
+              {loading ? "Signing in..." : "Sign in"}
+            </Button>
           </form>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Demo credentials: <code className="text-foreground">admin / admin</code>
+          </p>
+          <p className="mt-1 text-center text-[11px] text-muted-foreground">
+            Demo only — replace with real auth before shipping.
+          </p>
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <a

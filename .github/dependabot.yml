@@ -1,0 +1,10 @@
+# Dependabot — automated dependency updates.
+
+version: 2
+updates:
+  - package-ecosystem: "npm" # Bun is npm-compatible for Dependabot's manifest parser
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase

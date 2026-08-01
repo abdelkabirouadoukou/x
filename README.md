@@ -241,10 +241,44 @@ export default defineConfig({
 });
 ```
 
+## Dev log
+
+Newest first.
+
+### 2026-07 — production-readiness pass
+
+- **`x build --outDir <dir>` / `x start --outDir <dir>`** — CLI now writes the
+  build to an arbitrary directory instead of always `.x/`. Fixed the Docker
+  image (`CMD bun dist/server/index.ts`) and `DEPLOY.md`, which referenced a
+  `dist/` that never existed.
+- **Graceful shutdown** — the generated production server entry and `x dev`
+  handle `SIGTERM`/`SIGINT`: stop accepting connections, flush the error
+  reporter, drain for 3s, exit.
+- **Postgres** — `connectPostgres` now pools (`max`), enforces TLS by default
+  in production (`ssl: "require"`, with optional `ca`), and retries the first
+  connection with exponential backoff (`retryAttempts`, `retryDelayMs`).
+- **Rate limiting** — async `check`/middleware, automatic bucket sweeping,
+  and a `createRedisRateLimitStore` for cluster-wide limiting (uses built-in
+  `bun:redis`, no npm dependency).
+- **Env isolation hardened** — the client-bundle scan now also catches
+  `import.meta.env["KEY"]`, dynamic keys, concatenated keys, and aliased
+  `process.env`.
+- **Cookies** — CSRF and session cookies get `Secure` in production.
+- **Auth singletons** — template `auth.ts` files open one SQLite connection
+  and run migrations once instead of per call.
+- **saas template login** — now functional (submits to a real API route) and
+  marked DEMO ONLY, matching the basic template.
+- **Docs** — added `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`,
+  `CODE_OF_CONDUCT.md`, `.env.example`.
+- **CI** — pinned Bun 1.3.14, Linux + macOS matrix, dependency audit job
+  (two known dev-only advisories ignored with rationale).
+
 ## Links
 
 - Docs: https://thexjs.vercel.app/docs
 - Repo: https://github.com/abdelkabirouadoukou/x
+- Security: see `SECURITY.md`
+- Contributing: see `CONTRIBUTING.md`
 - Install: `bun create thexjs-app@latest`
 
 MIT licensed. Not production-ready yet this is a solo learning project, feedback and issues are welcome.

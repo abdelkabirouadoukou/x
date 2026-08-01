@@ -112,18 +112,18 @@ describe("security headers", () => {
 });
 
 describe("rate limiting", () => {
-  test("allows requests under the limit and blocks once exceeded", () => {
+  test("allows requests under the limit and blocks once exceeded", async () => {
     const limiter = createRateLimiter({ limit: 2, windowMs: 60_000, keyFn: () => "same-key" });
     const req = new Request("https://example.com/x");
 
-    expect(rateLimitMiddleware(limiter, req)).toBeNull();
-    expect(rateLimitMiddleware(limiter, req)).toBeNull();
-    const blocked = rateLimitMiddleware(limiter, req);
+    expect(await rateLimitMiddleware(limiter, req)).toBeNull();
+    expect(await rateLimitMiddleware(limiter, req)).toBeNull();
+    const blocked = await rateLimitMiddleware(limiter, req);
     expect(blocked).not.toBeNull();
     expect(blocked?.status).toBe(429);
   });
 
-  test("separate keys get independent buckets", () => {
+  test("separate keys get independent buckets", async () => {
     const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
     const reqA = new Request("https://example.com/x", {
       headers: { "x-forwarded-for": "1.1.1.1" },
@@ -132,9 +132,47 @@ describe("rate limiting", () => {
       headers: { "x-forwarded-for": "2.2.2.2" },
     });
 
-    expect(rateLimitMiddleware(limiter, reqA)).toBeNull();
-    expect(rateLimitMiddleware(limiter, reqB)).toBeNull();
-    expect(rateLimitMiddleware(limiter, reqA)).not.toBeNull();
+    expect(await rateLimitMiddleware(limiter, reqA)).toBeNull();
+    expect(await rateLimitMiddleware(limiter, reqB)).toBeNull();
+    expect(await rateLimitMiddleware(limiter, reqA)).not.toBeNull();
+  });
+
+  test("sweep() removes expired buckets and dispose() stops the timer", async () => {
+    const limiter = createRateLimiter({
+      limit: 5,
+      windowMs: 10,
+      keyFn: () => "sweep-key",
+    });
+    await limiter.check(new Request("https://example.com/x"));
+    expect(limiter.buckets.size).toBe(1);
+
+    await new Promise((r) => setTimeout(r, 20));
+    limiter.sweep();
+    expect(limiter.buckets.size).toBe(0);
+    limiter.dispose();
+  });
+
+  test("works with a shared store (backed by an in-memory RateLimitStore)", async () => {
+    const counts = new Map<string, { count: number; resetAt: number }>();
+    const store: import("./rate-limit").RateLimitStore = {
+      async incr(key, windowMs) {
+        const now = Date.now();
+        const current = counts.get(key);
+        const count = current && current.resetAt > now ? current.count + 1 : 1;
+        const bucket = { count, resetAt: now + windowMs };
+        counts.set(key, bucket);
+        return bucket;
+      },
+    };
+
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000, store });
+    const req = new Request("https://example.com/x", {
+      headers: { "x-forwarded-for": "9.9.9.9" },
+    });
+
+    expect(await rateLimitMiddleware(limiter, req)).toBeNull();
+    expect(await rateLimitMiddleware(limiter, req)).not.toBeNull();
+    limiter.dispose();
   });
 });
 
@@ -152,6 +190,23 @@ describe("env isolation", () => {
   test("catches Bun.env and import.meta.env access too", () => {
     const code = "const a = Bun.env.DATABASE_URL;\nconst b = import.meta.env.SECRET;";
     expect(findLeakedEnvKeys(code).sort()).toEqual(["DATABASE_URL", "SECRET"]);
+  });
+
+  test("catches import.meta.env bracket access", () => {
+    const code = 'const url = import.meta.env["API_SECRET"];';
+    expect(findLeakedEnvKeys(code)).toEqual(["API_SECRET"]);
+  });
+
+  test("flags dynamic, concatenated, and aliased env access", () => {
+    expect(findLeakedEnvKeys("const k = process.env[variable];")).toContain(
+      "process.env (dynamic env key access)",
+    );
+    expect(findLeakedEnvKeys('const k = process.env["ST" + "RIPE"];')).toContain(
+      "process.env (concatenated env key access)",
+    );
+    expect(findLeakedEnvKeys("const e = process.env; e.KEY;")).toContain(
+      "process.env (bare process.env access (aliasing/mutation))",
+    );
   });
 
   test("assertNoEnvLeakage throws EnvLeakageError with the offending file and keys", () => {

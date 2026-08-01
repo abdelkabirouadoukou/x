@@ -833,7 +833,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       if (healthResult !== null) return healthResult;
 
       if (rateLimiter) {
-        const limited = rateLimitMiddleware(rateLimiter, req);
+        const limited = await rateLimitMiddleware(rateLimiter, req);
         if (limited !== null) return limited;
       }
 
@@ -936,7 +936,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     if (healthResult !== null) return healthResult;
 
     if (rateLimiter) {
-      const limited = rateLimitMiddleware(rateLimiter, req);
+      const limited = await rateLimitMiddleware(rateLimiter, req);
       if (limited !== null) return limited;
     }
 

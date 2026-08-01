@@ -71,9 +71,11 @@ export {
 export { createImageProxyHandler, type ImageProxyOptions } from "./images/proxy";
 export {
   createRateLimiter,
+  createRedisRateLimitStore,
   rateLimitMiddleware,
   type RateLimitOptions,
   type RateLimitResult,
+  type RateLimitStore,
 } from "./security/rate-limit";
 export {
   findLeakedEnvKeys,

@@ -1,7 +1,7 @@
 # Deploying x apps
 
-x apps deploy as a single server binary with a static assets directory — no Node.js, no
-build-time server. Just `bun build --target=bun` + `bun dist/server/index.js`.
+x apps deploy as a single server process with a static assets directory — no Node.js, no
+build-time server. Just `x build --outDir dist` + `bun dist/server/index.ts`.
 
 ## Prerequisites
 
@@ -11,12 +11,14 @@ build-time server. Just `bun build --target=bun` + `bun dist/server/index.js`.
 ## Build
 
 ```sh
-x build
+x build --outDir dist
 ```
 
 This produces:
 - `dist/client/` — fully static assets (HTML, island JS chunks, content pages)
-- `dist/server/index.js` — a single bundled server binary (`bun build --target=bun`)
+- `dist/server/index.ts` — the generated server entry, run directly with `bun`
+
+`--outDir` defaults to `.x/` if omitted.
 
 ## Run in production
 
@@ -27,7 +29,7 @@ x start
 Or directly:
 
 ```sh
-NODE_ENV=production bun dist/server/index.js
+NODE_ENV=production bun dist/server/index.ts
 ```
 
 ## Docker
@@ -89,7 +91,7 @@ After=network.target
 Type=simple
 User=deploy
 WorkingDirectory=/opt/my-x-app
-ExecStart=/usr/local/bin/bun dist/server/index.js
+ExecStart=/usr/local/bin/bun dist/server/index.ts
 Restart=always
 Environment=NODE_ENV=production
 
@@ -117,8 +119,11 @@ dist/
     _islands/*.js   # Per-island hydration bundles
     blog/hello/index.html
   server/
-    index.js        # Bundled server (Bun.serve with routes + API + SSR)
+    index.ts        # Generated server entry (Bun.serve with routes + API + SSR)
 ```
 
 You can serve `dist/client/` from a CDN or reverse proxy (nginx, Fly CDN, etc.)
 and forward API/SSR requests to the server process.
+
+> **Docker tip:** `docker build` emits the build to `./dist` (the Dockerfile runs
+> `x build --outDir dist`), so the image's `CMD` is `bun dist/server/index.ts`.

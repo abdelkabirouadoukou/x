@@ -76,6 +76,9 @@ export default function LoginPage({ loaderData }: RouteProps) {
         </Button>
       </form>
       <p className="text-xs text-muted-foreground text-center">Demo credentials: admin / admin</p>
+      <p className="text-xs text-muted-foreground text-center">
+        Demo only — replace with real auth before shipping.
+      </p>
       <p className="text-center">
         <a
           href="/"
