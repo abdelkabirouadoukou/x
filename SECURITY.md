@@ -5,17 +5,10 @@ x takes the client/server boundary seriously: secrets (`DATABASE_URL`,
 security features built into the framework, how to configure them, and how to
 report a vulnerability.
 
-## Table of contents
-
-- [Security model](#security-model)
-- [Security headers](#security-headers)
-- [CSRF protection](#csrf-protection)
-- [Rate limiting](#rate-limiting)
-- [Environment variable isolation](#environment-variable-isolation)
-- [Authentication & sessions](#authentication--sessions)
-- [Health endpoints](#health-endpoints)
-- [Operational notes](#operational-notes)
-- [Reporting a vulnerability](#reporting-a-vulnerability)
+Most of this got written the way most security docs do, after something
+almost went wrong. The env-leak scanner exists because I nearly shipped a
+`STRIPE_SECRET_KEY` in a client bundle during early testing. So take the tone
+below seriously even if the repo itself is young.
 
 ## Security model
 
@@ -70,6 +63,12 @@ by two independent checks:
    and must be echoed back in the `x-csrf-token` header. Enable with
    `security.csrf.requireToken: true`. The cookie carries `HttpOnly`-independent
    `SameSite=Lax` and gets `Secure` in production.
+
+I kept the token check opt-in on purpose. The origin check covers real-world
+CSRF for almost every app, and I didn't want every fresh `create-thexjs-app`
+project to inherit cookie plumbing it probably doesn't need on day one.
+Turn it on if you're doing something the origin check genuinely can't cover
+(embedded widgets, cross-subdomain forms, that kind of thing).
 
 ```ts
 export default defineConfig({
@@ -137,6 +136,12 @@ The scan is a safety net over the interception, not a replacement for it.
 Defense in depth: keep secrets out of client components entirely, and set
 `THEXJS_PUBLIC_` variables with `THEXJS_PUBLIC_` in the name in your deploy
 platform's environment.
+
+This scanner took three rewrites to get right. The first version only
+matched `process.env.X` and missed bracket access entirely — `Bun.env["API_KEY"]`
+sailed straight through. It still isn't un-fool-able (see the note above about
+`Bun["e" + "nv"]`), which is exactly why it's a safety net and not the whole
+plan.
 
 ```env
 # Public (safe to reference in client code)

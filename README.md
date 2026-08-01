@@ -188,6 +188,13 @@ Getting this boundary right (making sure `DATABASE_URL` or `STRIPE_SECRET_KEY` n
 
 Island bundling itself happens in memory: for a route with islands, a scratch hydration entry file is written to a temp dir, bundled with `Bun.build({ target: "browser" })` (React/ReactDOM external), scanned, and the temp dir is deleted immediately after nothing lands in the project tree.
 
+This boundary is the part I rewrote the most times. Early on I only had the
+scanner, no interception — which meant a bug in the regex was the only thing
+standing between a real project and a leaked API key. Moving the real
+protection to build time (so the secret-holding code is never even read by
+the client bundler) and keeping the scanner as a second check, not the only
+check, is the version I'd actually trust in a project with real users.
+
 ## Content collections
 
 Markdown + frontmatter in, pages out:

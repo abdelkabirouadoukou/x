@@ -5,6 +5,8 @@ guidelines keep it reviewable and consistent.
 
 ## Project layout
 
+Nothing exotic — a normal Bun workspaces monorepo:
+
 ```
 packages/core                framework runtime (router, SSR/SSG, islands, server functions, data layer)
 packages/cli                 x dev / x build / x start
@@ -38,16 +40,23 @@ bun test <path>      # a single test file
 
 ## Making changes
 
-1. Branch off `main` and give the branch a short, descriptive name.
-2. Make the change. Prefer small, focused commits; use the repo's commit style
-   (`feat:`, `fix:`, `docs:`, `chore:`).
-3. Add or update tests for anything in `packages/core` — every feature has a
-   test file next to its source (`*.test.ts`), run with `bun test`.
-4. Run `bun run lint`, `bun run typecheck`, and `bun test` before pushing.
-   CI runs the same three on both Ubuntu and macOS.
-5. If you change templates in `packages/create-thexjs-app/templates/*`, also
-   update the matching `examples/*` app so they stay in sync (they're kept as
-   parallel dogfood copies).
+Branch off `main`, keep commits small and focused, and use the repo's commit
+style (`feat:`, `fix:`, `docs:`, `chore:`) — mostly so the changelog reads
+okay later, not because I'm precious about git history.
+
+Tests matter more than process here. If you touch `packages/core`, add or
+update the test next to the file you changed (`*.test.ts`, run with
+`bun test`). I'd rather review a smaller PR with a real test than a big one
+without.
+
+Before pushing, run `bun run lint`, `bun run typecheck`, and `bun test` —
+CI runs the exact same three on Ubuntu and macOS, so this just saves you a
+round trip.
+
+One easy-to-miss thing: if you change a template under
+`packages/create-thexjs-app/templates/*`, update the matching `examples/*`
+app too. They're kept as parallel dogfood copies on purpose, and they drift
+out of sync more often than I'd like to admit.
 
 ## Code style
 
