@@ -20,7 +20,7 @@ function post(path: string, init: RequestInit = {}): Request {
   });
 }
 
-const okFn = async (name: string) => ({ greeting: `hello ${name}` });
+const okFn = async (name: unknown) => ({ greeting: `hello ${String(name)}` });
 const throwingFn = async () => {
   throw new Error("boom");
 };

@@ -1,17 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { generateEntrySource } from "./generate-entry";
 import { buildVercelOutput } from "./index";
-import { writeConfigJson } from "./write-output";
 import type { BuildManifest } from "./types";
+import { writeConfigJson } from "./write-output";
 
 /**
  * The Vercel adapter had a real production bug: server-rendered pages shipped
@@ -80,10 +73,7 @@ describe("writeConfigJson", () => {
   });
 
   test("emits the Vercel images config when remote hosts are allow-listed", () => {
-    writeConfigJson(
-      out,
-      unitManifest({ images: { remoteHosts: ["cdn.example.com"] } }),
-    );
+    writeConfigJson(out, unitManifest({ images: { remoteHosts: ["cdn.example.com"] } }));
     const config = JSON.parse(readFileSync(join(out, "config.json"), "utf-8"));
     expect(config.images.domains).toEqual(["cdn.example.com"]);
     expect(config.images.sizes).toBeDefined();
@@ -97,9 +87,7 @@ describe("generateEntrySource", () => {
   });
 
   test("omits stylesheetHref when the app has no stylesheet", () => {
-    const manifest = unitManifest();
-    delete manifest.stylesheetHref;
-    const src = generateEntrySource(manifest, "/tmp/e");
+    const src = generateEntrySource(unitManifest(), "/tmp/e");
     expect(src).not.toContain("stylesheetHref");
   });
 
@@ -181,17 +169,12 @@ export default function About() {
   test("writes config.json with filesystem + render fallback routing", () => {
     const config = JSON.parse(readFileSync(join(OUTPUT_DIR, "config.json"), "utf-8"));
     expect(config.version).toBe(3);
-    expect(config.routes).toEqual([
-      { handle: "filesystem" },
-      { src: "/(.*)", dest: "/render" },
-    ]);
+    expect(config.routes).toEqual([{ handle: "filesystem" }, { src: "/(.*)", dest: "/render" }]);
   });
 
   test("ships prerendered static pages in static/", () => {
     expect(existsSync(join(OUTPUT_DIR, "static/index.html"))).toBe(true);
-    expect(readFileSync(join(OUTPUT_DIR, "static/index.html"), "utf-8")).toContain(
-      "<h1>Home</h1>",
-    );
+    expect(readFileSync(join(OUTPUT_DIR, "static/index.html"), "utf-8")).toContain("<h1>Home</h1>");
   });
 
   test("copies public assets (styles.css) into static/", () => {
@@ -208,18 +191,12 @@ export default function About() {
   });
 
   test("bakes the stylesheetHref into the bundled render function (regression)", () => {
-    const bundle = readFileSync(
-      join(OUTPUT_DIR, "functions/render.func/index.mjs"),
-      "utf-8",
-    );
+    const bundle = readFileSync(join(OUTPUT_DIR, "functions/render.func/index.mjs"), "utf-8");
     expect(bundle).toContain('stylesheetHref: "/styles.css"');
   });
 
   test("bundles every server-mode route into the render function", () => {
-    const bundle = readFileSync(
-      join(OUTPUT_DIR, "functions/render.func/index.mjs"),
-      "utf-8",
-    );
+    const bundle = readFileSync(join(OUTPUT_DIR, "functions/render.func/index.mjs"), "utf-8");
     expect(bundle).toContain('"/about"');
   });
 });

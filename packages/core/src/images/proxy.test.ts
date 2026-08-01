@@ -52,25 +52,19 @@ describe("routing and input validation", () => {
 describe("SSRF allow-list", () => {
   test("rejects a host not on the allow-list", async () => {
     const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
-    const res = await handler(
-      req("/_x/image?url=https%3A%2F%2Fevil.example%2Fsteal.png"),
-    );
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fevil.example%2Fsteal.png"));
     expect(res?.status).toBe(403);
   });
 
   test("rejects non-http(s) protocols even for allow-listed hosts", async () => {
     const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
-    const res = await handler(
-      req("/_x/image?url=file%3A%2F%2Fimg.example.com%2Fetc%2Fpasswd"),
-    );
+    const res = await handler(req("/_x/image?url=file%3A%2F%2Fimg.example.com%2Fetc%2Fpasswd"));
     expect(res?.status).toBe(403);
   });
 
   test("rejects when no remote hosts are configured (route is disabled)", async () => {
     const handler = createImageProxyHandler();
-    const res = await handler(
-      req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"),
-    );
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
     expect(res?.status).toBe(403);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { bool, createEnv, num, oneOf, str, url } from "./index";
+import { url, bool, createEnv, num, oneOf, str } from "./index";
 import { DEFAULT_CLIENT_PREFIX } from "./index";
 
 /**

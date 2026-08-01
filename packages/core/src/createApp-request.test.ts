@@ -135,18 +135,14 @@ describe("api routes", () => {
 
   test("dispatches POST to the exported handler", async () => {
     const a = await app();
-    const res = await a.fetch(
-      new Request("http://localhost/api/hello", { method: "POST" }),
-    );
+    const res = await a.fetch(new Request("http://localhost/api/hello", { method: "POST" }));
     expect(res.status).toBe(201);
     expect(await res.text()).toBe("posted");
   });
 
   test("returns 405 for a method with no exported handler", async () => {
     const a = await app();
-    const res = await a.fetch(
-      new Request("http://localhost/api/hello", { method: "DELETE" }),
-    );
+    const res = await a.fetch(new Request("http://localhost/api/hello", { method: "DELETE" }));
     expect(res.status).toBe(405);
     expect(await res.text()).toBe("Method DELETE not allowed");
   });
@@ -160,9 +156,7 @@ describe("api routes", () => {
 
   test("GET-only API route rejects POST with 405", async () => {
     const a = await app();
-    const res = await a.fetch(
-      new Request("http://localhost/api/users/42", { method: "POST" }),
-    );
+    const res = await a.fetch(new Request("http://localhost/api/users/42", { method: "POST" }));
     expect(res.status).toBe(405);
   });
 });
