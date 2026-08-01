@@ -3,18 +3,25 @@ export interface PostgresClient {
   (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown>;
 }
 
+export type PostgresSslMode =
+  | "disable"
+  | "prefer"
+  | "require"
+  | "verify-ca"
+  | "verify-full";
+
 export interface PostgresOptions {
   url?: string;
   /** Max connections in the pool. Default: 10. */
   max?: number;
   /**
-   * TLS mode. Defaults to `"require"` when NODE_ENV=production and
+   * TLS policy. Defaults to `"require"` when NODE_ENV=production and
    * `"disable"` otherwise (so local dev against a plain Postgres keeps
-   * working). Pass `false` to force-disable in production, or one of
-   * `"no-verify"` / `"require"` / `"verify-ca"` / `"verify-full"`.
+   * working). Pass `false` to force-disable in production, or one of the
+   * Postgres SSL modes. `"no-verify"` is an alias for `"require"`.
    */
-  ssl?: boolean | "no-verify" | "require" | "verify-ca" | "verify-full";
-  /** PEM-encoded CA certificate, used for `verify-ca` / `verify-full`. */
+  ssl?: boolean | "no-verify" | PostgresSslMode;
+  /** PEM-encoded CA certificate, used with `verify-ca` / `verify-full`. */
   ca?: string;
   /**
    * How many connection attempts to make (with exponential backoff) before
@@ -61,20 +68,38 @@ export function connectPostgres(options: PostgresOptions = {}): PostgresClient {
   }
 
   const isProd = process.env.NODE_ENV === "production";
-  const sslMode =
-    options.ssl === false
-      ? "disable"
-      : options.ssl && options.ssl !== true
-        ? options.ssl
-        : isProd
-          ? "require"
-          : "disable";
+
+  // Bun.SQL selects the TLS policy via `?sslmode=` on the connection URL — the
+  // `ssl`/`sslMode` options keys only accept a boolean/TLSOptions and a string
+  // mode there is silently ignored (falling back to the weak default). Bake
+  // the resolved mode into the URL so it's actually applied.
+  let sslMode: PostgresSslMode;
+  if (options.ssl === false) {
+    sslMode = "disable";
+  } else if (options.ssl === true) {
+    sslMode = "require";
+  } else if (options.ssl === "no-verify") {
+    sslMode = "require";
+  } else if (typeof options.ssl === "string") {
+    sslMode = options.ssl;
+  } else {
+    sslMode = isProd ? "require" : "disable";
+  }
+
+  const connectionUrl = new URL(url);
+  if (sslMode !== "disable") {
+    connectionUrl.searchParams.set("sslmode", sslMode);
+  }
 
   const client = new Bun.SQL({
-    url,
+    url: connectionUrl,
     max: options.max ?? 10,
-    ...(sslMode !== "disable" ? { sslMode } : {}),
-    ...(options.ca ? { tls: { ca: options.ca } } : {}),
+    // Providing a CA also turns on certificate verification (Bun escalates a
+    // `ca`-bearing tls object to verify-full), so only attach it when a
+    // verified mode is in effect.
+    ...(options.ca && sslMode !== "disable"
+      ? { tls: { ca: options.ca } }
+      : {}),
   });
 
   const attempts = options.retryAttempts ?? 3;
@@ -91,12 +116,21 @@ export function connectPostgres(options: PostgresOptions = {}): PostgresClient {
   let primed: Promise<void> | null = null;
 
   const prime = () => {
-    primed ??= probeWithRetry(client, attempts, options.retryDelayMs ?? 250, options.onRetry);
+    primed ??= probeWithRetry(
+      client,
+      attempts,
+      options.retryDelayMs ?? 250,
+      options.onRetry,
+    );
     return primed;
   };
 
   const run = async <T>(work: () => Promise<T>): Promise<T> => {
-    if (!primed) await prime();
+    // Always await prime(): prime() is memoized, so this is a no-op after the
+    // first call, but awaiting every time closes the race where two queries
+    // kicked off in the same tick (e.g. Promise.all) both see `primed` as set
+    // and skip the retry/backoff that the first query is still running.
+    await prime();
     return work();
   };
 

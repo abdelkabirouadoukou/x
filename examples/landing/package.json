@@ -8,16 +8,19 @@
     "vercel-build": "x build --adapter vercel"
   },
   "dependencies": {
+    "@base-ui/react": "^1.6.0",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "@thexjs/core": "workspace:*",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.511.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "shadcn": "^4.2.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "tailwind-merge": "^3.2.0",
-    "lucide-react": "^0.511.0",
-    "tw-animate-css": "^1.2.0",
-    "@base-ui/react": "^1.6.0"
+    "tw-animate-css": "^1.2.0"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

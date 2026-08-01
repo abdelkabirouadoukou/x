@@ -8,8 +8,6 @@
  * when it's actually used.
  */
 
-import { createRequire } from "node:module";
-
 export interface RateLimitOptions {
   /** Max requests allowed per window per key. Default: 60. */
   limit?: number;
@@ -130,10 +128,11 @@ export function createRedisRateLimitStore(options: { url?: string } = {}): RateL
   let connecting: Promise<RedisClientLike> | null = null;
 
   async function connect(): Promise<RedisClientLike> {
-    // Loaded lazily through require() (like bun:sqlite) so this module still
-    // type-checks and loads on runtimes where bun:redis isn't available —
-    // the failure only surfaces if someone actually uses the Redis store.
-    const require = createRequire(import.meta.url);
+    // Loaded lazily through import.meta.require (like bun:sqlite) so this
+    // module still type-checks and loads on runtimes where bun:redis isn't
+    // available — the failure only surfaces if someone actually uses the Redis
+    // store — and so the browser bundle never sees a `node:module` import.
+    const require = import.meta.require;
     const mod = require("bun:redis") as {
       RedisClient: new (opts?: { url?: string }) => {
         connect(): Promise<unknown>;
@@ -150,10 +149,19 @@ export function createRedisRateLimitStore(options: { url?: string } = {}): RateL
   function getClient(): Promise<RedisClientLike> {
     if (client) return Promise.resolve(client);
     if (!connecting) {
-      connecting = connect().then((c) => {
-        client = c;
-        return c;
-      });
+      // Clear `connecting` on failure so a transient blip (Redis briefly
+      // unreachable at boot) doesn't poison every later request with the same
+      // rejected promise — the store keeps retrying on each subsequent call.
+      connecting = connect().then(
+        (c) => {
+          client = c;
+          return c;
+        },
+        (err) => {
+          connecting = null;
+          throw err;
+        },
+      );
     }
     return connecting;
   }

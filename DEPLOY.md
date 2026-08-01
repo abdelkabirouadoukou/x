@@ -22,8 +22,11 @@ This produces:
 
 ## Run in production
 
+`x start` serves whatever `x build` produced. If you built with `--outDir dist`,
+point `start` at the same directory:
+
 ```sh
-x start
+x start --outDir dist
 ```
 
 Or directly:
@@ -31,6 +34,8 @@ Or directly:
 ```sh
 NODE_ENV=production bun dist/server/index.ts
 ```
+
+> If you omit `--outDir`, both commands default to `.x/` and stay consistent.
 
 ## Docker
 
@@ -96,10 +101,10 @@ fly deploy
 
 ## Deploy to a VPS
 
-1. Build locally:
+1. Build locally (so the artifacts land in `dist/`):
 
 ```sh
-x build
+x build --outDir dist
 ```
 
 2. Copy `dist/` to the server:

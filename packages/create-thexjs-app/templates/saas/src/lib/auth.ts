@@ -44,6 +44,16 @@ export function createSession(username: string): Session {
   return { id, token, user_id: userId, username };
 }
 
+// DEMO ONLY: the single source of truth for the credential check, shared by
+// the login API route and the login page's server fallback. Replace this with
+// real (hashed) password verification before shipping.
+export function authenticate(email: string, password: string): Session | null {
+  if (email === "admin" && password === "admin") {
+    return createSession(email);
+  }
+  return null;
+}
+
 export function getSession(token: string | undefined): Session | null {
   if (!token) return null;
   const db = getDb();

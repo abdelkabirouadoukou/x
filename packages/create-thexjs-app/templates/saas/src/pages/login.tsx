@@ -3,7 +3,7 @@ import { LogIn } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { createSession, setSessionCookie } from "../lib/auth";
+import { authenticate, setSessionCookie } from "../lib/auth";
 import { cn } from "../lib/utils";
 
 export async function loader({ request }: LoaderArgs) {
@@ -11,8 +11,8 @@ export async function loader({ request }: LoaderArgs) {
     const formData = await request.formData();
     const username = formData.get("email") as string | null;
     const password = formData.get("password") as string | null;
-    if (username === "admin" && password === "admin") {
-      const session = createSession(username);
+    const session = username && password ? authenticate(username, password) : null;
+    if (session) {
       return new Response(null, {
         status: 302,
         headers: { Location: "/dashboard", "Set-Cookie": setSessionCookie(session.token) },

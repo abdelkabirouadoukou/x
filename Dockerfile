@@ -22,9 +22,11 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-# Typecheck the workspace, then build the basic example into ./dist.
+# Typecheck the workspace, then build the basic example. `--cwd examples/basic`
+# makes projectDir /app/examples/basic, so `--outDir ../../dist` resolves to
+# /app/dist (matching the COPY below and DEPLOY.md).
 RUN bun run typecheck
-RUN bun packages/cli/src/index.ts build --outDir dist --cwd examples/basic
+RUN bun packages/cli/src/index.ts build --outDir ../../dist --cwd examples/basic
 FROM oven/bun:1 AS production
 WORKDIR /app
 COPY --from=build --chown=bun:bun /app/dist ./dist

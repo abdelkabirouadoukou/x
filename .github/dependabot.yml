@@ -2,9 +2,10 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm" # Bun is npm-compatible for Dependabot's manifest parser
+  # "bun" is the native ecosystem for bun.lock; "npm" can't parse bun.lock
+  # correctly and its versioning-strategy isn't supported for Bun.
+  - package-ecosystem: "bun"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
-    versioning-strategy: increase

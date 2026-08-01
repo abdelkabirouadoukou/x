@@ -277,8 +277,8 @@ Newest first.
 
 - Docs: https://thexjs.vercel.app/docs
 - Repo: https://github.com/abdelkabirouadoukou/x
-- Security: see `SECURITY.md`
-- Contributing: see `CONTRIBUTING.md`
+- Security: [SECURITY.md](SECURITY.md)
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Install: `bun create thexjs-app@latest`
 
 MIT licensed. Not production-ready yet this is a solo learning project, feedback and issues are welcome.

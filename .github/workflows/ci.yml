@@ -15,6 +15,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -38,6 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -58,3 +62,9 @@ jobs:
       #     (tsup). Not shipped.
       - name: Audit dependencies
         run: bun audit --ignore GHSA-frvp-7c67-39w9 --ignore GHSA-g7r4-m6w7-qqqr
+
+      # The two ignores above apply to the full graph (dev + prod). Guard the
+      # production-only graph separately with NO ignores: if either advisory
+      # ever shows up in what's actually shipped, this step fails regardless.
+      - name: Audit production dependencies
+        run: bun audit --prod
