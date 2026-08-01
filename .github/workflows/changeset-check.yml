@@ -28,5 +28,10 @@ jobs:
       # Use the explicit scoped package name: `bunx changeset` resolves the
       # unrelated bare `changeset` npm package when @changesets/cli isn't
       # installed locally, which fails with "could not determine executable".
+      #
+      # Versioning PRs (changeset-release/*, opened by the Release workflow)
+      # bump versions in packages/* but legitimately carry no changeset, so
+      # the enforcement must skip them.
       - name: Check for a changeset
+        if: ${{ !startsWith(github.head_ref, 'changeset-release/') }}
         run: bunx @changesets/cli status --since origin/main

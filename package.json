@@ -7,6 +7,7 @@
   "scripts": {
     "test": "bun test",
     "changeset": "changeset",
+    "changeset:version": "changeset version && bun run lint:fix",
     "typecheck": "for p in packages/*/tsconfig.json examples/*/tsconfig.json; do echo \"-- $p\"; tsc --noEmit -p \"$p\" || exit 1; done",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
