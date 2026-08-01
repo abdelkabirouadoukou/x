@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@thexjs/adapter-vercel": "^0.1.0",
+    "react": "^19.0.0",
     "tsup": "^8.3.0"
   }
 }

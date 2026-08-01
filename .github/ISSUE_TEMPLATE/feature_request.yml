@@ -1,0 +1,40 @@
+name: ✨ Feature Request
+description: Suggest an idea or improvement
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to do that you currently can't?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Affected area
+      options:
+        - core
+        - cli
+        - env
+        - adapter-vercel
+        - create-thexjs-app
+        - docs
+        - other
+    validations:
+      required: true
