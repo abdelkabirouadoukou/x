@@ -24,7 +24,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5.8.0",
+    "typescript": "^7.0.2",
     "@thexjs/cli": "workspace:*",
     "@thexjs/adapter-vercel": "workspace:*"
   }
