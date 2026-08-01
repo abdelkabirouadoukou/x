@@ -25,5 +25,8 @@ jobs:
       # under packages/) changed without a changeset in .changeset/.
       # Private packages (the examples) are skipped, so template/docs-only
       # PRs don't need a changeset.
+      # Use the explicit scoped package name: `bunx changeset` resolves the
+      # unrelated bare `changeset` npm package when @changesets/cli isn't
+      # installed locally, which fails with "could not determine executable".
       - name: Check for a changeset
-        run: bunx changeset status --since origin/main
+        run: bunx @changesets/cli status --since origin/main
