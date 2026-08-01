@@ -54,7 +54,7 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.1.2",
     "tsup": "^8.3.0"
   }
 }
