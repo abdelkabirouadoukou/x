@@ -6,6 +6,7 @@
   "trustedDependencies": ["@thexjs/cli"],
   "scripts": {
     "test": "bun test",
+    "changeset": "changeset",
     "typecheck": "for p in packages/*/tsconfig.json examples/*/tsconfig.json; do echo \"-- $p\"; tsc --noEmit -p \"$p\" || exit 1; done",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.31.1",
     "@types/bun": "latest",
     "typescript": "^5.9.3"
   },

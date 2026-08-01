@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Questions & Discussion
+    url: https://github.com/abdelkabirouadoukou/x/discussions
+    about: Ask questions or discuss ideas before opening an issue
+  - name: 📖 Documentation
+    url: https://thexjs.vercel.app/
+    about: Check the docs first — your question might already be answered

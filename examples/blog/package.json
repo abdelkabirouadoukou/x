@@ -1,5 +1,6 @@
 {
   "name": "blog-example",
+  "private": true,
   "type": "module",
   "dependencies": {
     "@thexjs/core": "workspace:*",

@@ -74,6 +74,62 @@ bun test packages/core/src/router.test.ts
   the build fails if you do.
 - **postinstall** builds all packages; if it fails, run `bun run build:packages`.
 
+## Releasing
+
+Releases are automated with [Changesets](https://github.com/changesets/changesets).
+
+### Adding a changeset
+
+Any PR that changes a **publishable package** (`packages/*`) must include a
+changeset — CI enforces this: `.github/workflows/changeset-check.yml` fails the
+PR if a `packages/*` change ships without one. Changes that only touch
+`examples/*` or docs don't need a changeset.
+
+Run the interactive wizard:
+
+```sh
+bun changeset
+```
+
+or write the file by hand under `.changeset/<random-name>.md`:
+
+```md
+---
+"@thexjs/core": patch
+"@thexjs/env": patch
+---
+
+Short description of the change, written from the user's perspective.
+```
+
+Bump levels: `patch` for fixes/refactors, `minor` for new features, `major`
+for breaking changes (the `@thexjs/*` packages are pre-1.0, so prefer `patch`
+unless something genuinely breaks).
+
+### What happens on merge to main
+
+The `.github/workflows/release.yml` workflow runs on every push to `main`:
+
+1. Installs dependencies and runs `build:packages`, `typecheck`, `lint`, and
+   `test` — the job fails if any of these fail, before anything is released.
+2. `changesets/action@v1` then:
+   - If pending changesets exist, it opens/updates a **"Version Packages"** PR
+     that bumps versions and writes changelogs. Merge that PR.
+   - If the merged commit is a versioning commit, it **publishes** every
+     bumped package to npm (`bunx changeset publish`).
+
+### Publishing to npm
+
+Publishing requires an npm token as the `NPM_TOKEN` repo secret (plus
+`GITHUB_TOKEN`, which GitHub provides automatically). Until `NPM_TOKEN` is
+configured in the repo settings, the workflow stops at the versioning PR —
+packages get version-bumped but nothing reaches npm. To set it up: create a
+read-only publish token on npmjs.com (with publish access to the `@thexjs`
+scope) and add it as a repo secret named `NPM_TOKEN`.
+
+Packages are published with `"publishConfig": { "access": "public" }`; `bun
+install`'s postinstall builds them before publishing.
+
 ## Code of conduct
 
 Be respectful. This project follows the [Contributor Covenant][covenant] — see

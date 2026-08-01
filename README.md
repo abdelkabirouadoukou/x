@@ -241,6 +241,36 @@ export default defineConfig({
 });
 ```
 
+## Versioning
+
+All `@thexjs/*` packages are **0.x and pre-1.0**. The public API is still
+settling, so expect breaking changes between minor releases — that's the
+signal you should pin versions (`^0.1.0` will still allow `0.1.x → 0.2.0`).
+
+- Releases are managed with **Changesets**. Every PR touching a `packages/*`
+  package adds a changeset (`bun changeset`), which bumps versions and writes
+  changelogs when merged to `main`.
+- The release GitHub Action (`publish` on `main`) creates a versioning PR; a
+  maintainer merges it to cut a release. Publishing to npm requires an
+  `NPM_TOKEN` secret, which is currently not configured (see
+  `.github/workflows/release.yml`).
+- Published packages: `@thexjs/core`, `@thexjs/cli`, `@thexjs/env`,
+  `@thexjs/adapter-vercel`, `create-thexjs-app`.
+
+## Known limitations
+
+- **Pre-1.0 API**: everything above is subject to change. Treat `0.x` minors as
+  potentially breaking.
+- **Bun-only**: the framework runs on Bun (runtime, bundler, package manager).
+  There is no Node.js target.
+- **Content collections** and the **data layer** (SQLite/Postgres migrations)
+  work but have the least test coverage in the framework; the image proxy and
+  server-actions runtime are covered, the build toolchain is exercised via the
+  Vercel adapter and CLI integration tests.
+- **Route-level test coverage is newest**: the request pipeline, server
+  functions, env validation, and the Vercel adapter all gained tests in the
+  latest pass; remaining gaps are documented in `ROADMAP.md`.
+
 ## Links
 
 - Docs: https://thexjs.vercel.app/docs

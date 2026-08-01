@@ -1,5 +1,6 @@
 {
   "name": "landing-example",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "x dev",

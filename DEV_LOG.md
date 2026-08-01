@@ -2,6 +2,33 @@
 
 Newest first.
 
+### 2026-08 — test-coverage pass: core pipeline + adapters + CLI
+
+- **Coverage audit** — mapped all six packages: the previous 7 test files
+  (1921 lines) lived entirely in `packages/core`; `@thexjs/env`, the Vercel
+  adapter, and the CLI had **zero** tests. Recorded the gaps.
+- **New suites (51 tests)**:
+  - `createApp-request.test.ts` — full request pipeline: SSR, static mode,
+    dynamic params, 404s, API dispatch + 405, security headers, rate-limit
+    429, `/healthz`, stylesheet `<link>`.
+  - `server-functions.test.ts` — action dispatch, route params, malformed
+    body, thrown errors, and the CSRF origin checks.
+  - `images/proxy.test.ts` — SSRF allow-list, protocol check, upstream
+    errors, cache headers.
+  - `packages/env/src/index.test.ts` — every validator + `createEnv` server /
+    client prefix filtering and aggregate errors.
+  - `packages/adapter-vercel/src/adapter.test.ts` — config.json routing,
+    `static/` payload, render function bundle, and a **regression test** for
+    the baked `stylesheetHref` (the 2026-07 Vercel styling bug).
+  - `packages/cli/src/cli.test.ts` — real `x build` end-to-end on a fixture
+    (`.x/` output, `--outDir`, adapter error handling). Added `react` as a
+    CLI devDependency so the fixture resolves JSX.
+- **Tooling** — added `@changesets/cli` + `bun changeset` script (config and
+  release workflow already existed); documented the pre-1.0 semver policy and
+  known limitations in the README; wrote `ROADMAP.md` (stability matrix +
+  coverage debt).
+- **Baseline** — 154 tests pass, 0 fail; lint + typecheck clean.
+
 ### 2026-08 — dependency audit clean + landing + Vercel styling
 
 - **Dependency audit is clean with zero ignores** — the two previously-accepted
