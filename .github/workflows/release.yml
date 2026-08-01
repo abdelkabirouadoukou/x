@@ -30,6 +30,12 @@ jobs:
       - name: Build packages
         run: bun run build:packages
 
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
       - name: Run tests
         run: bun test
 
@@ -41,4 +47,4 @@ jobs:
           commit: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}   # ila baghi t-publish l npm
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
