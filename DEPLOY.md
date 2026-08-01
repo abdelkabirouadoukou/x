@@ -41,6 +41,35 @@ docker build -t my-x-app .
 docker run -p 3000:3000 my-x-app
 ```
 
+## Deploy to Vercel
+
+Each example app ships a `vercel-build` script (`x build --adapter vercel`) that
+emits a Build Output API v3 tree (`.vercel/output/`) — no `vercel.json` needed.
+Two ways to wire it up:
+
+### Option 1 (recommended): rootDirectory per app
+
+In the Vercel project, set **Root Directory** to the app you're deploying, e.g.
+`examples/basic` (the same setup `examples/landing` uses for thexjs.vercel.app).
+Vercel then runs `bun install` + `bun run vercel-build` inside that directory.
+
+### Option 2: deploy from the repo root
+
+The root `package.json` has a `vercel-build` script that builds `examples/basic`
+in place (where `node_modules` resolve — the render function must live inside
+the app tree) and stages the result to the repo-root `.vercel/output`:
+
+```sh
+bun run vercel-build
+```
+
+> **Why the staging step?** The adapter bundles the SSR render function by
+> walking up from its output directory to find `node_modules`. That only works
+> when `.vercel/output` sits inside the app's tree, so the root script builds in
+> `examples/basic/.vercel/output` (where `@thexjs/*` resolve) and copies the
+> self-contained output to the root afterward. Point Vercel at the repo root if
+> you use this option.
+
 ## Deploy to Fly.io
 
 1. Install the [Fly CLI](https://fly.io/docs/hands-on/install-flyctl/)

@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "x dev",
-    "build": "x build",
-    "start": "x start",
+    "dev": "bun ../../packages/cli/src/index.ts dev",
+    "build": "bun ../../packages/cli/src/index.ts build",
+    "start": "bun ../../packages/cli/src/index.ts start",
     "dev:direct": "bun --hot server.ts",
-    "vercel-build": "x build --adapter vercel"
+    "vercel-build": "bun ../../packages/cli/src/index.ts build --adapter vercel"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

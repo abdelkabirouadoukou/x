@@ -1,12 +1,22 @@
-@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap");
 
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Field-log identity.
+
+  The bar for "not another AI landing page" isn't the color hex codes, it's
+  whether the page has an actual point of view you can name in one sentence.
+  Ours: this reads like a surveyor's log for a router — ruled margins, stamped
+  corners, a ledger-red rule, and one serif with real optical-size character
+  instead of the Oswald/Inter pairing every generated SaaS page reaches for.
+*/
+
 @theme inline {
-  --font-display: "Oswald", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --color-background: var(--background);
@@ -27,13 +37,23 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Tighter, less bubbly radius scale — the soft rounded-2xl/3xl everything
+     look is one of the fastest tells of a generated page. Surveyor gear has
+     corners, not pillows. */
+  --radius-lg: 0.4rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.65rem;
+  --radius-3xl: 0.85rem;
+
   --animate-dash: dash 1.4s linear infinite;
   --animate-pin-drop: pin-drop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-cursor: cursor-blink 1.1s step-end infinite;
+  --animate-stamp-in: stamp-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.4rem;
 
   /* Paper: a cool drafting-paper white, not the warm cream template default */
   --background: #eef1f0;
@@ -47,7 +67,7 @@
   --primary: #2947d1;
   --primary-foreground: #f5f7ff;
 
-  /* Waypoint marker: a warm signal red, reserved for pins / "you are here" moments only */
+  /* Waypoint marker: a warm signal red, reserved for pins / "you are here" moments and the ledger rule */
   --secondary: #d1452f;
   --secondary-foreground: #fff6f3;
 
@@ -72,6 +92,9 @@
 
   /* Route-line grid: faint survey-grid, not a glow-blob */
   --grid-line: rgba(22, 26, 31, 0.06);
+
+  /* Ledger rule: the thin warm-red line that runs down the log margin */
+  --ledger-rule: rgba(209, 69, 47, 0.55);
 }
 
 @layer base {
@@ -85,6 +108,11 @@
   h2,
   h3 {
     @apply font-display tracking-tight;
+  }
+  /* Fraunces carries a real italic worth using, unlike most display sans */
+  em,
+  i {
+    @apply font-display not-italic italic text-primary;
   }
 }
 
@@ -148,6 +176,20 @@
   }
 }
 
+@keyframes stamp-in {
+  0% {
+    transform: scale(1.9) rotate(-14deg);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(-6deg);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .route-line-dash,
   .animate-pin-drop,
@@ -158,7 +200,8 @@
 
 /* ---------------------------------------------------------------------- */
 /* Signature details — the stuff that keeps this from reading as a        */
-/* stock template: paper grain, a transit-ticket card motif, a themed     */
+/* stock template: paper grain, a ledger margin rule, folder-tab labels,  */
+/* crop-mark corners, a transit-ticket card motif, a themed               */
 /* scrollbar/selection, and the Stardance stage + easter egg animations.  */
 /* ---------------------------------------------------------------------- */
 
@@ -213,6 +256,90 @@ html {
   scrollbar-color: var(--muted-foreground) var(--background);
 }
 
+/* Ledger rule: a thin warm-red vertical line + tick marks down the left of
+   a section, like the margin rule on a field log or a graph-paper notebook.
+   This is the single most load-bearing "someone made a choice here" detail
+   on the page — most generated sites have zero asymmetric marginalia. */
+.ledger-rule {
+  position: relative;
+  padding-left: 1.25rem;
+}
+.ledger-rule::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  bottom: 0.15em;
+  width: 1px;
+  background: var(--ledger-rule);
+}
+.ledger-rule::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 0.15em;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--secondary);
+}
+
+/* Folder tab: a small offset label, like an index tab clipped to the edge
+   of a page in a binder, used for section eyebrows instead of a plain
+   uppercase-tracked line. */
+.folder-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.2rem 0.55rem 0.2rem 0.4rem;
+  border: 1px solid var(--border);
+  border-bottom-color: var(--background);
+  background: var(--card);
+  border-radius: 0.3rem 0.3rem 0 0;
+  transform: translateY(1px);
+}
+.folder-tab::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  flex: none;
+}
+
+/* Crop marks: four L-shaped corner ticks, like registration marks on a
+   printed sheet. Applied to a handful of "this is the important one" cards
+   so the page has a printed-artifact feel instead of uniform bordered boxes. */
+.crop-marks {
+  position: relative;
+}
+.crop-marks::before,
+.crop-marks::after,
+.crop-marks .crop-tl,
+.crop-marks .crop-br {
+  content: "";
+}
+.crop-marks::before,
+.crop-marks::after {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.crop-marks::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--secondary);
+  border-left: 2px solid var(--secondary);
+}
+.crop-marks::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--secondary);
+  border-right: 2px solid var(--secondary);
+}
+
 /* Ticket-stub card: a boarding-pass silhouette used for the one "go play"
    callout so it doesn't blend into the other bordered cards on the page. */
 .ticket-card {
@@ -240,10 +367,29 @@ html {
     );
   -webkit-mask-composite: source-in, source-in;
 }
+.ticket-card-perf {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--border) 0,
+    var(--border) 6px,
+    transparent 6px,
+    transparent 13px
+  );
+  width: 1px;
+}
+
 /* Stamped-button feel: a slightly heavier press than the default active:scale
    utility gives, reserved for primary CTAs. */
 .stamp-press:active {
   transform: translateY(1px) scale(0.985);
+}
+
+/* Rubber-stamp badge: used for the boarding-pass "CONFIRMED" mark and
+   anywhere else a result should feel physically stamped rather than
+   toast-notification generic. */
+.rubber-stamp {
+  animation: var(--animate-stamp-in);
+  transform: rotate(-6deg);
 }
 
 /* Stardance stage: the small dark "night sky" chip that hosts the pale
@@ -340,7 +486,8 @@ html {
 
 @media (prefers-reduced-motion: reduce) {
   .stardance-sparkle,
-  .shooting-star.run {
+  .shooting-star.run,
+  .route-pin-drop {
     animation: none !important;
   }
 }
@@ -359,4 +506,47 @@ html {
   to {
     transform: translateY(288px);
   }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Route Trail — cursor-tracing pins in the hero (new feature, see         */
+/* route-trail.tsx). Small dashed-line dots that drop where the pointer    */
+/* has been and fade, like a route being surveyed live.                    */
+/* ---------------------------------------------------------------------- */
+.route-pin-drop {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
+  pointer-events: none;
+  animation: route-pin-fade 1.1s ease-out forwards;
+  will-change: transform, opacity;
+}
+@keyframes route-pin-fade {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Boarding Pass — personalized ticket generator (new feature, see         */
+/* boarding-pass.tsx). Perforated stub layout + a barcode made of CSS bars.*/
+/* ---------------------------------------------------------------------- */
+.barcode-bars {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  height: 28px;
+}
+.barcode-bars span {
+  display: block;
+  background: var(--foreground);
+  flex: none;
 }
