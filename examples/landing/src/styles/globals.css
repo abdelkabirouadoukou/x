@@ -1,16 +1,66 @@
-/*
-  Fonts are self-hosted via fontsource (@font-face emitted from node_modules),
-  so there's no render-blocking Google Fonts request and no third-party font
-  origin in the CSP. Fraunces is a variable font that also carries the
-  optical-size axis used at display sizes.
-*/
-@import "@fontsource-variable/fraunces";
-@import "@fontsource-variable/inter";
-@import "@fontsource/ibm-plex-mono/400.css";
-@import "@fontsource/ibm-plex-mono/500.css";
-
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/*
+  Fonts are self-hosted (woff2 in /files, served from public/): no render-
+  blocking Google Fonts request, no third-party font origin in the CSP, works
+  offline. Pairing: Space Grotesk (geometric display) + Inter (body) +
+  JetBrains Mono (code) — the standard developer-tool look, minus the serif.
+*/
+@font-face {
+  font-family: "Space Grotesk Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url("/files/space-grotesk-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Space Grotesk Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url("/files/space-grotesk-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/files/inter-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "JetBrains Mono Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("/files/jetbrains-mono-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "JetBrains Mono Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("/files/jetbrains-mono-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -20,14 +70,15 @@
   The bar for "not another AI landing page" isn't the color hex codes, it's
   whether the page has an actual point of view you can name in one sentence.
   Ours: this reads like a surveyor's log for a router — ruled margins, stamped
-  corners, a ledger-red rule, and one serif with real optical-size character
-  instead of the Oswald/Inter pairing every generated SaaS page reaches for.
+  corners, a ledger-red rule, and a geometric grotesk (Space Grotesk) on
+  Inter instead of the Oswald/Inter pairing every generated SaaS page reaches
+  for.
 */
 
 @theme inline {
-  --font-display: "Fraunces Variable", ui-serif, Georgia, serif;
+  --font-display: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -118,7 +169,7 @@
   h3 {
     @apply font-display tracking-tight;
   }
-  /* Fraunces carries a real italic worth using, unlike most display sans */
+  /* accent the display font's red kicker runs in italics when present */
   em,
   i {
     @apply font-display not-italic italic text-primary;

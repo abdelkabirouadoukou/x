@@ -12,21 +12,21 @@ export default defineConfig({
   security: {
     headers: {
       // Default CSP is "default-src 'self'; script-src 'self'" — same-origin
-      // only, no inline scripts. Two things on this site need exceptions:
-      //  1. Google Fonts loads its stylesheet + woff2 files from a different
-      //     origin (fonts.googleapis.com / fonts.gstatic.com).
-      //  2. x's own island-hydration bootstrap appears to inline a small
-      //     <script> to pass server props to the client before hydrating —
-      //     the default policy blocks inline scripts outright, which is the
-      //     likely reason islands (Route Resolver, Route Rush, Ship It)
-      //     aren't hydrating. 'unsafe-inline' on script-src unblocks that.
-      // No img-src exception needed anymore — the Stardance badge now loads
-      // through /_x/image, which is same-origin.
+      // only, no inline scripts. Fonts are self-hosted (woff2 under /files,
+      // served from public/), so style-src/font-src need no third-party
+      // exception. One thing on this site needs an exception:
+      //   x's own island-hydration bootstrap appears to inline a small
+      //   <script> to pass server props to the client before hydrating —
+      //   the default policy blocks inline scripts outright, which is the
+      //   likely reason islands (Route Resolver, Route Rush, Ship It)
+      //   aren't hydrating. 'unsafe-inline' on script-src unblocks that.
+      // No img-src exception needed — the Stardance badge loads through
+      // /_x/image, which is same-origin.
       contentSecurityPolicy:
         "default-src 'self'; " +
         "script-src 'self' 'unsafe-inline'; " +
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-        "font-src 'self' https://fonts.gstatic.com; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "font-src 'self'; " +
         "connect-src 'self';",
     },
   },
