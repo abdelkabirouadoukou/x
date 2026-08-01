@@ -2,15 +2,7 @@
   "name": "@thexjs/env",
   "version": "0.1.5",
   "description": "Type-safe environment variable loading and validation for the x framework.",
-  "keywords": [
-    "environment-variables",
-    "env",
-    "validation",
-    "typescript",
-    "config",
-    "bun",
-    "x"
-  ],
+  "keywords": ["environment-variables", "env", "validation", "typescript", "config", "bun", "x"],
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -27,11 +19,7 @@
       "import": "./dist/validators.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },

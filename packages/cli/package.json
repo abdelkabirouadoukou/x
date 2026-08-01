@@ -2,25 +2,13 @@
   "name": "@thexjs/cli",
   "version": "0.1.8",
   "description": "Dev/build/start CLI for x framework apps. Requires Bun to run (https://bun.sh).",
-  "keywords": [
-    "cli",
-    "bun",
-    "react",
-    "framework",
-    "dev-server",
-    "build-tool",
-    "x"
-  ],
+  "keywords": ["cli", "bun", "react", "framework", "dev-server", "build-tool", "x"],
   "license": "MIT",
   "type": "module",
   "bin": {
     "x": "./dist/index.js"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },
