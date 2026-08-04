@@ -11,6 +11,7 @@ import {
   Layout,
   MousePointerClick,
   Package,
+  RefreshCw,
   Rocket,
   Server,
   Shield,
@@ -96,6 +97,18 @@ const guideSections = [
     title: "Server Functions",
     desc: "Call server-side functions from the browser without REST.",
     href: "/docs/server-functions",
+  },
+  {
+    icon: MousePointerClick,
+    title: "Islands",
+    desc: "Selective hydration: ship JS only for the interactive parts.",
+    href: "/docs/islands",
+  },
+  {
+    icon: RefreshCw,
+    title: "Incremental Static Regeneration",
+    desc: "Static pages that revalidate on a timer or on demand.",
+    href: "/docs/isr",
   },
   {
     icon: MousePointerClick,

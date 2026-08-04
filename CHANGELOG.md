@@ -9,6 +9,14 @@ dates. This is a pre-1.0 project — expect breaking changes between releases.
 
 ### Security
 
+- **Rate limiting is now per-client-IP.** The default limiter previously keyed
+  every request to a single `"unknown"` bucket unless proxy headers
+  (`x-forwarded-for` / `x-real-ip`) were present, so all clients shared one
+  limit and one client's burst could 429 the whole site. The default key now
+  prefers the server's socket IP (`server.requestIP(req)`) before falling back
+  to those headers, and the 429 response carries a `text/plain` content type
+  so browsers don't refuse to apply static assets. `createRateLimiter` /
+  `rateLimitMiddleware` / `defaultKeyFn` accept the optional server handle.
 - Hardened `assertNoEnvLeakage`: it now also flags `import.meta.env["KEY"]`,
   dynamic keys (`process.env[key]`), string-concatenated keys
   (`process.env["ST"+"RIPE"]`), and aliased `process.env` access.
@@ -45,12 +53,26 @@ dates. This is a pre-1.0 project — expect breaking changes between releases.
   `CODE_OF_CONDUCT.md`.
 - Templates' demo auth (hardcoded `admin`/`admin`) is now explicitly marked
   DEMO ONLY in code and on the login pages.
+- The landing site's docs now document the whole framework: new Islands and
+  Incremental Static Regeneration (ISR) pages, plus catch-all routes, batch
+  server-function registration, and the CLI flags (`--cwd`, `--adapter`,
+  `--outDir`). The data layer, security, build & deploy, API routes, content
+  collections, and configuration pages were rewritten to match the real
+  public APIs (fixed incorrect `RouteProps<typeof loader>`, `apiDir`, 404
+  handling, image-proxy, and middleware claims).
+- Docs code blocks use a monochrome token palette (`--code-*` CSS variables)
+  instead of colored hex classes, so highlighting stays legible in the
+  monochrome design.
+- Shortened the landing page boot animation from roughly 5.5s to about 4s.
 
 ### CI
 
 - Pinned the Bun version (`1.3.14`) instead of `latest` for reproducible
   builds, added a Linux + macOS matrix, and a separate `bun audit` job.
 - Added Dependabot configuration for weekly dependency updates.
+- The test workflow now runs `bun run build` and a format check on every PR
+  in addition to typecheck, lint, and tests. Root `package.json` gained
+  `format` and `build` scripts.
 
 ## 0.1.x — pre-release
 

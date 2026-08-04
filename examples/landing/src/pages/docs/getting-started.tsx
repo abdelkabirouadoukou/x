@@ -50,6 +50,8 @@ cat << EOF > x.config.ts
 import { defineConfig } from "@thexjs/core";
 export default defineConfig({
   pagesDir: "src/pages",
+  apiDir: "src/api",       // optional: API routes
+  actionsDir: "src/actions", // optional: server functions
 });
 EOF`}
       />
@@ -101,9 +103,8 @@ EOF`}
         label="terminal"
         lang="bash"
         code={`x dev
-  [x] resolving routes...
-  [x] found 3 routes in 12ms
-  [x] dev server running at http://localhost:3000`}
+[x] dev server starting...
+✓ dev server running at http://localhost:3000`}
       />
       <p className="mt-4 text-muted-foreground">
         The dev server watches your <span className="text-foreground">src/</span> directory and

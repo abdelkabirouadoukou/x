@@ -17,9 +17,13 @@ x start            # run the production server (run `x build` first)
 
 x run dev          # "run" is optional — an alias, for npm/bun muscle memory
 
+options:
+--cwd <dir>        # run as if started inside <dir> instead of the current directory
+--adapter <name>   # build target, e.g. "vercel" (default: Bun server -> .x/)
+--outDir <dir>     # build/start output directory (default: .x)
+
 -h, --help         # show help
 -v, --version      # print the installed @thexjs/cli version
---cwd <dir>        # run as if started inside <dir> instead of the current directory
 ```
 
 Add them to your `package.json` scripts once `@thexjs/cli` is a dependency:
@@ -57,7 +61,8 @@ If no config file is found, it falls back to sensible defaults — `src/pages` (
 - **`x build`** — compiles Tailwind in production/minified mode, then calls `build()` from `@thexjs/core`, writing:
   - `.x/client/` — prerendered HTML for every page with `export const mode = "static"`, plus your `public/` assets copied alongside them. This directory alone is deployable to any static host (Vercel, Netlify, a CDN, etc.).
   - `.x/server/index.ts` — a server entry covering any page left in the default `"server"` mode, plus your API routes. Requires a Bun-capable host to actually run (see `x start`).
-- **`x start`** — runs `.x/server/index.ts` under `bun` with `NODE_ENV=production`. Requires `x build` to have been run first; exits with an error if `.x/server/index.ts` is missing.
+- **`x start`** — runs `.x/server/index.ts` under `bun` with `NODE_ENV=production`. Requires `x build` to have been run first; exits with an error if `.x/server/index.ts` is missing. If the build has no server entry (a fully static app), it serves `.x/client/` as a plain static server with an SPA `index.html` fallback.
+- **`x build --adapter vercel`** — emits a `.vercel/output` tree (Build Output API v3) instead of `.x/`, for deployment to Vercel (see `@thexjs/adapter-vercel`). `--outDir <dir>` relocates the build output, e.g. `x build --outDir dist`.
 
 ## Deployment note
 

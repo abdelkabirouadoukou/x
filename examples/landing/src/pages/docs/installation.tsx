@@ -120,9 +120,15 @@ export default defineConfig({
         label="terminal"
         lang="bash"
         code={`x dev
-  compiling Tailwind CSS...
-  dev server running at http://localhost:3000`}
+[x] compiling Tailwind CSS...
+[x] dev server starting...
+✓ dev server running at http://localhost:3000`}
       />
+      <p className="mt-4 text-muted-foreground">
+        (The Tailwind line only appears when{" "}
+        <span className="text-foreground">src/styles/globals.css</span> exists, which the default
+        template ships.)
+      </p>
 
       <div className="mt-16 flex flex-wrap gap-6 border-t border-border pt-8">
         <a

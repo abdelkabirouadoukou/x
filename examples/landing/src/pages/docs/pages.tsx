@@ -58,12 +58,13 @@ export async function loader({ request }: LoaderArgs) {
   return { products };
 }
 
-export default function Products({ loaderData }: RouteProps<typeof loader>) {
+export default function Products({ loaderData }: RouteProps) {
+  const { products } = loaderData as { products: Array<{ id: string; name: string; price: number }> };
   return (
     <div>
       <h1 className="text-3xl font-bold">Products</h1>
       <ul className="mt-6 space-y-4">
-        {loaderData.products.map((p: any) => (
+        {products.map((p) => (
           <li key={p.id} className="rounded-xl border border-border bg-card p-4">
             <h2 className="font-semibold">{p.name}</h2>
             <p className="text-sm text-muted-foreground">{p.price}</p>
@@ -88,12 +89,12 @@ export async function loader({ params }: LoaderArgs) {
   const product = await db.query(
     "SELECT * FROM products WHERE id = ?", [params.id]
   );
-  if (!product) throw new Response(null, { status: 404 });
+  if (!product) return new Response(null, { status: 404 });
   return { product };
 }
 
-export default function ProductDetail({ loaderData }: RouteProps<typeof loader>) {
-  const { product } = loaderData;
+export default function ProductDetail({ loaderData }: RouteProps) {
+  const { product } = loaderData as { product: { name: string; description: string; price: number } };
   return (
     <div>
       <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -106,21 +107,34 @@ export default function ProductDetail({ loaderData }: RouteProps<typeof loader>)
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">RouteProps type</h2>
       <p className="mt-3 text-muted-foreground">
-        The <span className="text-foreground">RouteProps</span> type provides typed access to{" "}
-        <span className="text-foreground">loaderData</span>,{" "}
-        <span className="text-foreground">params</span>, and{" "}
-        <span className="text-foreground">request</span>. Pass your loader function as the type
-        parameter for full type safety.
+        Page components receive <span className="text-foreground">RouteProps</span> with{" "}
+        <span className="text-foreground">params</span> (a{" "}
+        <span className="text-foreground">Record&lt;string, string&gt;</span> of dynamic segments)
+        and <span className="text-foreground">loaderData</span> (the loader's return value). It is a
+        plain non-generic type — cast loader data to its shape if you want inline types.
       </p>
       <CodeBlock
         label="type usage"
         code={`import type { RouteProps } from "@thexjs/core";
 
-// loaderData is automatically typed via the generic
-export default function Page({ loaderData, params, request }: RouteProps<typeof loader>) {
-  // loaderData has the return type of loader()
-  // params has the dynamic segment types
-  // request is the standard Request object
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+}
+
+export default function ProductDetail({
+  loaderData,
+}: RouteProps) {
+  const { product } = loaderData as { product: Product };
+  return (
+    <div>
+      <h1 className="text-3xl font-bold">{product.name}</h1>
+      <p className="mt-2 text-muted-foreground">{product.description}</p>
+      <p className="mt-4 text-2xl font-bold text-primary">${"$"}{product.price}</p>
+    </div>
+  );
 }`}
       />
 

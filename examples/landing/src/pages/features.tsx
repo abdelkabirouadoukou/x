@@ -46,7 +46,7 @@ const allFeatures = [
   {
     icon: Shield,
     title: "Type safe end to end",
-    desc: "TypeScript from loader to component. LoaderData is typed through RouteProps, params are inferred from file paths, and server functions are fully typed.",
+    desc: "TypeScript across the stack. Dynamic route params are inferred from file paths, server functions are fully typed, and client bundles stay type-checked against the same code.",
   },
   {
     icon: Shield,

@@ -116,7 +116,9 @@ export async function loader() {
       />
       <p className="mt-4 text-muted-foreground">
         Kubernetes/Docker can poll these endpoints to decide whether to send traffic to a pod or
-        restart it.
+        restart it. The handler itself is exported as{" "}
+        <span className="text-foreground">createHealthCheckHandler</span> if you want to wire these
+        endpoints into a custom server instead.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">APM error tracing</h2>
@@ -167,6 +169,38 @@ observability: {
         If no reporter is configured, errors are logged to the console and the request returns a
         generic 500. The reporter never blocks the response. If it throws, the error is caught and
         logged so it can't take down the request.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Low-level APIs</h2>
+      <p className="mt-3 text-muted-foreground">
+        The pieces behind the config are exported directly, so you can swap the wiring for custom
+        logic:
+      </p>
+      <CodeBlock
+        label="low-level"
+        code={`import {
+  setErrorReporter,
+  reportException,
+  combineReporters,
+  createSentryReporter,
+} from "@thexjs/core";
+
+setErrorReporter(combineReporters(createSentryReporter(Sentry), customReporter));
+
+try {
+  // ...
+} catch (error) {
+  reportException(error, { route: "/dashboard", phase: "loader" });
+}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        <span className="text-foreground">setErrorReporter</span> installs a reporter at runtime,
+        <span className="text-foreground"> reportException</span> fires it with an{" "}
+        <span className="text-foreground">ErrorContext</span>, and{" "}
+        <span className="text-foreground">combineReporters</span> fans an exception out to several
+        reporters at once. Reporters may also implement an optional{" "}
+        <span className="text-foreground">flush()</span> (used to drain buffered events on graceful
+        shutdown).
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">What's captured</h2>

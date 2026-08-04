@@ -29,5 +29,13 @@ export default defineConfig({
         "font-src 'self'; " +
         "connect-src 'self';",
     },
+    // The landing site ships many subresources per page (islands, fonts,
+    // image proxy). 60/min (the default) is easy for one browser to blow
+    // through while browsing docs fast, which 429s static assets and makes
+    // the site appear broken. Raise it well above any human browsing rate.
+    rateLimit: {
+      limit: 300,
+      windowMs: 60_000,
+    },
   },
 });

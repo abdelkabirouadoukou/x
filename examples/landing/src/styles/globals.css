@@ -173,6 +173,18 @@
   --terminal-label: #a1a1aa;
   --terminal-glow: 0 30px 70px -28px rgba(255, 255, 255, 0.2);
 
+  /* Code syntax tokens — a strict zinc-scale monochrome hierarchy. Each
+     level is one rung brighter than the last so structure reads at a glance:
+     comments < numbers/tags < identifiers < strings < keywords < prompt. */
+  --code-comment: #71717a;
+  --code-number: #8b8b94;
+  --code-tag: #8b8b94;
+  --code-property: #a1a1aa;
+  --code-identifier: #c9c9d0;
+  --code-component: #d9d9df;
+  --code-string: #e8e8ec;
+  --code-keyword: #ffffff;
+
   /* Faint grid */
   --grid-line: rgba(255, 255, 255, 0.05);
 }

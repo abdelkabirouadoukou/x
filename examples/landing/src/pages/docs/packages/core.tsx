@@ -55,7 +55,8 @@ export default function HomePage({}: RouteProps) {
 src/pages/index.tsx           /
 src/pages/about.tsx           /about
 src/pages/blog/[slug].tsx     /blog/:slug
-src/pages/api/users.ts        API route at /api/users
+src/pages/blog/[...rest].tsx  /blog/*       (catch-all)
+src/api/users.ts              /api/users
 src/pages/_layout.tsx         Wraps routes in directory
 src/pages/_middleware.ts      Runs before matching routes
 src/pages/_404.tsx              Custom not-found page`}
@@ -94,29 +95,69 @@ export async function loader({ params }: { params: Record<string, string> }) {
   return { user: await getUser(params.id) };
 }
 
-export default function UserPage({ loaderData }: RouteProps<typeof loader>) {
-  return <p>{loaderData.user.name}</p>;
+export default function UserPage({ loaderData }: RouteProps) {
+  const { user } = loaderData as { user: { name: string } };
+  return <p>{user.name}</p>;
 }`}
       />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Islands</h2>
       <p className="mt-3 text-muted-foreground">
-        Wrap interactive pieces in <span className="text-foreground">&lt;Island&gt;</span> for
-        selective hydration:
+        Wrap interactive pieces in <span className="text-foreground">&lt;Island&gt;</span> and
+        register the component on the page or layout with{" "}
+        <span className="text-foreground">export const islands</span>. Only registered islands get a
+        hydration bundle, so unregistered components never ship client JS. Full details on{" "}
+        <a href="/docs/islands" className="text-primary underline underline-offset-2">
+          the Islands page
+        </a>
+        .
       </p>
       <CodeBlock
-        label="island"
+        label="page with an island"
         code={`import { Island } from "@thexjs/core";
+import { LikeButton } from "./like-button";
 
-<Island name="like-button" client="visible">
-  <LikeButton />
-</Island>`}
+export const islands = { LikeButton };
+
+export default function Page() {
+  return (
+    <Island name="LikeButton" client="visible">
+      <LikeButton />
+    </Island>
+  );
+}`}
       />
       <p className="mt-4 text-muted-foreground">
         <span className="text-foreground">client</span> accepts{" "}
         <span className="text-foreground">"idle"</span>,{" "}
         <span className="text-foreground">"visible"</span>, or{" "}
         <span className="text-foreground">"load"</span>.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Typed routes</h2>
+      <p className="mt-3 text-muted-foreground">
+        In dev, <span className="text-foreground">createApp</span> writes{" "}
+        <span className="text-foreground">src/x-routes.ts</span> with a{" "}
+        <span className="text-foreground">RouteMap</span> type and a typed{" "}
+        <span className="text-foreground">href()</span> helper — routes can't drift from your file
+        tree, and dynamic segments are checked at compile time. Do not edit the file by hand.
+      </p>
+      <CodeBlock
+        label="typed href"
+        code={`import { href } from "../x-routes";
+
+const url = href("/blog/[slug]", { slug: "hello-world" }); // "/blog/hello-world"`}
+      />
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Incremental static regeneration</h2>
+      <p className="mt-3 text-muted-foreground">
+        Static pages can revalidate on a timer with{" "}
+        <span className="text-foreground">export const revalidate = N</span>, and you can bust the
+        cache via <span className="text-foreground">POST /__x/revalidate</span>. See{" "}
+        <a href="/docs/isr" className="text-primary underline underline-offset-2">
+          the ISR page
+        </a>
+        .
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Client navigation &amp; images</h2>
@@ -155,7 +196,7 @@ const html = renderMarkdown(posts[0].body);`}
         label="sqlite"
         code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
 
-const db = connectSQLite({ filename: "./data/dev.db" });
+const db = connectSQLite({ path: "./data/dev.db" });
 await runSQLiteMigrations(db, "./data/migrations");`}
       />
       <CodeBlock
@@ -171,15 +212,29 @@ await runPostgresMigrations(sql, "./data/migrations");`}
         label="exports"
         code={`defineConfig, createApp, build          App setup & build
 renderPage, renderStaticPage            Lower-level rendering
+renderStreamingPage                     Streaming SSR for Suspense
 scanRoutes, scanPages, scanApiDir       Routing internals
+scanLayouts, scanMiddleware, scanNotFound  Layout/middleware/404 scanning
+findLayoutChain, findMiddlewareChain    Resolve chains from a route
+generateManifestSource, writeManifest   Typed route map (src/x-routes.ts)
 Island, IslandProvider                  Selective hydration
 Link, CLIENT_NAV_SCRIPT                 Client-side navigation
 DefaultNotFound, renderErrorOverlay     404 page & dev error overlay
 createImageProxyHandler                 Remote image proxy (/_x/image)
-scanContent, renderMarkdown             Markdown content
+scanContent, renderMarkdown, escapeHtml Markdown content
 composeMiddleware, MiddlewareFn         Route middleware
-registerServerFunctions                 Server function internals
-connectSQLite, connectPostgres          Data layer`}
+registerServerFunctions, generateServerFunctionClient  Server functions
+createRateLimiter, rateLimitMiddleware  Rate limiting
+createRedisRateLimitStore               Shared Redis rate-limit store
+checkCsrf, verifyOrigin, verifyCsrfToken, generateCsrfToken, withCsrfCookie  CSRF
+buildSecurityHeaders, applySecurityHeaders  Security response headers
+findLeakedEnvKeys, assertNoEnvLeakage   Build-time env isolation
+logger, withRequestLogging              Structured JSON logging
+setErrorReporter, reportException, combineReporters  Error reporting
+createSentryReporter, createOtelReporter  Sentry / OpenTelemetry adapters
+createHealthCheckHandler                /healthz + /readyz probes
+connectSQLite, connectPostgres          Data layer (subpath @thexjs/core/data)
+runSQLiteMigrations, runPostgresMigrations  File-based migrations`}
       />
 
       <div className="mt-16 flex flex-wrap gap-6 border-t border-border pt-8">

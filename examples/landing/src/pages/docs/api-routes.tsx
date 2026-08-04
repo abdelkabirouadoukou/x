@@ -18,63 +18,68 @@ export default function DocPage(_props: RouteProps) {
       <p className="mt-3 text-muted-foreground">
         Like pages, API routes use the file system. A file at{" "}
         <span className="text-foreground">src/api/hello.ts</span> becomes{" "}
-        <span className="text-foreground">/api/hello</span>.
+        <span className="text-foreground">/api/hello</span>. Handlers are plain functions: export
+        the HTTP method you want to handle, receive the{" "}
+        <span className="text-foreground">Request</span>, return a{" "}
+        <span className="text-foreground">Response</span>. The{" "}
+        <span className="text-foreground">Request</span> is the standard{" "}
+        <span className="text-foreground">fetch</span> API request, so{" "}
+        <span className="text-foreground">req.json()</span>,{" "}
+        <span className="text-foreground">req.formData()</span>, and{" "}
+        <span className="text-foreground">req.headers</span> all work as expected.
       </p>
       <CodeBlock
         label="src/api/hello.ts"
-        code={`import type { ApiHandler } from "@thexjs/core";
-
-export const GET: ApiHandler = ({ request }) => {
+        code={`export function GET(req: Request) {
   return Response.json({ message: "Hello from x!" });
-};`}
+}`}
       />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Request &amp; response</h2>
       <p className="mt-3 text-muted-foreground">
-        Each exported HTTP method receives the request and returns a standard{" "}
-        <span className="text-foreground">Response</span> object. Dynamic segments work the same as
-        pages: <span className="text-foreground">api/users/[id].ts</span> →{" "}
-        <span className="text-foreground">/api/users/:id</span>.
+        Each exported HTTP method receives the raw request and returns a standard{" "}
+        <span className="text-foreground">Response</span>. Dynamic segments work the same as pages:{" "}
+        <span className="text-foreground">api/users/[id].ts</span> →{" "}
+        <span className="text-foreground">/api/users/:id</span>. Return any{" "}
+        <span className="text-foreground">Response</span>, including{" "}
+        <span className="text-foreground">Response.json(...)</span> and{" "}
+        <span className="text-foreground">new Response(stream)</span>.
       </p>
       <CodeBlock
         label="src/api/users.ts"
-        code={`import type { ApiHandler } from "@thexjs/core";
-
-export const GET: ApiHandler = async ({ request }) => {
+        code={`export async function GET(req: Request) {
   const users = await db.query("SELECT * FROM users");
   return Response.json(users);
-};
+}
 
-export const POST: ApiHandler = async ({ request }) => {
-  const body = await request.json();
+export async function POST(req: Request) {
+  const body = await req.json();
   const result = await db.query(
     "INSERT INTO users (name, email) VALUES (?, ?) RETURNING *",
-    [body.name, body.email]
+    [body.name, body.email],
   );
   return Response.json(result, { status: 201 });
-};`}
+}`}
       />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">POST endpoint example</h2>
       <CodeBlock
         label="src/api/contact.ts"
-        code={`import type { ApiHandler } from "@thexjs/core";
-
-export const POST: ApiHandler = async ({ request }) => {
-  const form = await request.formData();
+        code={`export async function POST(req: Request) {
+  const form = await req.formData();
   const email = form.get("email");
   const message = form.get("message");
 
   if (!email || !message) {
     return Response.json(
       { error: "Email and message are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   await sendEmail({ email, message });
   return Response.json({ success: true });
-};`}
+}`}
       />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">API route tree</h2>

@@ -73,30 +73,26 @@ console.log(greeting);
 import { scanContent, renderMarkdown } from "@thexjs/core";
 
 export async function loader({ params }: LoaderArgs) {
-  const posts = await scanContent("posts");
+  const posts = scanContent("content/posts");
   const post = posts.find((p) => p.slug === params.slug);
-  if (!post) throw new Response(null, { status: 404 });
-  const html = await renderMarkdown(post.body);
+  if (!post) return new Response(null, { status: 404 });
+  const html = renderMarkdown(post.body);
   return { post: { ...post, html } };
 }
 
-export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
+export default function BlogPost({ loaderData }: RouteProps) {
+  const { post } = loaderData as {
+    post: { frontmatter: Record<string, unknown>; html: string };
+  };
   return (
     <article className="prose max-w-none">
-      <h1 className="text-4xl font-bold">{loaderData.post.title}</h1>
+      <h1 className="text-4xl font-bold">{post.frontmatter.title}</h1>
       <p className="text-sm text-muted-foreground">
-        {loaderData.post.date} — {loaderData.post.author}
+        {String(post.frontmatter.date)} — {String(post.frontmatter.author)}
       </p>
-      <div className="mt-6 flex gap-2">
-        {loaderData.post.tags?.map((tag: string) => (
-          <span key={tag} className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
-            {tag}
-          </span>
-        ))}
-      </div>
       <div
         className="mt-8 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: loaderData.post.html }}
+        dangerouslySetInnerHTML={{ __html: post.html }}
       />
     </article>
   );
@@ -107,16 +103,40 @@ export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
       <p className="mt-3 text-muted-foreground">
         <span className="text-foreground">scanContent(directory)</span> scans a subdirectory of your
         content folder and returns an array of content entries. Each entry includes{" "}
-        <span className="text-foreground">slug</span>,{" "}
-        <span className="text-foreground">frontmatter</span>, and{" "}
-        <span className="text-foreground">content</span>.
+        <span className="text-foreground">slug</span>, <span className="text-foreground">body</span>{" "}
+        (the raw markdown), and <span className="text-foreground">frontmatter</span> (parsed YAML).
+        Both this and <span className="text-foreground">renderMarkdown</span> are synchronous — no{" "}
+        <span className="text-foreground">await</span> needed.
       </p>
+      <CodeBlock
+        label="content entry"
+        code={`interface ContentEntry {
+  slug: string;              // "posts/hello-world" — route-safe path
+  body: string;              // markdown after the frontmatter block
+  frontmatter: Record<string, string | number | boolean | string[] | null>;
+}`}
+      />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">renderMarkdown API</h2>
       <p className="mt-3 text-muted-foreground">
         <span className="text-foreground">renderMarkdown(markdownString)</span> converts markdown to
-        an HTML string. It supports syntax highlighting via Shiki and handles all standard markdown
-        features.
+        an HTML string. It is a lightweight, dependency-free renderer: headings, paragraphs, lists,
+        links, inline code, code blocks, bold/italic, and blockquotes are supported, and all output
+        is HTML-escaped by default (<span className="text-foreground">escapeHtml</span> is exported
+        separately too). It does not run a full markdown engine or syntax highlighter, so for
+        heavy-duty content you can swap in your own renderer and feed the result to{" "}
+        <span className="text-foreground">dangerouslySetInnerHTML</span>.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Auto-routes</h2>
+      <p className="mt-3 text-muted-foreground">
+        Every <span className="text-foreground">.md</span>/
+        <span className="text-foreground">.mdx</span> file under{" "}
+        <span className="text-foreground">contentDir</span> becomes a route at its own path during
+        build and dev. The <span className="text-foreground">blog</span> template is a working
+        example: <span className="text-foreground">content/posts/*.md</span> with a{" "}
+        <span className="text-foreground">[slug].tsx</span> page that renders each post via{" "}
+        <span className="text-foreground">renderMarkdown</span>.
       </p>
 
       <div className="mt-16 border-t border-border pt-8">

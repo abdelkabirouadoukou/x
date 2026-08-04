@@ -60,11 +60,12 @@ export async function loader({ params }: LoaderArgs) {
   return { title: post.title, content: post.content };
 }
 
-export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
+export default function BlogPost({ loaderData }: RouteProps) {
+  const { title, content } = loaderData as { title: string; content: string };
   return (
     <article>
-      <h1 className="text-3xl font-bold">{loaderData.title}</h1>
-      <div>{loaderData.content}</div>
+      <h1 className="text-3xl font-bold">{title}</h1>
+      <div>{content}</div>
     </article>
   );
 }`}
@@ -73,6 +74,33 @@ export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
         Multiple dynamic segments work too:{" "}
         <span className="text-foreground">pages/product/[category]/[id].tsx</span> →{" "}
         <span className="text-foreground">/product/:category/:id</span>.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Catch-all routes</h2>
+      <p className="mt-3 text-muted-foreground">
+        Prefix a dynamic segment with <span className="text-foreground">...</span> to match any
+        number of remaining path segments. The full remaining path arrives as a single{" "}
+        <span className="text-foreground">params</span> value.
+      </p>
+      <CodeBlock
+        label="src/pages/docs/[...slug].tsx"
+        code={`import type { RouteProps, LoaderArgs } from "@thexjs/core";
+
+export async function loader({ params }: LoaderArgs) {
+  return { slug: params.slug };
+}
+
+export default function DocsPage({ loaderData }: RouteProps) {
+  const { slug } = loaderData as { slug: string };
+  return <div>Viewing docs for: {slug}</div>;
+}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        <span className="text-foreground">/docs/routing</span> →{" "}
+        <span className="text-foreground">params.slug === "routing"</span>;{" "}
+        <span className="text-foreground">/docs/guides/overview</span> →{" "}
+        <span className="text-foreground">"guides/overview"</span>. Catch-alls match one or more
+        segments, so they don't capture the parent route itself.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Nested routes with folders</h2>

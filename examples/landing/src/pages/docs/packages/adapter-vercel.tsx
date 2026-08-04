@@ -99,7 +99,16 @@ vercel deploy --prebuilt`}
   additionalStaticDirs?: string[];
   security?: {
     csrf?: { allowedOrigins?: string[]; requireToken?: boolean; disabled?: boolean };
-    headers?: SecurityHeadersOptions | false;
+    headers?:
+      | {
+          contentSecurityPolicy?: string;
+          hstsMaxAge?: number;
+          hstsIncludeSubDomains?: boolean;
+          frameOptions?: string;
+          contentTypeOptions?: string;
+          referrerPolicy?: string;
+        }
+      | false;
     rateLimit?: { limit?: number; windowMs?: number } | false;
   };
   observability?: {
@@ -116,8 +125,9 @@ vercel deploy --prebuilt`}
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Usage with x.config.ts</h2>
       <p className="mt-3 text-muted-foreground">
-        The adapter reads your <span className="text-foreground">x.config.ts</span> automatically,
-        so no extra configuration is needed. Just install the adapter and run:
+        Running <span className="text-foreground">x build --adapter vercel</span> loads your{" "}
+        <span className="text-foreground">x.config.ts</span>, so no extra configuration is needed.
+        Just install the adapter and run:
       </p>
       <CodeBlock
         label="terminal"

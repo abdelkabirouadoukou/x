@@ -16,8 +16,8 @@ export default function DocPage(_props: RouteProps) {
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Layouts directory</h2>
       <p className="mt-3 text-muted-foreground">
-        Configure a layouts directory in <span className="text-foreground">x.config.ts</span>.
-        Layouts follow the same file-tree hierarchy as pages.
+        Configure a layouts directory in <span className="text-foreground">x.config.ts</span>. Every
+        file in it acts as a root-level layout and wraps all your routes.
       </p>
       <CodeBlock
         label="x.config.ts"
@@ -31,9 +31,11 @@ export default defineConfig({
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Root layout</h2>
       <p className="mt-3 text-muted-foreground">
-        The root layout wraps every page in your app. Create{" "}
+        Any layout in the dedicated layouts directory wraps every route page. Create{" "}
         <span className="text-foreground">src/layouts/main.tsx</span> to add a header, footer, or
-        global styling.
+        global styling. A <span className="text-foreground">_layout.tsx</span> at the root of{" "}
+        <span className="text-foreground">pages/</span> also serves as the root layout for page
+        routes (and is the one used to wrap the 404 page).
       </p>
       <CodeBlock
         label="src/layouts/main.tsx"

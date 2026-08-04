@@ -4,6 +4,7 @@ export type RouteMap = {
   "/features": Record<string, never>;
   "/docs": Record<string, never>;
   "/docs/content-collections": Record<string, never>;
+  "/docs/isr": Record<string, never>;
   "/docs/build-deploy": Record<string, never>;
   "/docs/configuration": Record<string, never>;
   "/docs/observability": Record<string, never>;
@@ -13,6 +14,7 @@ export type RouteMap = {
   "/docs/api-routes": Record<string, never>;
   "/docs/routing": Record<string, never>;
   "/docs/installation": Record<string, never>;
+  "/docs/islands": Record<string, never>;
   "/docs/packages/cli": Record<string, never>;
   "/docs/packages/env": Record<string, never>;
   "/docs/packages/adapter-vercel": Record<string, never>;

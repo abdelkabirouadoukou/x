@@ -1,4 +1,4 @@
-# AGENTS.md — x framework (Bun + React)
+# AGENTS.md x framework (Bun + React)
 
 ## What is this?
 

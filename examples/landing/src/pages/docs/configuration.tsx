@@ -43,6 +43,25 @@ export default defineConfig({
   // Dev server port
   port: 3000,
 
+  // Security guardrails (headers, CSRF, rate limiting)
+  security: {
+    csrf: { requireToken: true },
+    headers: { contentSecurityPolicy: "default-src 'self'; script-src 'self'" },
+    rateLimit: { limit: 120 },
+  },
+
+  // Observability (logging, health probes, error reporting)
+  observability: {
+    logging: true,
+    health: { check: () => ({ status: "ok" }) },
+    errorReporter: (err, ctx) => console.error(err, ctx),
+  },
+
+  // Remote image proxy allow-list
+  images: {
+    remoteHosts: ["cdn.example.com"],
+  },
+
   // Legacy routes directory
   routesDir: "src/routes",
 });`}
@@ -52,15 +71,24 @@ export default defineConfig({
 
       <CodeBlock
         label="options table"
-        code={`Option         Type       Default          Description
-────────────────────────────────────────────────────────────
-pagesDir       string     "src/pages"      File-based page routes
-layoutsDir     string     "src/layouts"    Root layout directory
-apiDir         string     "src/api"        File-based API routes
-actionsDir     string     "src/actions"    Server functions
-contentDir     string     "content"        Markdown content collections
-port           number     3000             Dev server port
-routesDir      string     undefined        Legacy routes directory`}
+        code={`Option          Type        Default             Description
+─────────────────────────────────────────────────────────────
+pagesDir        string      "src/pages"        File-based page routes
+layoutsDir      string      "src/layouts"      Root layout directory
+apiDir          string      "src/api"          File-based API routes
+actionsDir      string      "src/actions"      Server functions
+contentDir      string      undefined          Markdown content collections
+port            number      3000               Dev server port
+routesDir       string      undefined          Legacy routes directory
+development     boolean     false              Force dev-mode behavior
+stylesheetHref  string      undefined          Precomputed stylesheet <link> href
+security.csrf   object|false enabled           CSRF for /__x/actions/*
+security.headers object|false enabled          CSP, HSTS, X-Frame-Options, ...
+security.rateLimit object|false enabled        Per-IP fixed-window limiter
+observability.logging boolean true             Structured JSON request logs
+observability.errorReporter fn undefined       Plugin for exceptions (Sentry/OTel)
+observability.health object undefined         /healthz + /readyz endpoints
+images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
       />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">pagesDir</h2>
@@ -86,21 +114,58 @@ routesDir      string     undefined        Legacy routes directory`}
       <h2 className="mt-12 text-xl font-bold tracking-tight">actionsDir</h2>
       <p className="mt-3 text-muted-foreground">
         The directory for server functions. Exported async functions can be called from the browser
-        via <span className="text-foreground">fetch('/__x/actions/...')</span>.
+        via <span className="text-foreground">fetch('/__x/actions/...')</span>. If you don't set
+        this, x auto-detects a <span className="text-foreground">src/actions</span> directory.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">contentDir</h2>
       <p className="mt-3 text-muted-foreground">
-        The directory for markdown content collections. Files with frontmatter are scanned and can
-        be loaded via <span className="text-foreground">scanContent</span> and{" "}
+        The directory for markdown content collections. Files with frontmatter are scanned, and each
+        becomes a route at its own path. Load content via{" "}
+        <span className="text-foreground">scanContent</span> and{" "}
         <span className="text-foreground">renderMarkdown</span>.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">port</h2>
       <p className="mt-3 text-muted-foreground">
         The port number for the dev server. Defaults to{" "}
-        <span className="text-foreground">3000</span>. Set to a different value if the default port
-        is in use.
+        <span className="text-foreground">3000</span>.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">security</h2>
+      <p className="mt-3 text-muted-foreground">
+        Nested options for the security guardrails: <span className="text-foreground">csrf</span>{" "}
+        (origin verification + optional double-submit token),{" "}
+        <span className="text-foreground">headers</span> (CSP, HSTS, frame options, nosniff), and{" "}
+        <span className="text-foreground">rateLimit</span> (per-IP fixed-window limiter, optionally
+        backed by a Redis store). Pass <span className="text-foreground">false</span> for any of
+        them to disable it. See{" "}
+        <a href="/docs/security" className="text-primary underline underline-offset-2">
+          Security
+        </a>{" "}
+        for the full reference.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">observability</h2>
+      <p className="mt-3 text-muted-foreground">
+        <span className="text-foreground">logging</span> toggles structured JSON request logs,
+        <span className="text-foreground"> health</span> enables the{" "}
+        <span className="text-foreground">/healthz</span> and{" "}
+        <span className="text-foreground">/readyz</span> probes, and{" "}
+        <span className="text-foreground">errorReporter</span> plugs exceptions into Sentry, OTel,
+        or your own handler. See{" "}
+        <a href="/docs/observability" className="text-primary underline underline-offset-2">
+          Observability
+        </a>
+        .
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">images</h2>
+      <p className="mt-3 text-muted-foreground">
+        <span className="text-foreground">remoteHosts</span> allow-lists hosts for the{" "}
+        <span className="text-foreground">/_x/image?url=...</span> proxy, so a strict{" "}
+        <span className="text-foreground">img-src 'self'</span> CSP can still load remote images
+        through your own origin.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">routesDir (legacy)</h2>

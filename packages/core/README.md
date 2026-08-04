@@ -45,10 +45,11 @@ Given a `pagesDir`, `scanPages` walks the directory and maps files to routes:
 | `src/pages/index.tsx` | `/` |
 | `src/pages/about.tsx` | `/about` |
 | `src/pages/blog/[slug].tsx` | `/blog/:slug` |
-| `src/pages/api/users.ts` | API route at `/api/users` |
+| `src/pages/blog/[...rest].tsx` | `/blog/*` (catch-all) |
 | `src/pages/_layout.tsx` | Wraps every route in the same directory (and below) |
 | `src/pages/_middleware.ts` | Runs before matching routes in the same directory (and below) |
 | `src/pages/_404.tsx` | Custom not-found page |
+| `src/api/users.ts` | API route at `/api/users` (via `apiDir`) |
 
 Files and directories prefixed with `_` or `.` are never treated as routes.
 
@@ -76,8 +77,9 @@ export async function loader({ params }: { params: Record<string, string> }) {
   return { user: await getUser(params.id) };
 }
 
-export default function UserPage({ loaderData }: RouteProps<typeof loader>) {
-  return <p>{loaderData.user.name}</p>;
+export default function UserPage({ loaderData }: RouteProps) {
+  const { user } = loaderData as { user: { name: string } };
+  return <p>{user.name}</p>;
 }
 ```
 
@@ -85,13 +87,17 @@ export default function UserPage({ loaderData }: RouteProps<typeof loader>) {
 
 ## Server functions / actions
 
-Files under an `actionsDir` (or a page's colocated `actions` export) register callable server functions:
+Files under an `actionsDir` register callable server functions. Each named export (or an `export const actions = { ... }` map) becomes a function callable from a client island:
 
 ```ts
-// src/pages/contact/_actions.ts
+// src/actions/contact.ts
 export async function submitContact(data: { email: string; message: string }) {
   // runs on the server, callable from a client island
 }
+
+export const actions = {
+  ping: async () => ({ pong: true }),
+};
 ```
 
 `registerServerFunctions`, `generateServerFunctionClient`, and `getServerFunctionHandler` are the lower-level primitives the router wires up automatically — most apps won't call these directly.
@@ -103,7 +109,7 @@ Wrap any interactive piece of a static/server-rendered page in `<Island>` to shi
 ```tsx
 import { Island } from "@thexjs/core";
 
-<Island name="like-button" client="visible">
+<Island name="LikeButton" client="visible">
   <LikeButton />
 </Island>
 ```
@@ -123,17 +129,17 @@ const html = renderMarkdown(posts[0].body);
 
 ## Data layer
 
-Thin, typed wrappers over Bun's built-in SQLite and Postgres clients, plus a minimal migration runner:
+Thin, typed wrappers over Bun's built-in SQLite and Postgres clients, plus a minimal migration runner. Import from the `@thexjs/core/data` subpath:
 
 ```ts
-import { connectSQLite, runSQLiteMigrations } from "@thexjs/core";
+import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
 
-const db = connectSQLite({ filename: "./data/dev.db" });
+const db = connectSQLite({ path: "./data/dev.db" });
 await runSQLiteMigrations(db, "./data/migrations");
 ```
 
 ```ts
-import { connectPostgres, runPostgresMigrations } from "@thexjs/core";
+import { connectPostgres, runPostgresMigrations } from "@thexjs/core/data";
 
 const sql = connectPostgres({ url: process.env.DATABASE_URL! });
 await runPostgresMigrations(sql, "./data/migrations");
@@ -143,12 +149,14 @@ await runPostgresMigrations(sql, "./data/migrations");
 
 ```ts
 // src/pages/dashboard/_middleware.ts
-import type { MiddlewareFn } from "@thexjs/core";
+import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 
-export const middleware: MiddlewareFn = async (ctx, next) => {
-  if (!ctx.session) return new Response("Unauthorized", { status: 401 });
+export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
+  if (!ctx.request.headers.get("authorization")) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   return next();
-};
+}
 ```
 
 `composeMiddleware` chains multiple middleware functions together; `findMiddlewareChain` resolves which ones apply to a given route based on directory nesting.
@@ -223,7 +231,7 @@ Only variables prefixed `THEXJS_PUBLIC_` may reach the browser — `@thexjs/env`
 | `DefaultNotFound`, `renderErrorOverlay`, `CLIENT_NAV_SCRIPT` | Defaults / dev tooling |
 | `checkCsrf`, `verifyOrigin`, `verifyCsrfToken`, `generateCsrfToken`, `withCsrfCookie`, `CsrfOptions`, `CsrfResult` | CSRF protection |
 | `buildSecurityHeaders`, `applySecurityHeaders`, `SecurityHeadersOptions` | Security response headers (CSP/HSTS/etc.) |
-| `createRateLimiter`, `rateLimitMiddleware`, `RateLimitOptions`, `RateLimitResult` | Rate limiting |
+| `createRateLimiter`, `rateLimitMiddleware`, `RateLimitOptions`, `RateLimitResult`, `RateLimitServer`, `createRedisRateLimitStore` | Rate limiting (per-IP fixed window) |
 | `findLeakedEnvKeys`, `assertNoEnvLeakage`, `EnvLeakageError`, `PUBLIC_ENV_PREFIX` | Server/client env var isolation |
 | `logger`, `withRequestLogging`, `Logger`, `LogFields` | Structured JSON logging |
 | `setErrorReporter`, `getErrorReporter`, `reportException`, `createSentryReporter`, `createOtelReporter`, `combineReporters`, `noopReporter`, `ErrorReporter` | Error reporting (Sentry/OpenTelemetry hook) |

@@ -836,14 +836,17 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       console.warn("[x] file watching not available on this platform");
     }
 
-    const devFetchInner = async (req: Request) => {
+    const devFetchInner = async (
+      req: Request,
+      server?: import("./security/rate-limit").RateLimitServer,
+    ) => {
       const url = new URL(req.url).pathname;
 
       const healthResult = await healthHandler(req);
       if (healthResult !== null) return healthResult;
 
       if (rateLimiter) {
-        const limited = await rateLimitMiddleware(rateLimiter, req);
+        const limited = await rateLimitMiddleware(rateLimiter, req, server);
         if (limited !== null) return limited;
       }
 
@@ -925,8 +928,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       return renderNotFound(req);
     };
 
-    const devFetchHardened = async (req: Request) =>
-      withResponseHardening(await devFetchInner(req));
+    const devFetchHardened = async (
+      req: Request,
+      server?: import("./security/rate-limit").RateLimitServer,
+    ) => withResponseHardening(await devFetchInner(req, server));
     const devFetch = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
 
     return {
@@ -939,14 +944,17 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
   // Production -- same iteration logic as dev, so dynamic routes, layouts,
   // middleware, static assets and 404 page all work identically.
-  const prodFetchInner = async (req: Request) => {
+  const prodFetchInner = async (
+    req: Request,
+    server?: import("./security/rate-limit").RateLimitServer,
+  ) => {
     const url = new URL(req.url).pathname;
 
     const healthResult = await healthHandler(req);
     if (healthResult !== null) return healthResult;
 
     if (rateLimiter) {
-      const limited = await rateLimitMiddleware(rateLimiter, req);
+      const limited = await rateLimitMiddleware(rateLimiter, req, server);
       if (limited !== null) return limited;
     }
 
@@ -981,8 +989,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     return renderNotFound(req);
   };
 
-  const prodFetchHardened = async (req: Request) =>
-    withResponseHardening(await prodFetchInner(req));
+  const prodFetchHardened = async (
+    req: Request,
+    server?: import("./security/rate-limit").RateLimitServer,
+  ) => withResponseHardening(await prodFetchInner(req, server));
   const prodFetch = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
 
   return {

@@ -11,8 +11,8 @@ export default function DocPage(_props: RouteProps) {
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Security</h1>
       <p className="mt-4 text-lg text-muted-foreground">
         x ships with production-grade security guardrails enabled by default: build-time env
-        isolation, CSRF protection on server actions, security headers on every response, and an
-        in-memory rate limiter. All of it is configurable or disableable per environment.
+        isolation, CSRF protection on server actions, security headers on every response, and a
+        per-IP rate limiter. All of it is configurable or disableable per environment.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Configuration overview</h2>
@@ -76,11 +76,18 @@ export default defineConfig({
         can't accidentally ship secrets. Move env access into a loader or server function and pass
         the value as <span className="text-foreground">loaderData</span>.
       </p>
+      <p className="mt-4 text-muted-foreground">
+        The low-level pieces are exported too:{" "}
+        <span className="text-foreground">findLeakedEnvKeys(code)</span>,{" "}
+        <span className="text-foreground">assertNoEnvLeakage(code, file)</span>, and the{" "}
+        <span className="text-foreground">PUBLIC_ENV_PREFIX</span> constant — handy for custom build
+        tooling or CI checks.
+      </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">CSRF protection</h2>
       <p className="mt-3 text-muted-foreground">
-        All POST requests to <span className="text-foreground">/__x/actions/*</span> (server
-        functions) are automatically verified. Two independent checks are available:
+        All requests to <span className="text-foreground">/__x/actions/*</span> (server functions)
+        are verified. Two independent checks are available:
       </p>
       <ol className="mt-4 list-decimal space-y-2 text-muted-foreground">
         <li>
@@ -90,9 +97,8 @@ export default defineConfig({
         </li>
         <li>
           <span className="text-foreground">Double-submit token</span> — when{" "}
-          <span className="text-foreground">requireToken: true</span> is set, a random token is
-          issued in a cookie and must be echoed back in the{" "}
-          <span className="text-foreground">x-csrf-token</span> header on mutating requests.
+          <span className="text-foreground">requireToken: true</span> is set, a token must be echoed
+          in the <span className="text-foreground">x-csrf-token</span> header on mutating requests.
         </li>
       </ol>
 
@@ -106,17 +112,27 @@ export default defineConfig({
 }`}
       />
 
-      <h3 className="mt-8 text-lg font-semibold">Using CSRF tokens from the browser</h3>
+      <h3 className="mt-8 text-lg font-semibold">Issuing the token cookie</h3>
       <p className="mt-2 text-muted-foreground">
-        When <span className="text-foreground">requireToken</span> is enabled, read the cookie and
-        send it back as a header:
+        The token cookie is <span className="text-foreground">not</span> set automatically: your app
+        sets it once, typically when a session starts (a login route), by wrapping the response with{" "}
+        <span className="text-foreground">withCsrfCookie</span> — or generate one yourself with{" "}
+        <span className="text-foreground">generateCsrfToken</span>. From the browser, read the
+        cookie and echo it on every POST to <span className="text-foreground">/__x/actions/*</span>:
       </p>
       <CodeBlock
-        label="client"
-        code={`// The cookie is set automatically by the server on the first response.
-// Read it and echo it on every POST to /__x/actions/*.
-function getCsrfToken() {
-  const match = document.cookie.match(/(?:^|;\s*)x_csrf_token=([^;]+)/);
+        label="login route (sets the cookie)"
+        code={`import { withCsrfCookie } from "@thexjs/core";
+
+export async function POST(req: Request) {
+  // ...create a session...
+  return withCsrfCookie(req, Response.json({ ok: true }));
+}`}
+      />
+      <CodeBlock
+        label="client (echoes the token)"
+        code={`function getCsrfToken() {
+  const match = document.cookie.match(/(?:^|;\\s*)x_csrf_token=([^;]+)/);
   return match ? match[1] : "";
 }
 
@@ -129,6 +145,12 @@ await fetch("/__x/actions/greet/greet", {
   body: JSON.stringify(["world"]),
 });`}
       />
+      <p className="mt-4 text-muted-foreground">
+        The other primitives are exported for custom pipelines:{" "}
+        <span className="text-foreground">checkCsrf</span>,{" "}
+        <span className="text-foreground">verifyOrigin</span>,{" "}
+        <span className="text-foreground">verifyCsrfToken</span>.
+      </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Security headers</h2>
       <p className="mt-3 text-muted-foreground">
@@ -160,12 +182,18 @@ await fetch("/__x/actions/greet/greet", {
   },
 }`}
       />
+      <p className="mt-4 text-muted-foreground">
+        To reuse the header builder without the request pipeline, call{" "}
+        <span className="text-foreground">buildSecurityHeaders(options)</span> directly.
+      </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Rate limiting</h2>
       <p className="mt-3 text-muted-foreground">
-        A lightweight in-memory rate limiter is applied ahead of all routing. It uses a fixed-window
-        counter keyed by client IP (from <span className="text-foreground">x-forwarded-for</span> or{" "}
-        <span className="text-foreground">x-real-ip</span>). When the limit is exceeded, the server
+        A lightweight fixed-window rate limiter is applied ahead of all routing. Buckets are keyed
+        by the client's real IP — resolved from the underlying socket (Bun{" "}
+        <span className="text-foreground">server.requestIP</span>), falling back to{" "}
+        <span className="text-foreground">x-forwarded-for</span> /{" "}
+        <span className="text-foreground">x-real-ip</span>. When the limit is exceeded, the server
         returns a <span className="text-foreground">429 Too Many Requests</span> with a{" "}
         <span className="text-foreground">Retry-After</span> header.
       </p>
@@ -175,12 +203,32 @@ await fetch("/__x/actions/greet/greet", {
   limit?: number;                     // default: 60 requests
   windowMs?: number;                  // default: 60_000 (1 minute)
   keyFn?: (req: Request) => string;   // custom bucket key (e.g. by user ID)
+  store?: RateLimitStore;             // shared store for multi-instance
 }`}
       />
       <p className="mt-4 text-muted-foreground">
-        This is a single-process limiter. For multi-instance deployments, front it with a shared
-        store (Redis, etc.) via a custom <span className="text-foreground">keyFn</span> or use a
-        reverse proxy with its own rate limiting.
+        For multi-instance deployments, share counters with Redis via{" "}
+        <span className="text-foreground">createRedisRateLimitStore</span> (uses Bun's built-in{" "}
+        <span className="text-foreground">bun:redis</span>, no npm dependency):
+      </p>
+      <CodeBlock
+        label="x.config.ts"
+        code={`import { defineConfig, createRedisRateLimitStore } from "@thexjs/core";
+
+export default defineConfig({
+  security: {
+    rateLimit: {
+      limit: 120,
+      store: createRedisRateLimitStore({ url: process.env.REDIS_URL }),
+    },
+  },
+});`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        <span className="text-foreground">createRateLimiter</span> and{" "}
+        <span className="text-foreground">rateLimitMiddleware</span> are also exported if you want
+        to apply limits to a specific handler yourself (e.g. a login endpoint with a tighter
+        budget).
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Disabling security</h2>

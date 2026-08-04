@@ -13,10 +13,24 @@ export interface RateLimitOptions {
   limit?: number;
   /** Window size in milliseconds. Default: 60_000 (1 minute). */
   windowMs?: number;
-  /** Derives the rate-limit bucket key from a request. Default: client IP from standard headers. */
-  keyFn?: (req: Request) => string;
+  /**
+   * Derives the rate-limit bucket key from a request. Default: the client IP
+   * from the underlying socket (Bun `server.requestIP`), falling back to the
+   * `x-forwarded-for` / `x-real-ip` headers. `server` is provided when the
+   * limiter is wired into `Bun.serve`.
+   */
+  keyFn?: (req: Request, server?: RateLimitServer) => string;
   /** Optional shared store (e.g. Redis) for multi-instance deployments. */
   store?: RateLimitStore;
+}
+
+/**
+ * The subset of Bun's `Bun.serve` server handle the rate limiter needs to
+ * resolve the real client IP from the socket. Passed through from
+ * `Bun.serve`'s `fetch(request, server)` second argument.
+ */
+export interface RateLimitServer {
+  requestIP?: (req: Request) => { address: string } | null;
 }
 
 export interface RateLimitResult {
@@ -40,11 +54,19 @@ interface Bucket {
   resetAt: number;
 }
 
-function defaultKeyFn(req: Request): string {
-  const headers = req.headers;
-  const forwarded = headers.get("x-forwarded-for");
+function defaultKeyFn(req: Request, server?: RateLimitServer): string {
+  // Prefer the real peer address from the socket. Header-based IPs are both
+  // spoofable and — worse — absent on localhost and self-hosted deployments,
+  // where every request would otherwise collapse into a single "unknown"
+  // bucket and share one global limit (breaking the site once a normal
+  // browsing session exceeds it).
+  if (server?.requestIP) {
+    const ip = server.requestIP(req);
+    if (ip) return ip.address;
+  }
+  const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0]?.trim() ?? "unknown";
-  return headers.get("x-real-ip") ?? "unknown";
+  return req.headers.get("x-real-ip") ?? "unknown";
 }
 
 /** Creates an independent rate limiter with its own bucket store. */
@@ -55,8 +77,8 @@ export function createRateLimiter(options: RateLimitOptions = {}) {
   const store = options.store;
   const buckets = new Map<string, Bucket>();
 
-  async function check(req: Request): Promise<RateLimitResult> {
-    const key = keyFn(req);
+  async function check(req: Request, server?: RateLimitServer): Promise<RateLimitResult> {
+    const key = keyFn(req, server);
     if (store) {
       const { count, resetAt } = await store.incr(key, windowMs);
       return { ok: count <= limit, limit, remaining: Math.max(0, limit - count), resetAt };
@@ -101,14 +123,16 @@ export function createRateLimiter(options: RateLimitOptions = {}) {
 export async function rateLimitMiddleware(
   limiter: ReturnType<typeof createRateLimiter>,
   req: Request,
+  server?: RateLimitServer,
 ): Promise<Response | null> {
-  const result = await limiter.check(req);
+  const result = await limiter.check(req, server);
   if (result.ok) return null;
 
   const retryAfterSeconds = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
   return new Response("Too Many Requests", {
     status: 429,
     headers: {
+      "Content-Type": "text/plain; charset=utf-8",
       "Retry-After": String(retryAfterSeconds),
       "X-RateLimit-Limit": String(result.limit),
       "X-RateLimit-Remaining": String(result.remaining),

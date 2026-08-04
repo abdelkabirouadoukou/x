@@ -83,7 +83,7 @@ export default function DocPage(_props: RouteProps) {
         code={`import { createImageProxyHandler } from "@thexjs/core";
 
 const imageProxy = createImageProxyHandler({
-  remoteHosts: ["stardance.hackclub.com"], // required allow-list — empty means the route 404s
+  remoteHosts: ["stardance.hackclub.com"], // required allow-list — empty means requests are rejected
 });`}
       />
       <CodeBlock
@@ -103,17 +103,16 @@ const imageProxy = createImageProxyHandler({
         When a loader, page, or API route throws during{" "}
         <span className="text-foreground">x dev</span>,{" "}
         <span className="text-foreground">renderErrorOverlay</span> renders a full-screen overlay
-        with the error message, stack trace, and the route that triggered it, instead of a bare 500
-        response. It's dev-only: production builds never ship the overlay, they return a plain error
-        response.
+        with the error message and stack trace, instead of a bare 500 response. It's dev-only:
+        production builds never ship the overlay, they return a plain error response.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">404 handling</h2>
       <p className="mt-3 text-muted-foreground">
         Drop a <span className="text-foreground">src/pages/_404.tsx</span> to customize the
-        not-found page for a section (or the whole site, at the root). If you don't provide one, x
-        falls back to <span className="text-foreground">DefaultNotFound</span>, a minimal built-in
-        page, so every project has a sane 404 without extra setup.
+        site-wide not-found page. If you don't provide one, x falls back to{" "}
+        <span className="text-foreground">DefaultNotFound</span>, a minimal built-in page, so every
+        project has a sane 404 without extra setup.
       </p>
       <CodeBlock
         label="src/pages/_404.tsx"

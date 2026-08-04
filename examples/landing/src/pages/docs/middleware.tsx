@@ -10,8 +10,8 @@ export default function DocPage(_props: RouteProps) {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Middleware</p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Middleware</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        Route-level middleware lets you intercept requests before they reach your page or API
-        handler. Use it for authentication, redirects, logging, and validation.
+        Route-level middleware lets you intercept page requests before they reach the page handler.
+        Use it for authentication, redirects, logging, and validation.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">The _middleware.ts convention</h2>
@@ -36,10 +36,11 @@ export default function DocPage(_props: RouteProps) {
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Middleware context</h2>
       <p className="mt-3 text-muted-foreground">
-        A middleware function receives an object with{" "}
-        <span className="text-foreground">params</span> (dynamic route params),{" "}
-        <span className="text-foreground">request</span> (the original Request), and a{" "}
-        <span className="text-foreground">next</span> function to continue the chain.
+        A middleware function receives a context object with{" "}
+        <span className="text-foreground">params</span> (dynamic route params) and{" "}
+        <span className="text-foreground">request</span> (the original Request), plus a{" "}
+        <span className="text-foreground">next</span> function as the second argument to continue
+        the chain. It returns a <span className="text-foreground">Response</span>.
       </p>
       <CodeBlock
         label="src/pages/_middleware.ts"
@@ -47,7 +48,7 @@ export default function DocPage(_props: RouteProps) {
 
 export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
   console.log(\`[${"$"}{ctx.request.method}] ${"$"}{ctx.request.url}\`);
-  return next(ctx);
+  return next();
 }`}
       />
 
@@ -60,7 +61,7 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
         code={`import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 
 export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
-  const session = ctx.request.cookies.get("session");
+  const session = ctx.request.headers.get("cookie");
 
   if (!session) {
     return new Response(null, {
@@ -77,17 +78,21 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
     });
   }
 
-  ctx.params.user = user;
-  return next(ctx);
+  return next();
 }`}
       />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">MiddlewareNext</h2>
       <p className="mt-3 text-muted-foreground">
-        Call <span className="text-foreground">next(ctx)</span> to pass control to the next
-        middleware or the route handler. You can modify{" "}
-        <span className="text-foreground">ctx.params</span> to enrich the request context for
+        Call <span className="text-foreground">next()</span> (no arguments) to pass control to the
+        next middleware or the route handler. Any mutations to{" "}
+        <span className="text-foreground">ctx.params</span> you make before the call flow through to
         downstream handlers.
+      </p>
+      <p className="mt-4 text-muted-foreground">
+        Middleware applies to page routes only. API routes (in{" "}
+        <span className="text-foreground">apiDir</span>) and content routes are dispatched without a
+        middleware chain.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Redirect patterns</h2>

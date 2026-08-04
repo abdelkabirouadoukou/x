@@ -30,11 +30,12 @@ export default function DocPage(_props: RouteProps) {
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">The packages</h2>
       <p className="mt-3 text-muted-foreground">
-        x ships as three focused npm packages. You typically install{" "}
+        x ships as a set of focused npm packages. You typically install{" "}
         <span className="text-foreground">@thexjs/cli</span> and{" "}
         <span className="text-foreground">@thexjs/core</span> through the project scaffolder; add{" "}
         <span className="text-foreground">@thexjs/env</span> when you need validated environment
-        variables.
+        variables, and <span className="text-foreground">@thexjs/adapter-vercel</span> to deploy to
+        Vercel.
       </p>
       <div className="mt-6 space-y-3">
         {[

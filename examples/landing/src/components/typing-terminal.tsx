@@ -32,12 +32,12 @@ const CHAR_MS = 16;
 const LINE_PAUSE_MS = 380;
 const END_PAUSE_MS = 2600;
 
-const LINE_STYLES: Record<Line["kind"], string> = {
-  prompt: "text-[#ffffff]",
-  cmd: "text-[#f4f4f5]",
-  ok: "text-[#e4e4e7]",
-  out: "text-[#a1a1aa]",
-  dim: "text-[#71717a]/80",
+const LINE_STYLES: Record<Line["kind"], { color: string }> = {
+  prompt: { color: "var(--code-keyword)" },
+  cmd: { color: "var(--terminal-text)" },
+  ok: { color: "var(--code-string)" },
+  out: { color: "var(--code-property)" },
+  dim: { color: "var(--code-comment)" },
 };
 
 export default function TypingTerminal() {
@@ -83,7 +83,10 @@ export default function TypingTerminal() {
           <span className="h-2.5 w-2.5 rounded-full bg-[#52525b]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#3f3f46]" />
         </div>
-        <span className="truncate font-mono text-[11px] tracking-wide text-[#71717a]">
+        <span
+          className="truncate font-mono text-[11px] tracking-wide"
+          style={{ color: "var(--code-comment)" }}
+        >
           ~/my-app — x dev
         </span>
         <span className="hidden w-12 sm:block" />
@@ -100,14 +103,14 @@ export default function TypingTerminal() {
         {SCRIPT.slice(0, lineIdx).map((line, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static const list, stable order, never reordered
           <div key={i} className="whitespace-pre">
-            {line.kind === "prompt" && <span className="text-[#ffffff]">$ </span>}
-            <span className={LINE_STYLES[line.kind]}>{line.text}</span>
+            {line.kind === "prompt" && <span style={LINE_STYLES.prompt}>$ </span>}
+            <span style={LINE_STYLES[line.kind]}>{line.text}</span>
           </div>
         ))}
         {SCRIPT[lineIdx] && (
           <div className="whitespace-pre">
-            {SCRIPT[lineIdx].kind === "prompt" && <span className="text-[#ffffff]">$ </span>}
-            <span className={LINE_STYLES[SCRIPT[lineIdx].kind]}>
+            {SCRIPT[lineIdx].kind === "prompt" && <span style={LINE_STYLES.prompt}>$ </span>}
+            <span style={LINE_STYLES[SCRIPT[lineIdx].kind]}>
               {SCRIPT[lineIdx].text.slice(0, charIdx)}
             </span>
           </div>

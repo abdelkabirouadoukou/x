@@ -12,14 +12,15 @@ export default function DocPage(_props: RouteProps) {
       </p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Build &amp; deploy</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        x produces optimized production builds with static HTML export, a server entry point, and
-        content collection rendering, all in a single command.
+        x produces optimized production builds: prerendered HTML, island bundles, and a server entry
+        point, all in one command.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Build command</h2>
       <p className="mt-3 text-muted-foreground">
         Run <span className="text-foreground">x build</span> to produce a production build. The
-        build output goes to a <span className="text-foreground">.x/</span> directory.
+        build output goes to a <span className="text-foreground">.x/</span> directory (override with{" "}
+        <span className="text-foreground">--outDir</span>).
       </p>
       <CodeBlock
         label="terminal"
@@ -28,67 +29,117 @@ export default function DocPage(_props: RouteProps) {
   [x] resolving routes...
   [x] found 12 routes
   [x] building static pages...
+  [x] building island bundles...
   [x] building server bundle...
-  [x] rendering content collections...
-  [x] build complete in 1.2s`}
+  [x] build complete in 1.2s -> .x
+
+x build --outDir dist   # write to ./dist instead of .x/`}
       />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Output structure</h2>
       <p className="mt-3 text-muted-foreground">
         The <span className="text-foreground">.x/</span> directory contains everything needed to
-        deploy: static files, server bundle, and assets.
+        deploy:
       </p>
       <CodeBlock
         label="output tree"
         lang="tree"
         code={`.x/
-  client/         // Client-side assets
-    assets/
-      *.js               // Bundled JS
-      *.css              // Extracted CSS
-  server/         // Server entry point
-    index.js             // Bun server bundle
-  static/        // Prerendered HTML pages
+  client/               // Static site: prerendered HTML + public/ assets
     index.html
     about/index.html
     blog/
       hello-world/index.html
-  x.json             // Build manifest`}
+    _islands/
+      index-abc123/       // One hydration bundle per page's islands
+        index-abc123.js
+    styles.css           // Compiled Tailwind
+    favicon.ico
+  server/
+    index.ts             // Server entry for SSR/API/actions (run with x start)`}
       />
+      <p className="mt-4 text-muted-foreground">
+        Static pages (and their <span className="text-foreground">public/</span> assets) live under{" "}
+        <span className="text-foreground">.x/client/</span> and deploy to any static host. Server
+        code ships as <span className="text-foreground">.x/server/index.ts</span>, a single entry
+        that re-imports your <span className="text-foreground">x.config.ts</span> at runtime.
+      </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Static page export</h2>
       <p className="mt-3 text-muted-foreground">
-        Pages with <span className="text-foreground">mode = "static"</span> are exported as HTML
-        files in <span className="text-foreground">.x/static/</span>. Each page is fully rendered at
-        build time, including its loader output. For dynamic-static pages (static pages with dynamic
-        params), x generates one HTML file per unique path.
+        Pages with <span className="text-foreground">mode = "static"</span> are rendered at build
+        time, including their loader output. Dynamic segments generate one HTML file per unique path
+        at build time.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Server entry</h2>
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Incremental static regeneration</h2>
       <p className="mt-3 text-muted-foreground">
-        Server-rendered pages are bundled into{" "}
-        <span className="text-foreground">.x/server/index.js</span>. This file contains all server
-        routes, API handlers, server functions, and middleware, everything needed to run the dynamic
-        parts of your app.
+        A static page can opt into time-based revalidation with{" "}
+        <span className="text-foreground">revalidate</span>. The page is prerendered on first
+        request, cached in memory for N seconds, then re-rendered on demand. Each response carries
+        an <span className="text-foreground">X-Revalidated</span> header ({" "}
+        <span className="text-foreground">hit</span> / <span className="text-foreground">miss</span>{" "}
+        / <span className="text-foreground">none</span>).
+      </p>
+      <CodeBlock
+        label="src/pages/pricing.tsx"
+        code={`export const mode = "static";
+export const revalidate = 3600; // re-render at most once per hour`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        Bust the cache programmatically with a <span className="text-foreground">POST</span> to{" "}
+        <span className="text-foreground">/__x/revalidate</span> — send{" "}
+        <span className="text-foreground">{`{ "path": "/pricing" }`}</span> to revalidate one page
+        or an empty body to clear the whole cache.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Production server</h2>
       <p className="mt-3 text-muted-foreground">
-        Use <span className="text-foreground">x start</span> to run the production server. It serves
-        static files from <span className="text-foreground">.x/static/</span> and handles dynamic
-        routes via the server bundle.
+        Use <span className="text-foreground">x start</span> to run{" "}
+        <span className="text-foreground">.x/server/index.ts</span>. It serves static files and
+        handles dynamic routes, and the entry handles{" "}
+        <span className="text-foreground">SIGTERM</span>/
+        <span className="text-foreground">SIGINT</span> gracefully: it stops accepting connections,
+        flushes the error reporter, and drains in-flight requests for up to 3 seconds before
+        exiting.
       </p>
       <CodeBlock
         label="terminal"
         lang="bash"
         code={`x start
-  [x] production server running at http://localhost:3000`}
+  [x] production server running at http://localhost:3000
+
+PORT=8080 x start   # PORT env var overrides the default 3000`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        If a build has no server entry (every page is static and there are no API routes),{" "}
+        <span className="text-foreground">x start</span> falls back to serving{" "}
+        <span className="text-foreground">.x/client/</span> as a plain static file server with an
+        SPA <span className="text-foreground">index.html</span> fallback.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Programmatic build</h2>
+      <p className="mt-3 text-muted-foreground">
+        <span className="text-foreground">build()</span> from{" "}
+        <span className="text-foreground">@thexjs/core</span> runs the same pipeline the CLI uses,
+        useful for custom deploy scripts:
+      </p>
+      <CodeBlock
+        label="build.mjs"
+        code={`import { build } from "@thexjs/core";
+
+await build({
+  pagesDir: "src/pages",
+  apiDir: "src/api",
+  actionsDir: "src/actions",
+  outDir: "dist",
+  configPath: "x.config.ts",
+});`}
       />
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Docker deployment</h2>
       <p className="mt-3 text-muted-foreground">
-        Deploy with a minimal Docker image using the official Bun runtime. The build output is
-        self-contained.
+        Deploy with a minimal Docker image using the official Bun runtime:
       </p>
       <CodeBlock
         label="Dockerfile"
@@ -97,21 +148,16 @@ WORKDIR /app
 COPY package.json bun.lock .
 RUN bun install
 COPY . .
-RUN x build
+RUN bun run build:packages
+RUN x build --outDir dist
 
 FROM oven/bun:1-slim
 WORKDIR /app
-COPY --from=build /app/.x .x
+COPY --from=build /app/dist dist
+COPY --from=build /app/node_modules node_modules
 EXPOSE 3000
-CMD ["x", "start"]`}
+CMD ["x", "start", "--outDir", "dist"]`}
       />
-
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Content collections in builds</h2>
-      <p className="mt-3 text-muted-foreground">
-        During <span className="text-foreground">x build</span>, content collections are scanned and
-        rendered. Each markdown file becomes a static HTML page if its route uses static mode, or is
-        available for server-rendered routes to consume.
-      </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Deploy to Vercel</h2>
       <p className="mt-3 text-muted-foreground">

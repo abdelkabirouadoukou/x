@@ -94,7 +94,7 @@ export default function BootIntro() {
       const counterObj = { v: 0 };
       tl.to(counterObj, {
         v: 100,
-        duration: 2.2,
+        duration: 1.5,
         ease: "power2.inOut",
         onUpdate: () => {
           if (counter) counter.textContent = `${Math.round(counterObj.v)}%`;
@@ -108,11 +108,11 @@ export default function BootIntro() {
         {
           opacity: (i, el) => Number((el as HTMLElement).style.opacity),
           scale: 1,
-          duration: 0.9,
+          duration: 0.8,
           ease: "power2.out",
           stagger: 0.01,
         },
-        "-=1.2",
+        "-=1.0",
       );
       tl.to(
         ".boot-star",
@@ -122,7 +122,7 @@ export default function BootIntro() {
           y: () => gsap.utils.random(-8, 8),
           opacity: 0,
           scale: 0,
-          duration: 0.7,
+          duration: 0.6,
           ease: "power2.in",
           stagger: 0.008,
         },
@@ -133,22 +133,22 @@ export default function BootIntro() {
       tl.fromTo(
         xMark,
         { opacity: 0, scale: 0.6 },
-        { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" },
-        "-=0.35",
+        { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.6)" },
+        "-=0.3",
       );
       tl.fromTo(
         bolt,
         { opacity: 1 },
-        { opacity: 0, scale: 3, duration: 0.45, ease: "power2.out" },
+        { opacity: 0, scale: 3, duration: 0.4, ease: "power2.out" },
         "<",
       );
 
       // 4 — hyper-jump: camera smashes through the x into the hero.
-      tl.to(root, { scale: 8, opacity: 0, duration: 0.8, ease: "power4.inOut" }, "+=0.35");
+      tl.to(root, { scale: 8, opacity: 0, duration: 0.7, ease: "power4.inOut" }, "+=0.25");
       tl.add(() => setGone(true), "-=0.05");
       tl.to(
         heroReveals,
-        { opacity: 1, y: 0, duration: 0.9, stagger: 0.08, ease: "power3.out", clearProps: "all" },
+        { opacity: 1, y: 0, duration: 0.8, stagger: 0.07, ease: "power3.out", clearProps: "all" },
         "+=0.05",
       );
 

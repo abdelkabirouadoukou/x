@@ -40,6 +40,22 @@ export async function sendEmail({ to, subject, body }: {
 }`}
       />
 
+      <p className="mt-3 text-sm text-muted-foreground">
+        Or register a map in one shot with{" "}
+        <span className="text-foreground">export const actions</span> — handy for grouping several
+        functions under one file. This also works in{" "}
+        <span className="text-foreground">src/api/</span> files and page files, so a{" "}
+        <span className="text-foreground">greet.ts</span> with no page component still registers its
+        actions.
+      </p>
+      <CodeBlock
+        label="src/actions/greet.ts"
+        code={`export const actions = {
+  greet: async (name: string) => \`Hello, ${"$"}{name}!\`,
+  ping: async () => ({ pong: true }),
+};`}
+      />
+
       <h2 className="mt-12 text-xl font-bold tracking-tight">Calling actions directly</h2>
       <p className="mt-3 text-muted-foreground">
         Import the function into a client component and call it like any other async function. When
@@ -154,7 +170,7 @@ export async function loader({ request }: LoaderArgs) {
   return { data };
 }
 
-export default function Dashboard({ loaderData }: RouteProps<typeof loader>) {
+export default function Dashboard({ loaderData }: RouteProps) {
   return <div>...</div>;
 }`}
       />

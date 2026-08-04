@@ -173,11 +173,12 @@ export async function loader({ params }: LoaderArgs) {
   return { title: post.title, content: post.content };
 }
 
-export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
+export default function BlogPost({ loaderData }: RouteProps) {
+  const { title, content } = loaderData as { title: string; content: string };
   return (
     <article>
-      <h1 className="text-3xl font-bold">{loaderData.title}</h1>
-      <div>{loaderData.content}</div>
+      <h1 className="text-3xl font-bold">{title}</h1>
+      <div>{content}</div>
     </article>
   );
 }
@@ -261,12 +262,13 @@ export async function loader({ request }: LoaderArgs) {
   return { products };
 }
 
-export default function Products({ loaderData }: RouteProps<typeof loader>) {
+export default function Products({ loaderData }: RouteProps) {
+  const { products } = loaderData as { products: Array<{ id: string; name: string; price: number }> };
   return (
     <div>
       <h1 className="text-3xl font-bold">Products</h1>
       <ul className="mt-6 space-y-4">
-        {loaderData.products.map((p: any) => (
+        {products.map((p) => (
           <li key={p.id} className="rounded-xl border border-border bg-card p-4">
             <h2 className="font-semibold">{p.name}</h2>
             <p className="text-sm text-muted-foreground">{p.price}</p>
@@ -289,12 +291,12 @@ export async function loader({ params }: LoaderArgs) {
   const product = await db.query(
     "SELECT * FROM products WHERE id = ?", [params.id]
   );
-  if (!product) throw new Response(null, { status: 404 });
+  if (!product) return new Response(null, { status: 404 });
   return { product };
 }
 
-export default function ProductDetail({ loaderData }: RouteProps<typeof loader>) {
-  const { product } = loaderData;
+export default function ProductDetail({ loaderData }: RouteProps) {
+  const { product } = loaderData as { product: { name: string; description: string; price: number } };
   return (
     <div>
       <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -307,15 +309,14 @@ export default function ProductDetail({ loaderData }: RouteProps<typeof loader>)
 
 ### RouteProps type
 
-The `RouteProps` type provides typed access to `loaderData`, `params`, and `request`. Pass your loader function as the type parameter for full type safety.
+`RouteProps` is a plain non-generic type with `params` (a `Record<string, string>` of dynamic segments) and `loaderData` (the loader's return value). Cast loader data to its shape for inline types.
 
 ```tsx
 import type { RouteProps } from "@thexjs/core";
 
-export default function Page({ loaderData, params, request }: RouteProps<typeof loader>) {
-  // loaderData has the return type of loader()
-  // params has the dynamic segment types
-  // request is the standard Request object
+export default function ProductDetail({ loaderData }: RouteProps) {
+  const { product } = loaderData as { product: { name: string; price: number } };
+  return <h1>{product.name}</h1>;
 }
 ```
 
@@ -409,43 +410,37 @@ Build REST endpoints alongside your frontend pages. API routes live in `src/api/
 
 Like pages, API routes use the file system. A file at `src/api/hello.ts` becomes `/api/hello`.
 
-```tsx
-import type { ApiHandler } from "@thexjs/core";
-
-export const GET: ApiHandler = ({ request }) => {
+```ts
+export function GET(req: Request) {
   return Response.json({ message: "Hello from x!" });
-};
+}
 ```
 
 ### Request & response
 
-Each exported HTTP method receives the request and returns a standard `Response` object. Dynamic segments work the same as pages: `api/users/[id].ts` → `/api/users/:id`.
+Each exported HTTP method is a plain `export async function GET(req: Request)` that receives the standard fetch `Request` and returns a `Response`. Dynamic segments work the same as pages: `api/users/[id].ts` → `/api/users/:id`.
 
 ```tsx
-import type { ApiHandler } from "@thexjs/core";
-
-export const GET: ApiHandler = async ({ request }) => {
-  const users = await db.query("SELECT * FROM users");
+export async function GET(req: Request) {
+  const users = await db.query("SELECT * FROM users").all();
   return Response.json(users);
-};
+}
 
-export const POST: ApiHandler = async ({ request }) => {
-  const body = await request.json();
+export async function POST(req: Request) {
+  const body = await req.json();
   const result = await db.query(
     "INSERT INTO users (name, email) VALUES (?, ?) RETURNING *",
     [body.name, body.email]
   );
   return Response.json(result, { status: 201 });
-};
+}
 ```
 
 ### POST endpoint example
 
 ```tsx
-import type { ApiHandler } from "@thexjs/core";
-
-export const POST: ApiHandler = async ({ request }) => {
-  const form = await request.formData();
+export async function POST(req: Request) {
+  const form = await req.formData();
   const email = form.get("email");
   const message = form.get("message");
 
@@ -458,7 +453,7 @@ export const POST: ApiHandler = async ({ request }) => {
 
   await sendEmail({ email, message });
   return Response.json({ success: true });
-};
+}
 ```
 
 ### API route tree
@@ -560,7 +555,7 @@ export async function loader({ request }: LoaderArgs) {
   return { data };
 }
 
-export default function Dashboard({ loaderData }: RouteProps<typeof loader>) {
+export default function Dashboard({ loaderData }: RouteProps) {
   return <div>...</div>;
 }
 ```
@@ -620,22 +615,25 @@ import type { RouteProps, LoaderArgs } from "@thexjs/core";
 import { scanContent, renderMarkdown } from "@thexjs/core";
 
 export async function loader({ params }: LoaderArgs) {
-  const posts = await scanContent("posts");
+  const posts = scanContent("posts");
   const post = posts.find((p) => p.slug === params.slug);
-  if (!post) throw new Response(null, { status: 404 });
-  const html = await renderMarkdown(post.body);
+  if (!post) return new Response(null, { status: 404 });
+  const html = renderMarkdown(post.body);
   return { post: { ...post, html } };
 }
 
-export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
+export default function BlogPost({ loaderData }: RouteProps) {
+  const { post } = loaderData as {
+    post: { frontmatter: Record<string, unknown>; html: string; date: string; author: string; tags?: string[] };
+  };
   return (
     <article className="prose max-w-none">
-      <h1 className="text-4xl font-bold">{loaderData.post.title}</h1>
+      <h1 className="text-4xl font-bold">{String(post.frontmatter.title)}</h1>
       <p className="text-sm text-muted-foreground">
-        {loaderData.post.date} &mdash; {loaderData.post.author}
+        {post.date} &mdash; {post.author}
       </p>
       <div className="mt-6 flex gap-2">
-        {loaderData.post.tags?.map((tag: string) => (
+        {post.tags?.map((tag) => (
           <span key={tag} className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
             {tag}
           </span>
@@ -643,7 +641,7 @@ export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
       </div>
       <div
         className="mt-8 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: loaderData.post.html }}
+        dangerouslySetInnerHTML={{ __html: post.html }}
       />
     </article>
   );
@@ -652,11 +650,11 @@ export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
 
 ### scanContent API
 
-`scanContent(directory)` scans a subdirectory of your content folder and returns an array of content entries. Each entry includes `slug`, `frontmatter`, and `content`.
+`scanContent(directory)` scans a subdirectory of your content folder (synchronously) and returns an array of content entries. Each entry includes `filePath`, `routePath`, `slug`, `frontmatter`, and `body`.
 
 ### renderMarkdown API
 
-`renderMarkdown(markdownString)` converts markdown to an HTML string. It supports syntax highlighting via Shiki and handles all standard markdown features.
+`renderMarkdown(markdownString)` converts Markdown to an HTML string. It's a lightweight, dependency-free renderer (headings, paragraphs, lists, links, inline code, code blocks, bold/italic, blockquotes) that HTML-escapes content by default.
 
 ---
 
@@ -690,7 +688,7 @@ import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 
 export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
   console.log(`[${ctx.request.method}] ${ctx.request.url}`);
-  return next(ctx);
+  return next();
 }
 ```
 
@@ -700,7 +698,7 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
 import type { MiddlewareContext, MiddlewareNext } from "@thexjs/core";
 
 export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
-  const session = ctx.request.cookies.get("session");
+  const session = ctx.request.headers.get("cookie");
 
   if (!session) {
     return new Response(null, {
@@ -717,14 +715,13 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
     });
   }
 
-  ctx.params.user = user;
-  return next(ctx);
+  return next();
 }
 ```
 
 ### MiddlewareNext
 
-Call `next(ctx)` to pass control to the next middleware or the route handler. You can modify `ctx.params` to enrich the request context for downstream handlers.
+Call `next()` (no arguments) to pass control to the next middleware or the route handler. Any mutations to `ctx.params` you make before the call flow through to downstream handlers. Middleware applies to page routes only, not API routes.
 
 ### Redirect patterns
 
@@ -755,44 +752,23 @@ x provides built-in SQLite and PostgreSQL integrations. Connect to a database, r
 Use `connectSQLite` to connect to a local SQLite database file. SQLite requires zero configuration and is perfect for development and single-server deployments.
 
 ```ts
-import { connectSQLite, runSQLiteMigrations } from "@thexjs/core";
+import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
 
-const db = connectSQLite("data/app.db");
+const db = connectSQLite({ path: "data/app.db" });
 
-await runSQLiteMigrations(db, [
-  {
-    version: 1,
-    sql: `
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        created_at TEXT DEFAULT (datetime('now'))
-      )
-    `,
-  },
-  {
-    version: 2,
-    sql: `
-      CREATE TABLE IF NOT EXISTS posts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER REFERENCES users(id),
-        title TEXT NOT NULL,
-        body TEXT,
-        created_at TEXT DEFAULT (datetime('now'))
-      )
-    `,
-  },
-]);
+// Points at a directory of .sql files (e.g. data/migrations/001_create_users.sql)
+await runSQLiteMigrations(db, "data/migrations");
 
 export { db };
 ```
+
+`runSQLiteMigrations` runs each `.sql` file in the directory in sorted order, tracking them in a `_x_migrations` table so each runs only once. It returns `{ applied, skipped }`.
 
 ### Querying SQLite
 
 The database object supports prepared statements with `query` and `execute` methods.
 
-```tsx
+```ts
 import type { RouteProps, LoaderArgs } from "@thexjs/core";
 import { db } from "../lib/db";
 
@@ -803,12 +779,13 @@ export async function loader({}: LoaderArgs) {
   return { users };
 }
 
-export default function Users({ loaderData }: RouteProps<typeof loader>) {
+export default function Users({ loaderData }: RouteProps) {
+  const { users } = loaderData as { users: Array<{ id: string; name: string; email: string }> };
   return (
     <div>
       <h1 className="text-3xl font-bold">Users</h1>
       <ul className="mt-6 space-y-3">
-        {loaderData.users.map((u: any) => (
+        {users.map((u) => (
           <li key={u.id} className="rounded-xl border border-border bg-card p-4">
             <p className="font-semibold">{u.name}</p>
             <p className="text-sm text-muted-foreground">{u.email}</p>
@@ -825,33 +802,21 @@ export default function Users({ loaderData }: RouteProps<typeof loader>) {
 For production deployments, use `connectPostgres` with a connection string. PostgreSQL provides concurrent access, connection pooling, and is suitable for multi-server deployments.
 
 ```ts
-import { connectPostgres, runPostgresMigrations } from "@thexjs/core";
+import { connectPostgres, runPostgresMigrations } from "@thexjs/core/data";
 
 const db = connectPostgres({
-  connectionString: process.env.DATABASE_URL,
+  url: process.env.DATABASE_URL,
   max: 20, // connection pool size
 });
 
-await runPostgresMigrations(db, [
-  {
-    version: 1,
-    sql: `
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `,
-  },
-]);
+await runPostgresMigrations(db, "data/migrations");
 
 export { db };
 ```
 
 ### Migration API
 
-Both `runSQLiteMigrations` and `runPostgresMigrations` take an array of migration objects. Each migration has a `version` number (incrementing) and `sql` string. Migrations are tracked and only run once.
+Both `runSQLiteMigrations` and `runPostgresMigrations` take a database connection and a **directory of `.sql` files**. The files run in sorted order and are tracked in a `_x_migrations` table, so each runs only once. They return `{ applied, skipped }`.
 
 ---
 
@@ -859,56 +824,21 @@ Both `runSQLiteMigrations` and `runPostgresMigrations` take an array of migratio
 
 x produces optimized production builds with static HTML export, a server entry point, and content collection rendering — all in a single command.
 
-### Build command
-
-Run `x build` to produce a production build. The build output goes to a `.x/` directory.
-
-```bash
-x build
-  [x] resolving routes...
-  [x] found 12 routes
-  [x] building static pages...
-  [x] building server bundle...
-  [x] rendering content collections...
-  [x] build complete in 1.2s
-```
-
-### Output structure
-
-The `.x/` directory contains everything needed to deploy — static files, server bundle, and assets.
+Build with `x build --outDir <dir>` (default `.x`). Output:
 
 ```
 .x/
-  client/         # Client-side assets
-    assets/
-      *.js               # Bundled JS
-      *.css              # Extracted CSS
-  server/         # Server entry point
-    index.js             # Bun server bundle
-  static/        # Prerendered HTML pages
+  client/          # Prerendered static HTML + assets (deployable as a static site)
     index.html
     about/index.html
-    blog/
-      hello-world/index.html
-  x.json             # Build manifest
+    styles.css
+    public/                # your public/ assets copied alongside
+    _islands/              # per-page island hydration bundles
+  server/
+    index.ts               # Bun server entry for server-mode pages + API routes
 ```
 
-### Static page export
-
-Pages with `mode = "static"` are exported as HTML files in `.x/static/`. Each page is fully rendered at build time, including its loader output.
-
-### Server entry
-
-Server-rendered pages are bundled into `.x/server/index.js`. This file contains all server routes, API handlers, server functions, and middleware.
-
-### Production server
-
-Use `x start` to run the production server. It serves static files from `.x/static/` and handles dynamic routes via the server bundle.
-
-```bash
-x start
-  [x] production server running at http://localhost:3000
-```
+Static pages are exported as HTML under `client/`. Server-rendered pages and API routes are covered by `server/index.ts`, run with `x start`. `x build --adapter vercel` emits a `.vercel/output` tree instead for Vercel.
 
 ### Docker deployment
 
@@ -972,9 +902,9 @@ export default defineConfig({
 |--------------|----------|---------------|------------------------------------|
 | `pagesDir`   | `string` | `"src/pages"` | File-based page routes             |
 | `layoutsDir` | `string` | `"src/layouts"` | Root layout directory           |
-| `apiDir`     | `string` | `"src/api"`   | File-based API routes              |
-| `actionsDir` | `string` | `"src/actions"` | Server functions                 |
-| `contentDir` | `string` | `"content"`   | Markdown content collections       |
+| `apiDir`     | `string` | *(none)*      | File-based API routes              |
+| `actionsDir` | `string` | *(auto-detected)* | Server functions                |
+| `contentDir` | `string` | *(auto-detected)* | Markdown content collections    |
 | `port`       | `number` | `3000`        | Dev server port                    |
 | `routesDir`  | `string` | `undefined`   | Legacy routes directory            |
 

@@ -28,9 +28,9 @@ export const env = createEnv({
     NODE_ENV: oneOf(["development", "production", "test"]),
   },
   client: {
-    NEXT_PUBLIC_API_URL: url(),
+    THEXJS_PUBLIC_API_URL: url(),
   },
-  clientPrefix: "NEXT_PUBLIC_",
+  clientPrefix: "THEXJS_PUBLIC_",
   runtimeEnv: process.env,
 });
 
@@ -86,11 +86,20 @@ function json<T>(): EnvValidator<T> {
       <p className="mt-3 text-muted-foreground">
         The <span className="text-foreground">client</span> schema is for variables safe to expose
         to the browser. <span className="text-foreground">clientPrefix</span> enforces that every
-        client key starts with that prefix (e.g.{" "}
-        <span className="text-foreground">NEXT_PUBLIC_</span>,{" "}
-        <span className="text-foreground">PUBLIC_</span>). A key that does not match fails
-        validation, so you cannot accidentally leak a server-only variable through the client
-        schema.
+        client key starts with that prefix. A key that does not match fails validation, so you
+        cannot accidentally leak a server-only variable through the client schema.
+      </p>
+      <p className="mt-4 text-muted-foreground">
+        When using <span className="text-foreground">@thexjs/env</span> with a{" "}
+        <span className="text-foreground">@thexjs/core</span> app, use the{" "}
+        <span className="text-foreground">THEXJS_PUBLIC_</span> prefix (the default):{" "}
+        <span className="text-foreground">@thexjs/core</span>'s build-time env isolation only lets
+        that prefix through to client bundles, and anything else referenced from client code fails
+        the build. See{" "}
+        <a href="/docs/security" className="text-primary underline underline-offset-2">
+          Security
+        </a>{" "}
+        for details.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Notes</h2>

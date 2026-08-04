@@ -19,9 +19,9 @@ export const env = createEnv({
     NODE_ENV: oneOf(["development", "production", "test"]),
   },
   client: {
-    NEXT_PUBLIC_API_URL: url(),
+    THEXJS_PUBLIC_API_URL: url(),
   },
-  clientPrefix: "NEXT_PUBLIC_",
+  clientPrefix: "THEXJS_PUBLIC_",
   runtimeEnv: process.env,
 });
 
@@ -65,7 +65,9 @@ function json<T>(): EnvValidator<T> {
 
 ## `client` / `clientPrefix`
 
-The `client` schema is for variables you're comfortable exposing to the browser. `clientPrefix` enforces that every client key actually starts with that prefix (e.g. `NEXT_PUBLIC_`, `PUBLIC_`) — a key that doesn't match fails validation, so you can't accidentally leak a server-only variable through the client schema by mistake.
+The `client` schema is for variables you're comfortable exposing to the browser. `clientPrefix` enforces that every client key actually starts with that prefix — a key that doesn't match fails validation, so you can't accidentally leak a server-only variable through the client schema by mistake.
+
+When used with `@thexjs/core`, keep the default `THEXJS_PUBLIC_` prefix: the framework's build-time env isolation only lets `THEXJS_PUBLIC_`-prefixed variables reach client bundles, and any other server-only `process.env` / `Bun.env` / `import.meta.env` reference from client code fails the build with an `EnvLeakageError`.
 
 ## Notes
 

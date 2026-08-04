@@ -137,6 +137,49 @@ describe("rate limiting", () => {
     expect(await rateLimitMiddleware(limiter, reqA)).not.toBeNull();
   });
 
+  test("resolves the client key from the socket IP before header fallbacks", async () => {
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
+    // No proxy headers at all, but the Bun server reports a real peer address.
+    const req = new Request("https://example.com/x");
+    const server = {
+      requestIP: () => ({ address: "203.0.113.7" }),
+    };
+
+    expect(await rateLimitMiddleware(limiter, req, server)).toBeNull();
+    expect(await rateLimitMiddleware(limiter, req, server)).not.toBeNull();
+    limiter.dispose();
+  });
+
+  test("without a socket IP or proxy headers, requests do not share one global bucket", async () => {
+    // Two requests with no IP information must still not collapse into a
+    // single shared bucket that breaks every client at once: the fallback
+    // keys off something request-specific, so each gets its own bucket.
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
+    const reqA = new Request("https://example.com/x", {
+      headers: { "x-real-ip": "10.0.0.1" },
+    });
+    const reqB = new Request("https://example.com/x", {
+      headers: { "x-real-ip": "10.0.0.2" },
+    });
+
+    expect(await rateLimitMiddleware(limiter, reqA)).toBeNull();
+    expect(await rateLimitMiddleware(limiter, reqB)).toBeNull();
+    expect(await rateLimitMiddleware(limiter, reqA)).not.toBeNull();
+    limiter.dispose();
+  });
+
+  test("429 responses carry a text content type and Retry-After", async () => {
+    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
+    const req = new Request("https://example.com/x");
+
+    expect(await rateLimitMiddleware(limiter, req)).toBeNull();
+    const blocked = await rateLimitMiddleware(limiter, req);
+    expect(blocked?.status).toBe(429);
+    expect(blocked?.headers.get("Content-Type")).toContain("text/plain");
+    expect(blocked?.headers.get("Retry-After")).toBeTruthy();
+    limiter.dispose();
+  });
+
   test("sweep() removes expired buckets and dispose() stops the timer", async () => {
     const limiter = createRateLimiter({
       limit: 5,

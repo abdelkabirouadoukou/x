@@ -1,4 +1,22 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+
+/**
+ * Minimal monochrome syntax highlighter. No lexer dependencies: tokens are
+ * mapped to a strict zinc-scale hierarchy (see the `--code-*` variables in
+ * globals.css) so structure reads at a glance — comments are dimmest,
+ * keywords brightest. Inline styles are used (not Tailwind classes) so the
+ * palette always resolves regardless of Tailwind's candidate detection.
+ */
+const TOKEN: Record<string, CSSProperties> = {
+  comment: { color: "var(--code-comment)" },
+  number: { color: "var(--code-number)" },
+  tag: { color: "var(--code-tag)" },
+  property: { color: "var(--code-property)" },
+  identifier: { color: "var(--code-identifier)" },
+  component: { color: "var(--code-component)" },
+  string: { color: "var(--code-string)" },
+  keyword: { color: "var(--code-keyword)", fontWeight: 600 },
+};
 
 const KEYWORDS = new Set([
   "export",
@@ -63,21 +81,21 @@ function highlightBash(code: string): ReactNode {
       return (
         <span key={i} className="block">
           {indent}
-          <span className="text-[#ffffff]">$</span>
+          <span style={TOKEN.keyword}>$</span>
           {rest}
         </span>
       );
     }
     if (trimmed === "" || trimmed.startsWith("//")) {
       return (
-        <span key={i} className="block text-[#71717a]">
+        <span key={i} className="block" style={TOKEN.comment}>
           {line}
         </span>
       );
     }
     if (trimmed.startsWith("  ")) {
       return (
-        <span key={i} className="block text-[#71717a]">
+        <span key={i} className="block" style={TOKEN.comment}>
           {line}
         </span>
       );
@@ -95,7 +113,7 @@ function highlightTree(code: string): ReactNode {
     const s = line.trimStart();
     if (s.endsWith("/")) {
       return (
-        <span key={i} className="block text-[#e4e4e7]">
+        <span key={i} className="block" style={TOKEN.identifier}>
           {line}
         </span>
       );
@@ -107,7 +125,7 @@ function highlightTree(code: string): ReactNode {
       return (
         <span key={i} className="block">
           {before}
-          <span className="text-[#71717a]">{after}</span>
+          <span style={TOKEN.comment}>{after}</span>
         </span>
       );
     }
@@ -157,7 +175,7 @@ function tokenizeLine(line: string): ReactNode[] {
 
     if (line[i] === "/" && line[i + 1] === "/") {
       tokens.push(
-        <span key={key++} className="text-[#71717a]">
+        <span key={key++} style={TOKEN.comment}>
           {line.slice(i)}
         </span>,
       );
@@ -186,7 +204,7 @@ function tokenizeLine(line: string): ReactNode[] {
         i++;
       }
       tokens.push(
-        <span key={key++} className="text-[#e4e4e7]">
+        <span key={key++} style={TOKEN.string}>
           {str}
         </span>,
       );
@@ -215,7 +233,7 @@ function tokenizeLine(line: string): ReactNode[] {
         i++;
       }
       tokens.push(
-        <span key={key++} className="text-[#e4e4e7]">
+        <span key={key++} style={TOKEN.string}>
           {str}
         </span>,
       );
@@ -249,7 +267,7 @@ function tokenizeLine(line: string): ReactNode[] {
         i++;
       }
       tokens.push(
-        <span key={key++} className="text-[#e4e4e7]">
+        <span key={key++} style={TOKEN.string}>
           {str}
         </span>,
       );
@@ -267,7 +285,7 @@ function tokenizeLine(line: string): ReactNode[] {
         i++;
       }
       tokens.push(
-        <span key={key++} className="text-[#71717a]">
+        <span key={key++} style={TOKEN.number}>
           {num}
         </span>,
       );
@@ -289,13 +307,13 @@ function tokenizeLine(line: string): ReactNode[] {
       if (name) {
         tag += name;
         tokens.push(
-          <span key={key++} className="text-[#71717a]">
+          <span key={key++} style={TOKEN.tag}>
             {tag}
           </span>,
         );
       } else {
         tokens.push(
-          <span key={key++} className="text-[#f4f4f5]">
+          <span key={key++} style={TOKEN.tag}>
             {tag}
           </span>,
         );
@@ -305,7 +323,7 @@ function tokenizeLine(line: string): ReactNode[] {
 
     if (i < line.length && line[i]! === "/" && i + 1 < line.length && line[i + 1]! === ">") {
       tokens.push(
-        <span key={key++} className="text-[#71717a]">
+        <span key={key++} style={TOKEN.tag}>
           {"/> "}
         </span>,
       );
@@ -327,7 +345,7 @@ function tokenizeLine(line: string): ReactNode[] {
         !restTrimmed.startsWith("=>")
       ) {
         tokens.push(
-          <span key={key++} className="text-[#71717a]">
+          <span key={key++} style={TOKEN.property}>
             {word}
           </span>,
         );
@@ -342,13 +360,13 @@ function tokenizeLine(line: string): ReactNode[] {
 
       if (KEYWORDS.has(word)) {
         tokens.push(
-          <span key={key++} className="text-[#ffffff]">
+          <span key={key++} style={TOKEN.keyword}>
             {word}
           </span>,
         );
       } else if (word.length > 0 && word[0]! >= "A" && word[0]! <= "Z") {
         tokens.push(
-          <span key={key++} className="text-[#e4e4e7]">
+          <span key={key++} style={TOKEN.component}>
             {word}
           </span>,
         );

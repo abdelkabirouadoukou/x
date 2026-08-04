@@ -31,10 +31,22 @@ x start            # run the production server (run x build first)
 
 x run dev          # "run" is optional, alias for npm/bun muscle memory
 
+Options:
+--cwd <dir>        # run as if started inside <dir>
+--adapter <name>   # build target, e.g. "vercel" (default: Bun server -> .x/)
+--outDir <dir>     # output directory for build/start (default: .x)
+
 -h, --help         # show help
--v, --version      # print installed @thexjs/cli version
---cwd <dir>        # run as if started inside <dir>`}
+-v, --version      # print installed @thexjs/cli version`}
       />
+      <p className="mt-4 text-muted-foreground">
+        <span className="text-foreground">x build --adapter vercel</span> emits a{" "}
+        <span className="text-foreground">.vercel/output</span> tree (Build Output API v3) instead
+        of <span className="text-foreground">.x/</span>, and{" "}
+        <span className="text-foreground">--outDir</span> relocates the build (used by the repo's{" "}
+        <span className="text-foreground">Dockerfile</span>, which builds to{" "}
+        <span className="text-foreground">dist</span>).
+      </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">package.json scripts</h2>
       <CodeBlock
@@ -67,8 +79,10 @@ export default defineConfig({
       />
       <p className="mt-4 text-muted-foreground">
         Without a config file, defaults apply: <span className="text-foreground">src/pages</span>{" "}
-        for pages, <span className="text-foreground">content</span> for content collections if
-        present, port <span className="text-foreground">3000</span>.
+        for pages, <span className="text-foreground">content</span> for content collections if a{" "}
+        <span className="text-foreground">content/</span> directory is present, and{" "}
+        <span className="text-foreground">src/actions</span> is auto-detected for server functions.
+        Port defaults to <span className="text-foreground">3000</span>.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">What each command does</h2>
@@ -102,8 +116,11 @@ export default defineConfig({
       <h3 className="mt-8 text-lg font-semibold">x start</h3>
       <p className="mt-2 text-muted-foreground">
         Runs <span className="text-foreground">.x/server/index.ts</span> with{" "}
-        <span className="text-foreground">NODE_ENV=production</span>. Exits with an error if the
-        build output is missing.
+        <span className="text-foreground">NODE_ENV=production</span> (or{" "}
+        <span className="text-foreground">--outDir dist</span>). If the build has no server entry
+        (all static), it serves <span className="text-foreground">.x/client/</span> as a plain
+        static server with an SPA <span className="text-foreground">index.html</span> fallback.
+        Exits with an error if the build output is missing.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Deployment</h2>

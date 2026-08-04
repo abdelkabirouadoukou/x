@@ -39,17 +39,19 @@ export const logger: Logger = {
 /**
  * Wraps a fetch handler so every request is logged as one structured JSON
  * line with `timestamp`, `requestId`, `route`, `status`, and `durationMs`.
+ * A second argument (Bun.serve's `server` handle) is forwarded untouched so
+ * downstream middleware like the rate limiter can resolve the client IP.
  */
-export function withRequestLogging(
-  handler: (req: Request) => Response | Promise<Response>,
-): (req: Request) => Promise<Response> {
-  return async (req: Request) => {
+export function withRequestLogging<Server = unknown>(
+  handler: (req: Request, server?: Server) => Response | Promise<Response>,
+): (req: Request, server?: Server) => Promise<Response> {
+  return async (req: Request, server?: Server) => {
     const start = performance.now();
     const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
     const route = new URL(req.url).pathname;
 
     try {
-      const res = await handler(req);
+      const res = await handler(req, server);
       const isStream = res.headers.get("content-type")?.includes("text/event-stream");
       console.log(
         `[x][request] ${req.method} ${route} -> ${res.status}${isStream ? " (stream opened, not closed)" : ""}`,
