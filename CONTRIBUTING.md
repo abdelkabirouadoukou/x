@@ -5,7 +5,7 @@ guidelines keep it reviewable and consistent.
 
 ## Project layout
 
-Nothing exotic — a normal Bun workspaces monorepo:
+Nothing exotic. It's a normal Bun workspaces monorepo:
 
 ```
 packages/core                framework runtime (router, SSR/SSG, islands, server functions, data layer)
@@ -41,7 +41,7 @@ bun test <path>      # a single test file
 ## Making changes
 
 Branch off `main`, keep commits small and focused, and use the repo's commit
-style (`feat:`, `fix:`, `docs:`, `chore:`) — mostly so the changelog reads
+style (`feat:`, `fix:`, `docs:`, `chore:`), mostly so the changelog reads
 okay later, not because I'm precious about git history.
 
 Tests matter more than process here. If you touch `packages/core`, add or
@@ -49,7 +49,7 @@ update the test next to the file you changed (`*.test.ts`, run with
 `bun test`). I'd rather review a smaller PR with a real test than a big one
 without.
 
-Before pushing, run `bun run lint`, `bun run typecheck`, and `bun test` —
+Before pushing, run `bun run lint`, `bun run typecheck`, and `bun test`:
 CI runs the exact same three on Ubuntu and macOS, so this just saves you a
 round trip.
 
@@ -61,7 +61,7 @@ out of sync more often than I'd like to admit.
 ## Code style
 
 - **Biome** (double quotes, 2-space indent, semicolons, trailing commas).
-- **TypeScript strict** — `strict`, `noUncheckedIndexedAccess`,
+- **TypeScript strict**: `strict`, `noUncheckedIndexedAccess`,
   `exactOptionalPropertyTypes`, `verbatimModuleSyntax` (type-only imports must
   use `import type`).
 - No `any`. If a type is painful, cast narrowly with a comment explaining why.
@@ -78,7 +78,7 @@ bun test packages/core/src/router.test.ts
 
 ## Conventions & gotchas
 
-- **`src/x-routes.ts` and `.x/`** are generated — never edit them by hand.
+- **`src/x-routes.ts` and `.x/`** are generated, so never edit them by hand.
 - **Env isolation**: never read a non-`THEXJS_PUBLIC_` env var in client code;
   the build fails if you do.
 - **postinstall** builds all packages; if it fails, run `bun run build:packages`.
@@ -90,7 +90,7 @@ Releases are automated with [Changesets](https://github.com/changesets/changeset
 ### Adding a changeset
 
 Any PR that changes a **publishable package** (`packages/*`) must include a
-changeset — CI enforces this: `.github/workflows/changeset-check.yml` fails the
+changeset. CI enforces this: `.github/workflows/changeset-check.yml` fails the
 PR if a `packages/*` change ships without one. Changes that only touch
 `examples/*` or docs don't need a changeset.
 
@@ -120,7 +120,7 @@ unless something genuinely breaks).
 The `.github/workflows/release.yml` workflow runs on every push to `main`:
 
 1. Installs dependencies and runs `build:packages`, `typecheck`, `lint`, and
-   `test` — the job fails if any of these fail, before anything is released.
+   `test`: the job fails if any of these fail, before anything is released.
 2. `changesets/action@v1` then:
    - If pending changesets exist, it opens/updates a **"Version Packages"** PR
      that bumps versions and writes changelogs. Merge that PR.
@@ -131,8 +131,8 @@ The `.github/workflows/release.yml` workflow runs on every push to `main`:
 
 Publishing requires an npm token as the `NPM_TOKEN` repo secret (plus
 `GITHUB_TOKEN`, which GitHub provides automatically). Until `NPM_TOKEN` is
-configured in the repo settings, the workflow stops at the versioning PR —
-packages get version-bumped but nothing reaches npm. To set it up: create a
+configured in the repo settings, the workflow stops at the versioning PR.
+Packages get version-bumped but nothing reaches npm. To set it up: create a
 read-only publish token on npmjs.com (with publish access to the `@thexjs`
 scope) and add it as a repo secret named `NPM_TOKEN`.
 
@@ -141,12 +141,12 @@ install`'s postinstall builds them before publishing.
 
 ## Code of conduct
 
-Be respectful. This project follows the [Contributor Covenant][covenant] — see
+Be respectful. This project follows the [Contributor Covenant][covenant]; see
 `CODE_OF_CONDUCT.md`.
 
 ## Questions
 
-Open a discussion or an issue. For security issues, see `SECURITY.md` — do not
+Open a discussion or an issue. For security issues, see `SECURITY.md`; do not
 file a public issue.
 
 [covenant]: https://www.contributor-covenant.org/

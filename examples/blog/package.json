@@ -2,6 +2,11 @@
   "name": "blog-example",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "bun ../../packages/cli/src/index.ts dev",
+    "build": "bun ../../packages/cli/src/index.ts build",
+    "start": "bun ../../packages/cli/src/index.ts start"
+  },
   "dependencies": {
     "@thexjs/core": "workspace:*",
     "react": "^19.1.0",
@@ -16,6 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
+    "@thexjs/cli": "workspace:*",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.3.3",

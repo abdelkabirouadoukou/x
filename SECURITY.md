@@ -56,10 +56,10 @@ Pass `headers: false` to disable entirely (not recommended in production).
 Server actions (`/__x/actions/*`) and other mutating endpoints are protected
 by two independent checks:
 
-1. **Origin/Referer verification (always on)** — cross-site `POST` requests
+1. **Origin/Referer verification (always on)**: cross-site `POST` requests
    whose `Origin` (or `Referer`) doesn't match the app's own origin are
    rejected. This alone stops the vast majority of CSRF attempts with zero setup.
-2. **Double-submit token (opt-in)** — a random `x_csrf_token` cookie is issued
+2. **Double-submit token (opt-in)**: a random `x_csrf_token` cookie is issued
    and must be echoed back in the `x-csrf-token` header. Enable with
    `security.csrf.requireToken: true`. The cookie carries `HttpOnly`-independent
    `SameSite=Lax` and gets `Secure` in production.
@@ -124,11 +124,11 @@ connects lazily on first use. Expired buckets are swept automatically.
 Anything else referenced from a client bundle fails the build with an
 `EnvLeakageError`, enforced two ways:
 
-1. **Build-time interception** — client imports of `src/actions/*` server
+1. **Build-time interception**: client imports of `src/actions/*` server
    functions are rewritten to `fetch()` wrappers before the client bundler
    ever reads the real source, so secrets in action bodies are structurally
    excluded.
-2. **A post-bundle scan** — `assertNoEnvLeakage` scans the compiled JS for
+2. **A post-bundle scan**: `assertNoEnvLeakage` scans the compiled JS for
    `process.env.*`, `Bun.env.*`, `import.meta.env.*`, including bracket access,
    dynamic keys, string-concatenated keys, and aliased `process.env` objects.
 
@@ -138,7 +138,7 @@ Defense in depth: keep secrets out of client components entirely, and set
 platform's environment.
 
 This scanner took three rewrites to get right. The first version only
-matched `process.env.X` and missed bracket access entirely — `Bun.env["API_KEY"]`
+matched `process.env.X` and missed bracket access entirely, so `Bun.env["API_KEY"]`
 sailed straight through. It still isn't un-fool-able (see the note above about
 `Bun["e" + "nv"]`), which is exactly why it's a safety net and not the whole
 plan.
@@ -154,7 +154,7 @@ STRIPE_SECRET_KEY=sk_live_...
 
 ## Authentication & sessions
 
-The framework does not ship an opinionated auth system — it ships the
+The framework does not ship an opinionated auth system; it ships the
 primitives you build one on (cookies, middleware, server functions, data
 layer). The `basic` and `saas` templates include a **demo** auth (hardcoded
 `admin` / `admin`, no password hashing, no expiry) that is explicitly marked
@@ -168,8 +168,8 @@ DEMO ONLY. Before shipping:
 
 ## Health endpoints
 
-- `/healthz` — liveness: returns `200 {"status":"ok"}` while the process serves.
-- `/readyz` — readiness: runs every configured check and returns `200` when
+- `/healthz` (liveness): returns `200 {"status":"ok"}` while the process serves.
+- `/readyz` (readiness): runs every configured check and returns `200` when
   all pass, `503` otherwise.
 
 ```ts

@@ -1,6 +1,6 @@
 # Deploying x apps
 
-x apps deploy as a single server process with a static assets directory — no Node.js, no
+x apps deploy as a single server process with a static assets directory, no Node.js, no
 build-time server. Just `x build --outDir dist` + `bun dist/server/index.ts`.
 
 ## Prerequisites
@@ -15,8 +15,8 @@ x build --outDir dist
 ```
 
 This produces:
-- `dist/client/` — fully static assets (HTML, island JS chunks, content pages)
-- `dist/server/index.ts` — the generated server entry, run directly with `bun`
+- `dist/client/`: fully static assets (HTML, island JS chunks, content pages)
+- `dist/server/index.ts`: the generated server entry, run directly with `bun`
 
 `--outDir` defaults to `.x/` if omitted.
 
@@ -49,7 +49,7 @@ docker run -p 3000:3000 my-x-app
 ## Deploy to Vercel
 
 Each example app ships a `vercel-build` script (`x build --adapter vercel`) that
-emits a Build Output API v3 tree (`.vercel/output/`) — no `vercel.json` needed.
+emits a Build Output API v3 tree (`.vercel/output/`), no `vercel.json` needed.
 Two ways to wire it up:
 
 ### Option 1 (recommended): rootDirectory per app
@@ -61,7 +61,7 @@ Vercel then runs `bun install` + `bun run vercel-build` inside that directory.
 ### Option 2: deploy from the repo root
 
 The root `package.json` has a `vercel-build` script that builds `examples/basic`
-in place (where `node_modules` resolve — the render function must live inside
+in place (where `node_modules` resolve; the render function must live inside
 the app tree) and stages the result to the repo-root `.vercel/output`:
 
 ```sh

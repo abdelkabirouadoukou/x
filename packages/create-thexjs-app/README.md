@@ -7,7 +7,7 @@
 <p align="center">
 
 <strong>The ultra-fast, full-stack React framework built natively for Bun.</strong>
-Static sites, SSR, file-based API routes, and server functions — running in a single process.
+Static sites, SSR, file-based API routes, and server functions, running in a single process.
 
 </p>
 
@@ -56,7 +56,7 @@ cd my-app
 bun run dev
 ```
 
-When prompted for a template, press Enter to accept **default** (recommended) — a single home page to start from.
+When prompted for a template, press Enter to accept **default** (recommended), a single home page to start from.
 
 Your app will be running at `http://localhost:3000`.
 
@@ -222,7 +222,7 @@ export default function NotFound() {
 
 ## Pages & Loaders
 
-x supports two page modes — static prerendering and server-side rendering — both powered by loaders.
+x supports two page modes: static prerendering and server-side rendering, both powered by loaders.
 
 ### Page modes
 
@@ -458,7 +458,7 @@ export async function POST(req: Request) {
 
 ### API route tree
 
-API routes support the same file-tree conventions as pages — nested folders, dynamic segments, and index files.
+API routes support the same file-tree conventions as pages: nested folders, dynamic segments, and index files.
 
 ```
 src/api/
@@ -544,7 +544,7 @@ export default function GreetForm() {
 
 ### Server functions from loaders
 
-You can also import and call server functions directly in loaders — no HTTP needed since they share the same process.
+You can also import and call server functions directly in loaders; no HTTP needed since they share the same process.
 
 ```tsx
 import type { RouteProps, LoaderArgs } from "@thexjs/core";
@@ -822,7 +822,7 @@ Both `runSQLiteMigrations` and `runPostgresMigrations` take a database connectio
 
 ## Build & Deploy
 
-x produces optimized production builds with static HTML export, a server entry point, and content collection rendering — all in a single command.
+x produces optimized production builds with static HTML export, a server entry point, and content collection rendering, all in a single command.
 
 Build with `x build --outDir <dir>` (default `.x`). Output:
 

@@ -1,12 +1,12 @@
 # @thexjs/cli
 
-The `x` command-line tool for [x](https://www.npmjs.com/package/@thexjs/core) framework apps — dev server, production build, and production start, built on [Bun](https://bun.sh).
+The `x` command-line tool for [x](https://www.npmjs.com/package/@thexjs/core) framework apps: dev server, production build, and production start, built on [Bun](https://bun.sh).
 
 ```sh
 bun add @thexjs/cli
 ```
 
-> Requires Bun (`bun --version` should work on your PATH) — this CLI shells out to `bun`/`bunx` and uses Bun-only APIs (`Bun.serve`, `Bun.argv`).
+> Requires Bun (`bun --version` should work on your PATH). This CLI shells out to `bun`/`bunx` and uses Bun-only APIs (`Bun.serve`, `Bun.argv`).
 
 ## Commands
 
@@ -53,20 +53,20 @@ export default defineConfig({
 });
 ```
 
-If no config file is found, it falls back to sensible defaults — `src/pages` (or `routes`) for pages, `content` for content collections if present, and port `3000`.
+If no config file is found, it falls back to sensible defaults: `src/pages` (or `routes`) for pages, `content` for content collections if present, and port `3000`.
 
 ## What each command does
 
-- **`x dev`** — auto-compiles `src/styles/globals.css` to `public/styles.css` via `bunx tailwindcss` (if that file exists), watches `src/styles` and recompiles on change, then starts `createApp()` from `@thexjs/core` under `Bun.serve`. If the configured port is taken, it tries up to 20 ports upward automatically.
-- **`x build`** — compiles Tailwind in production/minified mode, then calls `build()` from `@thexjs/core`, writing:
-  - `.x/client/` — prerendered HTML for every page with `export const mode = "static"`, plus your `public/` assets copied alongside them. This directory alone is deployable to any static host (Vercel, Netlify, a CDN, etc.).
-  - `.x/server/index.ts` — a server entry covering any page left in the default `"server"` mode, plus your API routes. Requires a Bun-capable host to actually run (see `x start`).
-- **`x start`** — runs `.x/server/index.ts` under `bun` with `NODE_ENV=production`. Requires `x build` to have been run first; exits with an error if `.x/server/index.ts` is missing. If the build has no server entry (a fully static app), it serves `.x/client/` as a plain static server with an SPA `index.html` fallback.
-- **`x build --adapter vercel`** — emits a `.vercel/output` tree (Build Output API v3) instead of `.x/`, for deployment to Vercel (see `@thexjs/adapter-vercel`). `--outDir <dir>` relocates the build output, e.g. `x build --outDir dist`.
+- **`x dev`**: auto-compiles `src/styles/globals.css` to `public/styles.css` via `bunx tailwindcss` (if that file exists), watches `src/styles` and recompiles on change, then starts `createApp()` from `@thexjs/core` under `Bun.serve`. If the configured port is taken, it tries up to 20 ports upward automatically.
+- **`x build`**: compiles Tailwind in production/minified mode, then calls `build()` from `@thexjs/core`, writing:
+  - `.x/client/`: prerendered HTML for every page with `export const mode = "static"`, plus your `public/` assets copied alongside them. This directory alone is deployable to any static host (Vercel, Netlify, a CDN, etc.).
+  - `.x/server/index.ts`: a server entry covering any page left in the default `"server"` mode, plus your API routes. Requires a Bun-capable host to actually run (see `x start`).
+- **`x start`**: runs `.x/server/index.ts` under `bun` with `NODE_ENV=production`. Requires `x build` to have been run first; exits with an error if `.x/server/index.ts` is missing. If the build has no server entry (a fully static app), it serves `.x/client/` as a plain static server with an SPA `index.html` fallback.
+- **`x build --adapter vercel`**: emits a `.vercel/output` tree (Build Output API v3) instead of `.x/`, for deployment to Vercel (see `@thexjs/adapter-vercel`). `--outDir <dir>` relocates the build output, e.g. `x build --outDir dist`.
 
 ## Deployment note
 
-If every page in your app opts into `mode = "static"` and you have no API routes or server functions, you only need `.x/client/` — deploy it as a static site anywhere. If any route stays in the default `"server"` mode (or you have API routes/server functions), you need a host that can keep a Bun process running (Fly.io, a VPS, Docker, Railway, etc.) and run `x start` there — static hosts and Node-only serverless platforms can't run `.x/server/index.ts`.
+If every page in your app opts into `mode = "static"` and you have no API routes or server functions, you only need `.x/client/`; deploy it as a static site anywhere. If any route stays in the default `"server"` mode (or you have API routes/server functions), you need a host that can keep a Bun process running (Fly.io, a VPS, Docker, Railway, etc.) and run `x start` there. Static hosts and Node-only serverless platforms can't run `.x/server/index.ts`.
 
 ## License
 

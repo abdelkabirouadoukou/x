@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-A full-stack React framework built on top of Bun. It features file-based routing, API routes, server functions, and SSR/static rendering. All of these run in one process instead of using five different tools combined.
+A full-stack React framework built on top of Bun. It has file-based routing, API routes, server functions, and SSR/static rendering. All of that runs in one process instead of five different tools combined.
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@ I was building a SaaS called [autopermit](https://autopermit.vercel.app) using N
 
 I didn't know how to make that happen until I started exploring Bun. It already comes with a bundler, a runtime, a package manager, and native SQLite/Postgres drivers. That’s when I realized I didn’t need to connect two bulky frameworks. I needed one framework based on Bun's foundations instead of adding more tools around it.
 
-That's x. I'm 18, and this is the first framework I've tried to design. Most of this journey was me figuring things out as I went, not following a specific plan.
+That's x. I'm 18, and this is the first framework I've tried to design. Most of the work was me figuring things out as I went, not following a specific plan.
 
 ## What was hard
 
@@ -52,7 +52,7 @@ bun run dev
 
 Pick the `default` template when prompted (just a blank home page), then the dev server runs at `http://localhost:3000`.
 
-Other templates: `basic` (pages + API + auth + dashboard), `blog` (markdown content collections), `saas` (dashboard + data layer), `landing` (the docs site itself, including a `/play` arcade of tiny games — route matching, env-leak protection, static-vs-server calls — for anyone who'd rather poke at the framework than read about it).
+Other templates: `basic` (pages + API + auth + dashboard), `blog` (markdown content collections), `saas` (dashboard + data layer), `landing` (the docs site itself, including a `/play` arcade of tiny games (route matching, env-leak protection, static-vs-server calls) for anyone who'd rather poke at the framework than read about it).
 
 ## What's inside
 
@@ -100,8 +100,8 @@ export async function loader({ params }: LoaderArgs) {
   return { title: post.title, content: post.content };
 }
 
-export default function BlogPost({ loaderData }: RouteProps<typeof loader>) {
-  return <h1>{loaderData.title}</h1>;
+export default function BlogPost({ loaderData }: RouteProps) {
+  return <h1>{String(loaderData?.title)}</h1>;
 }
 ```
 
@@ -142,11 +142,11 @@ pages/
 
 Files under `src/api/` become REST endpoints, running in the same process as everything else:
 
-```tsx
-export const GET: ApiHandler = async () => {
-  const users = await db.query("SELECT * FROM users");
+```ts
+export async function GET(req: Request) {
+  const users = await db.query("SELECT * FROM users").all();
   return Response.json(users);
-};
+}
 ```
 
 ## Server functions
@@ -189,7 +189,7 @@ Getting this boundary right (making sure `DATABASE_URL` or `STRIPE_SECRET_KEY` n
 Island bundling itself happens in memory: for a route with islands, a scratch hydration entry file is written to a temp dir, bundled with `Bun.build({ target: "browser" })` (React/ReactDOM external), scanned, and the temp dir is deleted immediately after nothing lands in the project tree.
 
 This boundary is the part I rewrote the most times. Early on I only had the
-scanner, no interception — which meant a bug in the regex was the only thing
+scanner, no interception, and a bug in the regex was the only thing
 standing between a real project and a leaked API key. Moving the real
 protection to build time (so the secret-holding code is never even read by
 the client bundler) and keeping the scanner as a second check, not the only
@@ -200,13 +200,13 @@ check, is the version I'd actually trust in a project with real users.
 Markdown + frontmatter in, pages out:
 
 ```ts
-const posts = await scanContent("posts");
-const html = await renderMarkdown(post.body);
+const posts = scanContent("posts");
+const html = renderMarkdown(post.body);
 ```
 
 ## Client navigation & images
 
-Every `<a>` tag gets SPA-style client-side navigation and hover prefetch automatically — no router setup, opt out per-link with `data-no-nav` / `data-no-prefetch`, or use the typed `<Link>` wrapper. A built-in `/_x/image` proxy streams allow-listed remote images through your own origin so a strict `img-src 'self'` CSP still works with external images:
+Every `<a>` tag gets SPA-style client-side navigation and hover prefetch automatically, no router setup required. Opt out per-link with `data-no-nav` / `data-no-prefetch`, or use the typed `<Link>` wrapper. A built-in `/_x/image` proxy streams allow-listed remote images through your own origin so a strict `img-src 'self'` CSP still works with external images:
 
 ```tsx
 import { Link, createImageProxyHandler } from "@thexjs/core";
@@ -251,7 +251,7 @@ export default defineConfig({
 ## Versioning
 
 All `@thexjs/*` packages are **0.x and pre-1.0**. The public API is still
-settling, so expect breaking changes between minor releases — that's the
+settling, so expect breaking changes between minor releases. That's the
 signal you should pin versions (`^0.1.0` will still allow `0.1.x → 0.2.0`).
 
 - Releases are managed with **Changesets**. Every PR touching a `packages/*`

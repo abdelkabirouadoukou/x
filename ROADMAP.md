@@ -29,16 +29,16 @@ writing.
 
 ## Coverage debt (high → low priority)
 
-1. **Data layer** — migration runner, WAL/FK setup, retry/backoff behavior.
+1. **Data layer**: migration runner, WAL/FK setup, retry/backoff behavior.
    Users depend on this for real apps; today it's untested glue around Bun's
    drivers.
-2. **Content pipeline** — frontmatter parsing edge cases, content route
+2. **Content pipeline**: frontmatter parsing edge cases, content route
    generation, `.mdx` compile path.
-3. **Islands runtime** — hydration lifecycle, island props serialization,
+3. **Islands runtime**: hydration lifecycle, island props serialization,
    event wiring.
-4. **Observability reporters** — error reporter flush on shutdown, metric
+4. **Observability reporters**: error reporter flush on shutdown, metric
    emission.
-5. **CLI `dev`** — dev-mode file watching / route rebuild (exercised manually,
+5. **CLI `dev`**: dev-mode file watching / route rebuild (exercised manually,
    not automated).
 
 ## Near-term (0.x)

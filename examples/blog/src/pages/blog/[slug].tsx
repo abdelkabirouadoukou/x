@@ -14,7 +14,7 @@ export async function loader({ params }: LoaderArgs) {
   const entries = scanContent(contentDir);
   const entry = entries.find((e) => e.slug === params.slug);
   if (!entry) return new Response(null, { status: 302, headers: { Location: "/blog" } });
-  const html = await renderMarkdown(entry.body);
+  const html = renderMarkdown(entry.body);
   return {
     html,
     title: entry.frontmatter.title ?? entry.slug,

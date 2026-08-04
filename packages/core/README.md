@@ -1,14 +1,14 @@
 # @thexjs/core
 
-The rendering/routing engine behind **x** — a full-stack React framework built on [Bun](https://bun.sh). This package provides file-based routing, SSR/SSG rendering, islands, server functions, a content layer, and a lightweight data layer (SQLite/Postgres).
+The rendering/routing engine behind **x**, a full-stack React framework built on [Bun](https://bun.sh). This package provides file-based routing, SSR/SSG rendering, islands, server functions, a content layer, and a lightweight data layer (SQLite/Postgres).
 
-You typically don't install this directly — [`@thexjs/cli`](https://www.npmjs.com/package/@thexjs/cli) depends on it and drives `x dev` / `x build` / `x start` for you. Install it explicitly only if you're calling the APIs below directly (e.g. a custom server entry).
+You typically don't install this directly. [`@thexjs/cli`](https://www.npmjs.com/package/@thexjs/cli) depends on it and drives `x dev` / `x build` / `x start` for you. Install it explicitly only if you're calling the APIs below directly (e.g. a custom server entry).
 
 ```sh
 bun add @thexjs/core
 ```
 
-> Requires the Bun runtime — this package uses `Bun.serve`, `Bun.file`, `bun:sqlite`, and `Bun.sql` internally.
+> Requires the Bun runtime. This package uses `Bun.serve`, `Bun.file`, `bun:sqlite`, and `Bun.sql` internally.
 
 ## Quick start
 
@@ -63,8 +63,8 @@ Every page defaults to **server-rendered (SSR)**. Opt into build-time prerenderi
 export const mode: "static" | "server" = "static";
 ```
 
-- **`static`** — rendered once at `x build` time to a `.html` file. Best for marketing pages, docs, blog posts — anything that doesn't need per-request data. No page in your app defaults to this; you must set it explicitly, or the build step will silently ship an empty/server-only route with no prerendered HTML.
-- **`server`** (default) — rendered per-request via `renderPage` / `renderStreamingPage` when running under `x start` (or `x dev`). Requires a live Bun server; **not deployable to static hosts** (see Deployment below).
+- **`static`**: rendered once at `x build` time to a `.html` file. Best for marketing pages, docs, blog posts, anything that doesn't need per-request data. No page in your app defaults to this; you must set it explicitly, or the build step will silently ship an empty/server-only route with no prerendered HTML.
+- **`server`** (default): rendered per-request via `renderPage` / `renderStreamingPage` when running under `x start` (or `x dev`). Requires a live Bun server; **not deployable to static hosts** (see Deployment below).
 
 ## Loaders
 
@@ -100,7 +100,7 @@ export const actions = {
 };
 ```
 
-`registerServerFunctions`, `generateServerFunctionClient`, and `getServerFunctionHandler` are the lower-level primitives the router wires up automatically — most apps won't call these directly.
+`registerServerFunctions`, `generateServerFunctionClient`, and `getServerFunctionHandler` are the lower-level primitives the router wires up automatically. Most apps won't call these directly.
 
 ## Islands (selective hydration)
 
@@ -178,7 +178,7 @@ await build({ pagesDir: "./src/pages", outDir: "./.x" });
 
 ## Deployment note
 
-`build()` writes prerendered `static` pages (and copies `public/`) to `<outDir>/client` — that output is a plain static site, deployable anywhere (Vercel, Netlify, any CDN). Any page left in the default `server` mode requires a running Bun process (`x start`) and **is not included in the static output** — it needs a Bun-capable host (Fly.io, a VPS, Docker, etc.), not a static host or a Node-only serverless platform.
+`build()` writes prerendered `static` pages (and copies `public/`) to `<outDir>/client`; that output is a plain static site, deployable anywhere (Vercel, Netlify, any CDN). Any page left in the default `server` mode requires a running Bun process (`x start`) and **is not included in the static output**. It needs a Bun-capable host (Fly.io, a VPS, Docker, etc.), not a static host or a Node-only serverless platform.
 
 ## Enterprise readiness: security & observability
 
@@ -213,7 +213,7 @@ const app = createApp({
 });
 ```
 
-Only variables prefixed `THEXJS_PUBLIC_` may reach the browser — `@thexjs/env`'s `createEnv` defaults `clientPrefix` to that, and the build step throws an `EnvLeakageError` if any client bundle references a server-only `process.env`/`Bun.env`/`import.meta.env` variable, so a secret like `STRIPE_SECRET_KEY` can never round-trip into shipped JS.
+Only variables prefixed `THEXJS_PUBLIC_` may reach the browser. `@thexjs/env`'s `createEnv` defaults `clientPrefix` to that, and the build step throws an `EnvLeakageError` if any client bundle references a server-only `process.env`/`Bun.env`/`import.meta.env` variable, so a secret like `STRIPE_SECRET_KEY` can never round-trip into shipped JS.
 
 ## Exports reference
 
