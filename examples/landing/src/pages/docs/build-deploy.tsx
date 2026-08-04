@@ -13,7 +13,7 @@ export default function DocPage(_props: RouteProps) {
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Build &amp; deploy</h1>
       <p className="mt-4 text-lg text-muted-foreground">
         x produces optimized production builds with static HTML export, a server entry point, and
-        content collection rendering — all in a single command.
+        content collection rendering, all in a single command.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Build command</h2>
@@ -36,7 +36,7 @@ export default function DocPage(_props: RouteProps) {
       <h2 className="mt-12 text-xl font-bold tracking-tight">Output structure</h2>
       <p className="mt-3 text-muted-foreground">
         The <span className="text-foreground">.x/</span> directory contains everything needed to
-        deploy — static files, server bundle, and assets.
+        deploy: static files, server bundle, and assets.
       </p>
       <CodeBlock
         label="output tree"
@@ -68,8 +68,8 @@ export default function DocPage(_props: RouteProps) {
       <p className="mt-3 text-muted-foreground">
         Server-rendered pages are bundled into{" "}
         <span className="text-foreground">.x/server/index.js</span>. This file contains all server
-        routes, API handlers, server functions, and middleware — everything needed to run the
-        dynamic parts of your app.
+        routes, API handlers, server functions, and middleware, everything needed to run the dynamic
+        parts of your app.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Production server</h2>
@@ -117,8 +117,8 @@ CMD ["x", "start"]`}
       <p className="mt-3 text-muted-foreground">
         Vercel doesn't run a long-lived Bun process, so it uses a different adapter:{" "}
         <span className="text-foreground">@thexjs/adapter-vercel</span> builds a{" "}
-        <span className="text-foreground">.vercel/output/</span> tree (Build Output API v3) directly
-        — no <span className="text-foreground">vercel.json</span> required.
+        <span className="text-foreground">.vercel/output/</span> tree (Build Output API v3)
+        directly, so no <span className="text-foreground">vercel.json</span> is required.
       </p>
       <CodeBlock
         label="terminal"
@@ -129,7 +129,7 @@ vercel deploy --prebuilt`}
       />
       <p className="mt-3 text-muted-foreground">
         If every page in your app uses <span className="text-foreground">mode = "static"</span> (no
-        API routes, no server actions), no function is emitted at all — just static files and
+        API routes, no server actions), no function is emitted at all, just static files and
         filesystem routing. Server-mode pages, API routes, and server actions run inside a single
         bundled <span className="text-foreground">nodejs20.x</span> function.
       </p>

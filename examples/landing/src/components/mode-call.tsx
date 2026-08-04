@@ -10,7 +10,7 @@ interface Scenario {
 
 const BANK: Scenario[] = [
   {
-    desc: "Marketing homepage — same for every visitor, changes maybe once a month.",
+    desc: "Marketing homepage, same for every visitor, changes maybe once a month.",
     answer: "static",
     why: "No per-request data. Prerender it once at build time.",
   },
@@ -22,7 +22,7 @@ const BANK: Scenario[] = [
   {
     desc: "A blog post rendered from a markdown file in the repo.",
     answer: "static",
-    why: "Content lives in the repo at build time — no reason to hit a loader per request.",
+    why: "Content lives in the repo at build time. No reason to hit a loader per request.",
   },
   {
     desc: "A live sports score page that must reflect the current score on load.",
@@ -32,7 +32,7 @@ const BANK: Scenario[] = [
   {
     desc: "Pricing page with three fixed tiers, no personalization.",
     answer: "static",
-    why: "Nothing here depends on who's asking — ship the same HTML to everyone.",
+    why: "Nothing here depends on who's asking. Ship the same HTML to everyone.",
   },
   {
     desc: "A page that reads a `?ref=` query param and shows a personalized banner.",
@@ -88,10 +88,11 @@ export default function ModeCall() {
   );
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/50 px-4 py-2.5">
+    <div className="glass overflow-hidden rounded-2xl">
+      <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-muted/40 px-4 py-2.5">
         <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          <span className="h-2 w-2 rounded-full bg-accent-foreground" /> Mode Call
+          <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,255,255,0.5)]" />{" "}
+          Mode Call
         </span>
         <span className="font-mono text-[11px] text-muted-foreground">
           {done ? run.length : round + 1}/{run.length} · score {score}
@@ -99,7 +100,7 @@ export default function ModeCall() {
       </div>
       <div className="h-1 w-full bg-muted">
         <div
-          className="h-full bg-accent-foreground transition-[width] duration-300"
+          className="h-full bg-primary shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-[width] duration-300"
           style={{ width: `${progressPct}%` }}
         />
       </div>
@@ -110,7 +111,7 @@ export default function ModeCall() {
             <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
               static or server?
             </p>
-            <p className="mt-1.5 rounded-lg bg-accent px-3 py-2.5 text-sm font-medium text-accent-foreground">
+            <p className="mt-1.5 rounded-xl border border-primary/25 bg-accent px-3 py-2.5 text-sm font-medium text-accent-foreground">
               {current.desc}
             </p>
 
@@ -125,12 +126,12 @@ export default function ModeCall() {
                     type="button"
                     onClick={() => pick(choice)}
                     disabled={picked !== null}
-                    className={`rounded-lg border px-3 py-3 text-center font-mono text-sm font-medium transition-colors ${
+                    className={`rounded-xl border px-3 py-3 text-center font-mono text-sm font-medium transition-colors ${
                       showState && isAnswer
-                        ? "border-primary bg-primary/10 text-primary"
+                        ? "border-go bg-go/10 text-go shadow-[0_0_14px_-4px_rgba(255,255,255,0.4)]"
                         : showState && isPicked
                           ? "border-secondary bg-secondary/10 text-secondary"
-                          : "border-border bg-background text-foreground hover:border-primary/40"
+                          : "border-border bg-background/70 text-foreground hover:border-primary/40"
                     }`}
                   >
                     {choice}
@@ -145,7 +146,7 @@ export default function ModeCall() {
                 <button
                   type="button"
                   onClick={next}
-                  className="inline-flex h-8 shrink-0 items-center rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  className="aqua-btn inline-flex h-8 shrink-0 px-4 text-xs font-semibold"
                 >
                   {round + 1 < run.length ? "Next" : "See score"}
                 </button>
@@ -157,18 +158,18 @@ export default function ModeCall() {
             <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
               Run complete
             </p>
-            <p className="mt-2 font-display text-3xl font-bold text-foreground">
+            <p className="lcd mt-2 text-5xl leading-none">
               {score} / {run.length}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground">
               {score === run.length
                 ? "Every call was right. You know exactly when to reach for a loader."
-                : "Rendering mode is a request-time question — give it another pass."}
+                : "Rendering mode is a request-time question. Give it another pass."}
             </p>
             <button
               type="button"
               onClick={replay}
-              className="stamp-press mt-4 inline-flex h-9 items-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted"
+              className="glass-btn mt-4 inline-flex h-9 px-5 text-sm font-medium"
             >
               Play again
             </button>

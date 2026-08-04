@@ -10,7 +10,7 @@ export default function DocPage(_props: RouteProps) {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">@thexjs/cli</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        The <span className="text-foreground">x</span> command-line tool — dev server, production
+        The <span className="text-foreground">x</span> command-line tool: dev server, production
         build, and production start, built on Bun.
       </p>
 
@@ -29,7 +29,7 @@ export default function DocPage(_props: RouteProps) {
 x build            # build for production -> .x/
 x start            # run the production server (run x build first)
 
-x run dev          # "run" is optional — alias for npm/bun muscle memory
+x run dev          # "run" is optional, alias for npm/bun muscle memory
 
 -h, --help         # show help
 -v, --version      # print installed @thexjs/cli version
@@ -89,13 +89,13 @@ export default defineConfig({
       </p>
       <ul className="mt-3 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
-          <span className="text-foreground">.x/client/</span> — prerendered HTML for static pages,
-          plus <span className="text-foreground">public/</span> assets. Deployable to any static
-          host.
+          <span className="text-foreground">.x/client/</span> holds prerendered HTML for static
+          pages, plus <span className="text-foreground">public/</span> assets. Deployable to any
+          static host.
         </li>
         <li>
-          <span className="text-foreground">.x/server/index.ts</span> — server entry for SSR pages
-          and API routes. Requires a Bun-capable host.
+          <span className="text-foreground">.x/server/index.ts</span> is the server entry for SSR
+          pages and API routes. Requires a Bun-capable host.
         </li>
       </ul>
 

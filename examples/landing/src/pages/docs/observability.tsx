@@ -10,9 +10,9 @@ export default function DocPage(_props: RouteProps) {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Observability</p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Observability</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        x includes production-ready observability out of the box — structured JSON logging,
-        container health/readiness probes, and pluggable APM error tracing. All of it is optional
-        and configurable via the <span className="text-foreground">observability</span> key in{" "}
+        x includes production-ready observability out of the box: structured JSON logging, container
+        health/readiness probes, and pluggable APM error tracing. All of it is optional and
+        configurable via the <span className="text-foreground">observability</span> key in{" "}
         <span className="text-foreground">x.config.ts</span>.
       </p>
 
@@ -86,12 +86,12 @@ export async function loader() {
       </p>
       <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
-          <span className="text-foreground">/healthz</span> — liveness probe. Returns{" "}
+          <span className="text-foreground">/healthz</span>, the liveness probe. Returns{" "}
           <span className="text-foreground">{'{ status: "ok" }'}</span> when the Bun process is up
           and serving.
         </li>
         <li>
-          <span className="text-foreground">/readyz</span> — readiness probe. Runs all configured
+          <span className="text-foreground">/readyz</span>, the readiness probe. Runs all configured
           checks and returns <span className="text-foreground">200</span> only if every check
           passes, or <span className="text-foreground">503</span> otherwise.
         </li>
@@ -165,7 +165,7 @@ observability: {
       />
       <p className="mt-4 text-muted-foreground">
         If no reporter is configured, errors are logged to the console and the request returns a
-        generic 500. The reporter never blocks the response — if it throws, the error is caught and
+        generic 500. The reporter never blocks the response. If it throws, the error is caught and
         logged so it can't take down the request.
       </p>
 

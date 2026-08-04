@@ -86,7 +86,7 @@ export default function BoardingPass() {
             }}
             placeholder="Abdo"
             maxLength={24}
-            className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+            className="h-10 w-full rounded-xl border border-input bg-background/70 px-3 text-sm outline-none focus:border-primary"
           />
         </label>
         <label className="block">
@@ -101,26 +101,26 @@ export default function BoardingPass() {
             }}
             placeholder="blog/[slug]"
             maxLength={40}
-            className="h-10 w-full rounded-lg border border-border bg-card px-3 font-mono text-sm outline-none focus:border-primary"
+            className="h-10 w-full rounded-xl border border-input bg-background/70 px-3 font-mono text-sm outline-none focus:border-primary"
           />
         </label>
         <button
           type="button"
           onClick={() => setIssued(true)}
-          className="stamp-press h-10 self-end rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          className="aqua-btn h-10 self-end px-5 text-sm font-semibold"
         >
           Print pass
         </button>
       </div>
 
-      <div className="ticket-card relative mt-6 flex overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="ticket-card glass relative mt-6 flex overflow-hidden rounded-2xl">
         <div className="min-w-0 flex-1 p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
                 x airways · one process, one runtime
               </p>
-              <h3 className="mt-1.5 truncate font-display text-2xl font-bold uppercase tracking-tight">
+              <h3 className="mt-1.5 truncate font-display text-2xl font-normal uppercase tracking-tight">
                 {passenger}
               </h3>
             </div>
@@ -136,27 +136,25 @@ export default function BoardingPass() {
               <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                 Route
               </p>
-              <p className="mt-1 truncate font-mono text-sm font-medium text-primary">{route}</p>
+              <p className="lcd mt-1 truncate text-lg">{route}</p>
             </div>
             <div>
               <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                 Render
               </p>
-              <p className="mt-1 font-mono text-sm font-medium">
-                {ticket.isDynamic ? "SSR" : "STATIC"}
-              </p>
+              <p className="lcd mt-1 text-lg">{ticket.isDynamic ? "SSR" : "STATIC"}</p>
             </div>
             <div>
               <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                 Gate
               </p>
-              <p className="mt-1 font-mono text-sm font-medium">{ticket.gate}</p>
+              <p className="lcd mt-1 text-lg">{ticket.gate}</p>
             </div>
             <div>
               <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                 Seat
               </p>
-              <p className="mt-1 font-mono text-sm font-medium">{ticket.seat}</p>
+              <p className="lcd mt-1 text-lg">{ticket.seat}</p>
             </div>
           </div>
 
@@ -181,7 +179,7 @@ export default function BoardingPass() {
         </div>
       </div>
       <p className="mt-3 text-center text-xs text-muted-foreground">
-        Every field except the name and route is derived — same input, same ticket, every time.
+        Every field except the name and route is derived. Same input, same ticket, every time.
       </p>
     </div>
   );

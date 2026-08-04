@@ -80,9 +80,9 @@ export default function RouteResolver() {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-2.5">
-        <span className="h-2 w-2 rounded-full bg-secondary" />
+    <div className="glass overflow-hidden rounded-2xl">
+      <div className="flex items-center gap-2 border-b border-border/70 bg-muted/40 px-4 py-2.5">
+        <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
         <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
           Route Resolver
         </span>
@@ -99,7 +99,7 @@ export default function RouteResolver() {
           onChange={(e) => setValue(e.target.value)}
           spellCheck={false}
           autoComplete="off"
-          className="mt-1.5 block w-full rounded-lg border border-border bg-background px-3 py-2.5 font-mono text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+          className="mt-1.5 block w-full rounded-xl border border-input bg-background/70 px-3 py-2.5 font-mono text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
           placeholder="pages/blog/[slug].tsx"
         />
 
@@ -162,7 +162,7 @@ export default function RouteResolver() {
               type="button"
               onClick={confirmWithServer}
               disabled={server.status === "loading"}
-              className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border bg-background px-3 font-mono text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-60"
+              className="inline-flex h-8 shrink-0 items-center rounded-full border border-chrome-lo bg-background/70 px-4 font-mono text-[11px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-60"
             >
               {server.status === "loading" ? "Asking the server…" : "Confirm with server →"}
             </button>
@@ -174,11 +174,11 @@ export default function RouteResolver() {
                 </span>
               )}
               {server.status === "done" && !server.route && (
-                <span>server agrees — not a route</span>
+                <span>server agrees, this is not a route</span>
               )}
               {server.status === "error" && (
                 <span className="text-secondary">
-                  dev server not reachable — run `bun run dev` to try this live
+                  dev server not reachable. Run `bun run dev` to try this live
                 </span>
               )}
             </div>
@@ -191,7 +191,7 @@ export default function RouteResolver() {
               key={ex}
               type="button"
               onClick={() => setValue(ex)}
-              className="rounded-md border border-border bg-background px-2 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              className="rounded-full border border-chrome-lo bg-background/70 px-3 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
             >
               {ex}
             </button>

@@ -43,13 +43,13 @@ const packageSections = [
   {
     icon: Package,
     title: "@thexjs/core",
-    desc: "Rendering engine — routing, SSR/SSG, islands, server functions, data layer.",
+    desc: "Rendering engine: routing, SSR/SSG, islands, server functions, data layer.",
     href: "/docs/packages/core",
   },
   {
     icon: Terminal,
     title: "@thexjs/cli",
-    desc: "The x command — dev, build, start, and deployment output.",
+    desc: "The x command: dev, build, start, and deployment output.",
     href: "/docs/packages/cli",
   },
   {
@@ -130,7 +130,7 @@ const guideSections = [
   {
     icon: Cog,
     title: "Configuration",
-    desc: "x.config.ts reference — all options and defaults.",
+    desc: "x.config.ts reference: all options and defaults.",
     href: "/docs/configuration",
   },
   {
@@ -158,7 +158,7 @@ function SectionGrid({
         <a
           key={s.title}
           href={s.href}
-          className="group rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+          className="group rounded-2xl border border-chrome-lo bg-white/[0.04] p-6 backdrop-blur transition-all hover:border-primary/40 hover:bg-white/[0.07]"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
             <s.icon className="h-5 w-5" />
@@ -190,7 +190,7 @@ export default function DocsHubPage() {
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
           A fullstack framework for Bun. Static sites, server-rendered pages, API routes, and server
-          functions — all in a single process.
+          functions, all in a single process.
         </p>
       </div>
 

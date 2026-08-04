@@ -15,7 +15,7 @@ export default function DocPage(_props: RouteProps) {
           Bun
         </a>
         . File-based routing, SSR, static generation, API routes, server functions, islands, and a
-        content layer — all in one process, zero orchestration.
+        content layer all live in one process, with zero orchestration.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Why x exists</h2>
@@ -25,10 +25,10 @@ export default function DocPage(_props: RouteProps) {
         <span className="text-foreground">src/pages</span>, get a route. Mark a page{" "}
         <span className="text-foreground">static</span> and it prerenders at build time. Leave it as
         server mode and it renders per request. API routes and server functions live alongside your
-        pages — same types, same runtime.
+        pages, with the same types and the same runtime.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">The package ecosystem</h2>
+      <h2 className="mt-12 text-xl font-bold tracking-tight">The packages</h2>
       <p className="mt-3 text-muted-foreground">
         x ships as three focused npm packages. You typically install{" "}
         <span className="text-foreground">@thexjs/cli</span> and{" "}
@@ -41,12 +41,12 @@ export default function DocPage(_props: RouteProps) {
           {
             name: "@thexjs/core",
             href: "/docs/packages/core",
-            desc: "Rendering engine — routing, SSR/SSG, islands, server functions, content, data layer.",
+            desc: "Rendering engine: routing, SSR/SSG, islands, server functions, content, data layer.",
           },
           {
             name: "@thexjs/cli",
             href: "/docs/packages/cli",
-            desc: "The x command — dev server, production build, and start.",
+            desc: "The x command: dev server, production build, and start.",
           },
           {
             name: "@thexjs/env",
@@ -90,8 +90,8 @@ export default function HomePage({}: RouteProps) {
       </p>
       <CodeBlock label="route mode" code={`export const mode: "static" | "server" = "static";`} />
       <p className="mt-4 text-muted-foreground">
-        Static pages ship as plain HTML in <span className="text-foreground">.x/client/</span> —
-        deployable to any static host. Server pages need a running Bun process via{" "}
+        Static pages ship as plain HTML in <span className="text-foreground">.x/client/</span> and
+        deploy to any static host. Server pages need a running Bun process via{" "}
         <span className="text-foreground">x start</span>.
       </p>
 

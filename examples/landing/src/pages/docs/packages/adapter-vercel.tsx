@@ -20,7 +20,7 @@ export default function DocPage(_props: RouteProps) {
           Build Output API v3
         </a>{" "}
         adapter for x apps. Produces a <span className="text-foreground">.vercel/output/</span> tree
-        directly — <span className="text-foreground">no vercel.json required</span>.
+        directly, with <span className="text-foreground">no vercel.json required</span>.
       </p>
 
       <CodeBlock
@@ -48,7 +48,7 @@ vercel deploy --prebuilt`}
       <p className="mt-4 text-muted-foreground">
         If your app is 100% static (every page is{" "}
         <span className="text-foreground">mode = "static"</span>, no API routes, no server actions),
-        no function is emitted at all — <span className="text-foreground">config.json</span> only
+        no function is emitted at all. <span className="text-foreground">config.json</span> only
         does filesystem routing.
       </p>
 
@@ -116,8 +116,8 @@ vercel deploy --prebuilt`}
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Usage with x.config.ts</h2>
       <p className="mt-3 text-muted-foreground">
-        The adapter reads your <span className="text-foreground">x.config.ts</span> automatically —
-        no extra configuration needed. Just install the adapter and run:
+        The adapter reads your <span className="text-foreground">x.config.ts</span> automatically,
+        so no extra configuration is needed. Just install the adapter and run:
       </p>
       <CodeBlock
         label="terminal"
@@ -131,14 +131,14 @@ vercel deploy --prebuilt`}
       <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
           ISR-style <span className="text-foreground">revalidate</span> caching (in-memory in the
-          long-running Bun dev/prod server) doesn't carry over to stateless serverless invocations —
-          use Vercel's own <span className="text-foreground">Cache-Control</span>/CDN caching on the
+          long-running Bun dev/prod server) doesn't carry over to stateless serverless invocations.
+          Use Vercel's own <span className="text-foreground">Cache-Control</span>/CDN caching on the
           response instead.
         </li>
         <li>
           Markdown <span className="text-foreground">contentDir</span> entries are always statically
-          prerendered (matches <span className="text-foreground">@thexjs/core</span>'s{" "}
-          <span className="text-foreground">build()</span> behavior today) — there's no server-mode
+          prerendered (matching <span className="text-foreground">@thexjs/core</span>'s{" "}
+          <span className="text-foreground">build()</span> behavior today). There's no server-mode
           content route yet.
         </li>
         <li>

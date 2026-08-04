@@ -10,13 +10,13 @@ export default function DocPage(_props: RouteProps) {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">@thexjs/core</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        The rendering and routing engine behind x — file-based routing, SSR/SSG, islands, server
+        The rendering and routing engine behind x: file-based routing, SSR/SSG, islands, server
         functions, content collections, and a lightweight data layer.
       </p>
 
       <CodeBlock label="terminal" lang="bash" code="bun add @thexjs/core" />
       <p className="mt-4 text-sm text-muted-foreground">
-        Requires Bun. You typically do not install this directly —{" "}
+        Requires Bun. You typically do not install this directly.{" "}
         <a href="/docs/packages/cli" className="text-primary underline underline-offset-2">
           @thexjs/cli
         </a>{" "}
@@ -75,11 +75,11 @@ src/pages/_404.tsx              Custom not-found page`}
       />
       <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
-          <span className="text-foreground">static</span> — rendered once at build time to HTML in{" "}
+          <span className="text-foreground">static</span> renders once at build time to HTML in{" "}
           <span className="text-foreground">.x/client/</span>
         </li>
         <li>
-          <span className="text-foreground">server</span> — rendered per request via{" "}
+          <span className="text-foreground">server</span> renders per request via{" "}
           <span className="text-foreground">x start</span> or{" "}
           <span className="text-foreground">x dev</span>
         </li>
@@ -122,7 +122,7 @@ export default function UserPage({ loaderData }: RouteProps<typeof loader>) {
       <h2 className="mt-12 text-xl font-bold tracking-tight">Client navigation &amp; images</h2>
       <p className="mt-3 text-muted-foreground">
         Plain <span className="text-foreground">&lt;a&gt;</span> tags already get SPA-style
-        navigation and hover prefetch on every page — no router setup needed.{" "}
+        navigation and hover prefetch on every page, with no router setup needed.{" "}
         <span className="text-foreground">&lt;Link&gt;</span> is a typed convenience wrapper over
         the same behavior, and <span className="text-foreground">createImageProxyHandler</span>{" "}
         streams allow-listed remote images through your own origin so a strict{" "}

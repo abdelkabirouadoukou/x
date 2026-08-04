@@ -20,7 +20,7 @@ export default function DocPage(_props: RouteProps) {
         <a href="https://bun.sh" className="text-primary underline underline-offset-2">
           Bun
         </a>{" "}
-        — x uses <span className="text-foreground">Bun.serve</span>,{" "}
+        first, since x uses <span className="text-foreground">Bun.serve</span>,{" "}
         <span className="text-foreground">Bun.file</span>, and other Bun-only APIs. Verify with:
       </p>
       <TerminalBlock label="terminal — bun" code="bun --version" />
@@ -41,7 +41,7 @@ bun run dev`}
       />
       <p className="mt-4 text-muted-foreground">
         When prompted for a template, press Enter to accept{" "}
-        <span className="text-foreground">default</span> (recommended) — a single home page to start
+        <span className="text-foreground">default</span> (recommended), a single home page to start
         from. Other templates include <span className="text-foreground">basic</span>,{" "}
         <span className="text-foreground">blog</span>, <span className="text-foreground">saas</span>
         , and <span className="text-foreground">landing</span>.

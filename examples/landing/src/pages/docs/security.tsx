@@ -10,7 +10,7 @@ export default function DocPage(_props: RouteProps) {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Security</p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Security</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        x ships with production-grade security guardrails enabled by default — build-time env
+        x ships with production-grade security guardrails enabled by default: build-time env
         isolation, CSRF protection on server actions, security headers on every response, and an
         in-memory rate limiter. All of it is configurable or disableable per environment.
       </p>
@@ -84,7 +84,7 @@ export default defineConfig({
       </p>
       <ol className="mt-4 list-decimal space-y-2 text-muted-foreground">
         <li>
-          <span className="text-foreground">Origin/Referer verification</span> — rejects cross-site
+          <span className="text-foreground">Origin/Referer verification</span> rejects cross-site
           requests whose Origin or Referer doesn't match the app's own origin. This is always on
           unless CSRF is disabled entirely.
         </li>
@@ -178,7 +178,7 @@ await fetch("/__x/actions/greet/greet", {
 }`}
       />
       <p className="mt-4 text-muted-foreground">
-        This is a single-process limiter — for multi-instance deployments, front it with a shared
+        This is a single-process limiter. For multi-instance deployments, front it with a shared
         store (Redis, etc.) via a custom <span className="text-foreground">keyFn</span> or use a
         reverse proxy with its own rate limiting.
       </p>

@@ -15,7 +15,7 @@ function loadBest(): number | null {
 function verdict(ms: number): string {
   if (ms < 150) return "Faster than the paint frame. Suspicious.";
   if (ms < 300) return "Faster than a cold start on most stacks.";
-  if (ms < 600) return "Solid — quicker than waiting on a container to spin up.";
+  if (ms < 600) return "Solid. Quicker than waiting on a container to spin up.";
   return "Shipped. The build was ready before you were.";
 }
 
@@ -70,19 +70,21 @@ export default function ShipIt() {
           : "Try again";
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/50 px-4 py-2.5">
+    <div className="glass overflow-hidden rounded-2xl">
+      <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-muted/40 px-4 py-2.5">
         <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
           <span
             className={`h-2 w-2 rounded-full ${
-              phase === "ready" ? "bg-primary" : phase === "building" ? "bg-secondary" : "bg-border"
+              phase === "ready"
+                ? "bg-go shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                : phase === "building"
+                  ? "bg-primary shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+                  : "bg-muted-foreground/40"
             }`}
           />
           Ship It
         </span>
-        {best !== null && (
-          <span className="font-mono text-[11px] text-muted-foreground">best {best}ms</span>
-        )}
+        {best !== null && <span className="lcd text-sm leading-none">best {best}ms</span>}
       </div>
 
       <div className="p-5 text-center">
@@ -96,18 +98,18 @@ export default function ShipIt() {
         </p>
 
         {phase === "shipped" && elapsed !== null && (
-          <p className="mt-2 font-display text-4xl font-bold text-primary">{elapsed}ms</p>
+          <p className="lcd mt-3 text-6xl leading-none">{elapsed}ms</p>
         )}
 
         <button
           type="button"
           onClick={handleClick}
-          className={`mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl px-5 text-sm font-semibold transition-all active:scale-[0.98] ${
+          className={`mt-6 inline-flex h-11 w-full items-center justify-center rounded-full px-5 text-sm font-semibold transition-all ${
             phase === "ready"
-              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+              ? "aqua-btn"
               : phase === "building"
-                ? "bg-muted text-muted-foreground"
-                : "border border-border bg-background text-foreground hover:bg-muted"
+                ? "cursor-wait bg-muted text-muted-foreground"
+                : "glass-btn"
           }`}
         >
           {label}

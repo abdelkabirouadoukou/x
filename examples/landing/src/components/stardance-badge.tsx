@@ -15,7 +15,7 @@ export function StardanceBadge({
   const img = (
     <img
       src="/_x/image?url=https%3A%2F%2Fstardance.hackclub.com%2Fassets%2Flanding%2Fheader%2Fstardance-logo-df399a7f.png"
-      alt="Stardance — Hack Club"
+      alt="Stardance, a Hack Club project"
       className={variant === "chip" ? "relative z-10 h-4 w-auto" : "relative z-10 h-3 w-auto"}
     />
   );

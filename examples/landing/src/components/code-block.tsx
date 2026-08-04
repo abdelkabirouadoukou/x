@@ -7,6 +7,8 @@ interface CodeBlockProps {
   lang?: string;
   /** Terminal-style output with prompt prefixes and scanline texture. */
   variant?: "code" | "terminal";
+  /** Glassmorphism window — translucent, blurred, floating in the sky. */
+  glass?: boolean;
 }
 
 function TerminalBody({ code, lang }: { code: string; lang: string }) {
@@ -62,26 +64,43 @@ function TerminalBody({ code, lang }: { code: string; lang: string }) {
   );
 }
 
-export function CodeBlock({ label, code, lang = "tsx", variant = "code" }: CodeBlockProps) {
+export function CodeBlock({
+  label,
+  code,
+  lang = "tsx",
+  variant = "code",
+  glass = false,
+}: CodeBlockProps) {
   const isTerminal = variant === "terminal" || lang === "bash" || lang === "tree";
 
   return (
     <div
-      className="code-block mt-6 overflow-hidden rounded-2xl border shadow-xl"
-      style={{
-        borderColor: "var(--terminal-border)",
-        backgroundColor: "var(--terminal-bg)",
-        boxShadow: "var(--terminal-glow)",
-      }}
+      className={`code-block overflow-hidden rounded-2xl ${glass ? "code-block-glass" : "mt-6"}`}
+      style={
+        glass
+          ? undefined
+          : {
+              border: "1px solid var(--terminal-border)",
+              backgroundColor: "var(--terminal-bg)",
+              boxShadow: "var(--terminal-glow)",
+            }
+      }
     >
       <div
         className="flex items-center justify-between gap-3 border-b px-4 py-2.5"
-        style={{ borderColor: "var(--terminal-border)", backgroundColor: "var(--terminal-bar)" }}
+        style={
+          glass
+            ? { borderColor: "rgba(255,255,255,0.1)" }
+            : {
+                borderColor: "var(--terminal-border)",
+                backgroundColor: "var(--terminal-bar)",
+              }
+        }
       >
         <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#71717a]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#52525b]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#3f3f46]" />
         </div>
         <span
           className="truncate font-mono text-[11px] tracking-wide"
@@ -109,9 +128,11 @@ export function CodeBlock({ label, code, lang = "tsx", variant = "code" }: CodeB
 export function TerminalBlock({
   label,
   code,
+  glass = false,
 }: {
   label: string;
   code: string;
+  glass?: boolean;
 }): ReactNode {
-  return <CodeBlock label={label} code={code} lang="bash" variant="terminal" />;
+  return <CodeBlock label={label} code={code} lang="bash" variant="terminal" glass={glass} />;
 }

@@ -108,10 +108,11 @@ export default function LeakCheck() {
   const done = !running && timeLeft === 0;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/50 px-4 py-2.5">
+    <div className="glass overflow-hidden rounded-2xl">
+      <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-muted/40 px-4 py-2.5">
         <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          <span className="h-2 w-2 rounded-full bg-secondary" /> Leak Check
+          <span className="h-2 w-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(255,255,255,0.4)]" />{" "}
+          Leak Check
         </span>
         <span className="font-mono text-[11px] text-muted-foreground">
           score {score} · misses {misses} · best {best}
@@ -119,25 +120,25 @@ export default function LeakCheck() {
       </div>
       <div className="h-1 w-full bg-muted">
         <div
-          className="h-full bg-secondary transition-[width] duration-100 linear"
+          className="h-full bg-secondary shadow-[0_0_8px_rgba(255,255,255,0.35)] transition-[width] duration-100 linear"
           style={{ width: `${(timeLeft / ROUND_MS) * 100}%` }}
         />
       </div>
 
-      <div className="relative h-72 overflow-hidden bg-background">
+      <div className="relative h-72 overflow-hidden bg-background/60">
         {!running && !done && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
             <p className="text-sm text-muted-foreground">
               Click only the{" "}
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+              <code className="rounded-lg border border-primary/25 bg-accent px-1.5 py-0.5 font-mono text-xs text-accent-foreground">
                 THEXJS_PUBLIC_
               </code>{" "}
-              vars before they land. Everything else is a secret — let it fall.
+              vars before they land. Everything else is a secret. Let it fall.
             </p>
             <button
               type="button"
               onClick={start}
-              className="stamp-press inline-flex h-9 items-center rounded-lg bg-secondary px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90"
+              className="aqua-btn inline-flex h-9 px-5 text-sm font-semibold"
             >
               Start 30s run
             </button>
@@ -149,7 +150,7 @@ export default function LeakCheck() {
             <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
               Time's up
             </p>
-            <p className="font-display text-3xl font-bold text-foreground">{score} pts</p>
+            <p className="lcd text-5xl leading-none">{score} pts</p>
             <p className="text-sm text-muted-foreground">
               {misses === 0
                 ? "Not one secret leaked. That's the whole point."
@@ -158,7 +159,7 @@ export default function LeakCheck() {
             <button
               type="button"
               onClick={start}
-              className="stamp-press mt-2 inline-flex h-9 items-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted"
+              className="glass-btn mt-2 inline-flex h-9 px-5 text-sm font-medium"
             >
               Run it again
             </button>
@@ -176,7 +177,7 @@ export default function LeakCheck() {
                 left: `${item.left}%`,
                 animationDuration: `${item.duration}ms`,
               }}
-              className={`leak-item absolute top-0 whitespace-nowrap rounded-md border px-2 py-1 font-mono text-[11px] font-medium shadow-sm ${
+              className={`leak-item absolute top-0 whitespace-nowrap rounded-full border px-2.5 py-1 font-mono text-[11px] font-medium shadow-sm backdrop-blur-sm ${
                 item.safe
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : "border-secondary/40 bg-secondary/10 text-secondary"

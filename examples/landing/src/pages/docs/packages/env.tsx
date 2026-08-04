@@ -65,7 +65,7 @@ url()                  string parseable by new URL(...)`}
       <h2 className="mt-12 text-xl font-bold tracking-tight">Custom validators</h2>
       <p className="mt-3 text-muted-foreground">
         Each validator is{" "}
-        <span className="text-foreground">{"{ parse(input: string | undefined): T }"}</span> — write
+        <span className="text-foreground">{"{ parse(input: string | undefined): T }"}</span>. Write
         your own for anything not covered:
       </p>
       <CodeBlock
@@ -88,7 +88,7 @@ function json<T>(): EnvValidator<T> {
         to the browser. <span className="text-foreground">clientPrefix</span> enforces that every
         client key starts with that prefix (e.g.{" "}
         <span className="text-foreground">NEXT_PUBLIC_</span>,{" "}
-        <span className="text-foreground">PUBLIC_</span>) — a key that does not match fails
+        <span className="text-foreground">PUBLIC_</span>). A key that does not match fails
         validation, so you cannot accidentally leak a server-only variable through the client
         schema.
       </p>
@@ -96,7 +96,7 @@ function json<T>(): EnvValidator<T> {
       <h2 className="mt-12 text-xl font-bold tracking-tight">Notes</h2>
       <ul className="mt-3 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
-          Every field is currently required — no built-in{" "}
+          Every field is currently required, with no built-in{" "}
           <span className="text-foreground">optional()</span> or{" "}
           <span className="text-foreground">default()</span>. For optional vars, read from{" "}
           <span className="text-foreground">process.env</span> directly or write a validator with a

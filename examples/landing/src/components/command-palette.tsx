@@ -70,7 +70,7 @@ const NAV_COMMANDS: Cmd[] = [
     icon: MapPin,
   },
   { label: "Features", hint: "/features", href: "/features", icon: MapPin },
-  { label: "The x Arcade", hint: "/play — three tiny games", href: "/play", icon: Gamepad2 },
+  { label: "The x Arcade", hint: "/play, three tiny games", href: "/play", icon: Gamepad2 },
   {
     label: "GitHub",
     hint: "opens in a new tab",
@@ -155,11 +155,11 @@ export function CommandPalette() {
       }}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+        className="glass w-full max-w-lg overflow-hidden rounded-2xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2.5 border-b border-border px-4">
+        <div className="flex items-center gap-2.5 border-b border-border/70 px-4">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <input
             ref={inputRef}
@@ -171,7 +171,7 @@ export function CommandPalette() {
             placeholder="Jump to a page, or type a command…"
             className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
-          <kbd className="hidden shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:block">
+          <kbd className="hidden shrink-0 rounded-lg border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:block">
             esc
           </kbd>
         </div>
@@ -188,8 +188,10 @@ export function CommandPalette() {
               type="button"
               onMouseEnter={() => setActive(i)}
               onClick={() => run(cmd)}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-                i === active ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
+                i === active
+                  ? "bg-primary/15 text-primary"
+                  : "text-foreground hover:bg-white/[0.06]"
               }`}
             >
               <cmd.icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
@@ -220,11 +222,12 @@ export function CommandPaletteTrigger({ className = "" }: { className?: string }
           window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
         }, 0);
       }}
-      className={`inline-flex h-8 items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground ${className}`}
+      className={`inline-flex h-9 items-center gap-2 rounded-full border border-chrome-lo bg-white/[0.05] px-2.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground ${className}`}
+      aria-label="Open search palette"
     >
       <Search className="h-3.5 w-3.5" />
       <span className="hidden sm:inline">Search</span>
-      <kbd className="hidden rounded border border-border bg-muted px-1 font-mono text-[10px] sm:inline">
+      <kbd className="hidden rounded-md border border-border bg-muted px-1 font-mono text-[10px] sm:inline">
         ⌘K
       </kbd>
     </button>

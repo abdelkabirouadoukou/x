@@ -15,7 +15,7 @@ export default function DocPage(_props: RouteProps) {
         Call server-side functions from the browser without writing REST endpoints. Server functions
         live in <span className="text-foreground">src/actions/</span>. Import one into a client
         component and call it like a normal function, or call it manually with{" "}
-        <span className="text-foreground">fetch</span> — both compile down to the same request.
+        <span className="text-foreground">fetch</span>. Both compile down to the same request.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Defining server functions</h2>
@@ -141,7 +141,7 @@ export default function GreetForm() {
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Server functions from loaders</h2>
       <p className="mt-3 text-muted-foreground">
-        You can also import and call server functions directly in loaders — no HTTP needed since
+        You can also import and call server functions directly in loaders. No HTTP needed, since
         they share the same process.
       </p>
       <CodeBlock

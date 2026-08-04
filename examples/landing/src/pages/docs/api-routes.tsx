@@ -79,7 +79,7 @@ export const POST: ApiHandler = async ({ request }) => {
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">API route tree</h2>
       <p className="mt-3 text-muted-foreground">
-        API routes support the same file-tree conventions as pages — nested folders, dynamic
+        API routes support the same file-tree conventions as pages: nested folders, dynamic
         segments, and index files.
       </p>
       <CodeBlock

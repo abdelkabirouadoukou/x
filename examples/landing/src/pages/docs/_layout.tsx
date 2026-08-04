@@ -54,7 +54,7 @@ function SidebarNav() {
                 <a
                   href={link.href}
                   data-doc-link={link.href}
-                  className="doc-nav-link block rounded-lg border border-transparent px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:border-border/60 hover:bg-muted/50 hover:text-foreground"
+                  className="doc-nav-link block rounded-xl border border-transparent px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:border-chrome-lo hover:bg-white/[0.05] hover:text-foreground"
                 >
                   {link.label}
                 </a>
@@ -73,7 +73,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
       <button
         id="sidebar-btn"
         type="button"
-        className="fixed left-4 top-[4.25rem] z-50 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+        className="fixed left-4 top-[4.25rem] z-50 flex h-11 w-11 items-center justify-center rounded-xl border border-chrome-lo bg-background/80 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-white/[0.08] hover:text-foreground lg:hidden"
         aria-label="Toggle sidebar"
       >
         <Menu className="h-4 w-4 btn-icon-open" />

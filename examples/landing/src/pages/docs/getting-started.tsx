@@ -32,7 +32,7 @@ bun run dev`}
       />
       <p className="mt-4 text-muted-foreground">
         Press Enter at the template prompt to use <span className="text-foreground">default</span>{" "}
-        (recommended) — a single home page. Your app will be running at{" "}
+        (recommended), a single home page. Your app will be running at{" "}
         <span className="text-foreground">http://localhost:3000</span>.
       </p>
 

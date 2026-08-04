@@ -63,21 +63,21 @@ function highlightBash(code: string): ReactNode {
       return (
         <span key={i} className="block">
           {indent}
-          <span className="text-[#7ee787]">$</span>
+          <span className="text-[#ffffff]">$</span>
           {rest}
         </span>
       );
     }
     if (trimmed === "" || trimmed.startsWith("//")) {
       return (
-        <span key={i} className="block text-[#848d97]">
+        <span key={i} className="block text-[#71717a]">
           {line}
         </span>
       );
     }
     if (trimmed.startsWith("  ")) {
       return (
-        <span key={i} className="block text-[#848d97]">
+        <span key={i} className="block text-[#71717a]">
           {line}
         </span>
       );
@@ -95,7 +95,7 @@ function highlightTree(code: string): ReactNode {
     const s = line.trimStart();
     if (s.endsWith("/")) {
       return (
-        <span key={i} className="block text-[#79c0ff]">
+        <span key={i} className="block text-[#e4e4e7]">
           {line}
         </span>
       );
@@ -107,7 +107,7 @@ function highlightTree(code: string): ReactNode {
       return (
         <span key={i} className="block">
           {before}
-          <span className="text-[#848d97]">{after}</span>
+          <span className="text-[#71717a]">{after}</span>
         </span>
       );
     }
@@ -157,7 +157,7 @@ function tokenizeLine(line: string): ReactNode[] {
 
     if (line[i] === "/" && line[i + 1] === "/") {
       tokens.push(
-        <span key={key++} className="text-[#848d97]">
+        <span key={key++} className="text-[#71717a]">
           {line.slice(i)}
         </span>,
       );
@@ -186,7 +186,7 @@ function tokenizeLine(line: string): ReactNode[] {
         i++;
       }
       tokens.push(
-        <span key={key++} className="text-[#a5d6ff]">
+        <span key={key++} className="text-[#e4e4e7]">
           {str}
         </span>,
       );
@@ -215,7 +215,7 @@ function tokenizeLine(line: string): ReactNode[] {
         i++;
       }
       tokens.push(
-        <span key={key++} className="text-[#a5d6ff]">
+        <span key={key++} className="text-[#e4e4e7]">
           {str}
         </span>,
       );
@@ -249,7 +249,7 @@ function tokenizeLine(line: string): ReactNode[] {
         i++;
       }
       tokens.push(
-        <span key={key++} className="text-[#a5d6ff]">
+        <span key={key++} className="text-[#e4e4e7]">
           {str}
         </span>,
       );
@@ -267,7 +267,7 @@ function tokenizeLine(line: string): ReactNode[] {
         i++;
       }
       tokens.push(
-        <span key={key++} className="text-[#79c0ff]">
+        <span key={key++} className="text-[#71717a]">
           {num}
         </span>,
       );
@@ -289,13 +289,13 @@ function tokenizeLine(line: string): ReactNode[] {
       if (name) {
         tag += name;
         tokens.push(
-          <span key={key++} className="text-[#ffa657]">
+          <span key={key++} className="text-[#71717a]">
             {tag}
           </span>,
         );
       } else {
         tokens.push(
-          <span key={key++} className="text-[#e6edf3]">
+          <span key={key++} className="text-[#f4f4f5]">
             {tag}
           </span>,
         );
@@ -305,7 +305,7 @@ function tokenizeLine(line: string): ReactNode[] {
 
     if (i < line.length && line[i]! === "/" && i + 1 < line.length && line[i + 1]! === ">") {
       tokens.push(
-        <span key={key++} className="text-[#ffa657]">
+        <span key={key++} className="text-[#71717a]">
           {"/> "}
         </span>,
       );
@@ -327,7 +327,7 @@ function tokenizeLine(line: string): ReactNode[] {
         !restTrimmed.startsWith("=>")
       ) {
         tokens.push(
-          <span key={key++} className="text-[#79c0ff]">
+          <span key={key++} className="text-[#71717a]">
             {word}
           </span>,
         );
@@ -342,13 +342,13 @@ function tokenizeLine(line: string): ReactNode[] {
 
       if (KEYWORDS.has(word)) {
         tokens.push(
-          <span key={key++} className="text-[#ff7b72]">
+          <span key={key++} className="text-[#ffffff]">
             {word}
           </span>,
         );
       } else if (word.length > 0 && word[0]! >= "A" && word[0]! <= "Z") {
         tokens.push(
-          <span key={key++} className="text-[#d2a8ff]">
+          <span key={key++} className="text-[#e4e4e7]">
             {word}
           </span>,
         );

@@ -54,9 +54,9 @@ export function EasterEgg() {
     <>
       {runId > 0 && <span key={runId} className="shooting-star run" aria-hidden="true" />}
       {toast && (
-        <output className="fixed bottom-5 left-1/2 z-[210] -translate-x-1/2 rounded-full border border-border bg-card px-4 py-2 text-xs font-medium shadow-lg">
+        <output className="fixed bottom-5 left-1/2 z-[210] -translate-x-1/2 rounded-full border border-chrome-lo bg-card/90 px-4 py-2 text-xs font-medium shadow-lg backdrop-blur">
           ✨ You found the shortcut. Press{" "}
-          <kbd className="mx-0.5 rounded border border-border px-1 font-mono">⌘K</kbd> for more.
+          <kbd className="mx-0.5 rounded-md border border-border px-1 font-mono">⌘K</kbd> for more.
         </output>
       )}
     </>
