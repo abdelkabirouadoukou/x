@@ -273,7 +273,16 @@ export function defineAuth(config: AuthConfig): Auth {
     const token = readCookie(req, SESSION_COOKIE);
     if (!token) return null;
     const hashed = await hash(token);
-    const session = await resolved.store.find(hashed);
+    let session: Session | null;
+    try {
+      session = await resolved.store.find(hashed);
+    } catch (error) {
+      // A session store outage (DB down / connection lost) fails closed:
+      // treat the caller as signed out rather than crashing the request
+      // handler with a 500 on every authenticated request.
+      console.warn("[@thexjs/auth] session store lookup failed:", error);
+      return null;
+    }
     if (!session) return null;
     if (session.expiresAt <= Date.now()) {
       await resolved.store.revoke(hashed);
