@@ -22,7 +22,7 @@ writing.
 | Vercel adapter (output v3, config.json) | stable | yes | `adapter.test.ts` |
 | Layouts / middleware chains | stable | partial | scanning tested; multi-layer rendering less so |
 | Content collections (`scanContent`) | beta | yes | `content.test.ts`; frontmatter parser is a small custom YAML subset |
-| Data layer (SQLite/Postgres migrations) | beta | yes | `data/migrate.test.ts`; thin wrapper over `bun:sqlite` / `Bun.sql` |
+| Data layer (SQLite/Postgres migrations) | beta | yes | `data/migrate.test.ts`; retry/backoff + TLS pinned by `data/postgres.test.ts` |
 | Auth (`@thexjs/auth`) | stable | yes | `auth.test.ts` + `auth-failures.test.ts` (store outage, store swap, generic OAuth2) |
 | Islands / client hydration | beta | partial | build emits islands; runtime hydration tested via examples only |
 | Content-MDX | experimental | no | `.mdx` support exists but is the least exercised surface |
@@ -30,9 +30,9 @@ writing.
 
 ## Coverage debt (high → low priority)
 
-1. **Data layer**: WAL/FK setup and Postgres retry/backoff behavior. The
-   migration runner is now tested (`data/migrate.test.ts`), but the runtime
-   connection behaviors are not.
+1. **Data layer**: SQLite WAL/FK setup. The migration runner and Postgres
+   retry/backoff + TLS behaviors are tested (`data/migrate.test.ts`,
+   `data/postgres.test.ts`), but the SQLite connection options are not.
 2. **Content pipeline**: frontmatter parsing edge cases, content route
    generation, `.mdx` compile path.
 3. **Islands runtime**: hydration lifecycle, island props serialization,
