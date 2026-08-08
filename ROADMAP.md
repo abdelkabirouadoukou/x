@@ -71,8 +71,9 @@ Shipped items are listed with a pointer to where they landed.
    benchmarks or soak tests for SSR throughput, the rate limiter under load,
    or shared-store behavior across replicas.
 4. **Backup / disaster recovery**: documented backup and restore story for the
-   SQLite/Postgres data layer, plus runbook guidance for multi-instance
-   deployments.
+   SQLite/Postgres data layer (hot backup via SQLite backup API, pg_dump/pg_restore,
+   restore runbook + checklist) in `docs/data-layer`, plus runbook guidance for
+   multi-instance deployments.
 5. **Security response**: disclosure SLA in `SECURITY.md` — 48h acknowledgement,
    5-business-day triage, CVSS-aligned severity, 90-day coordinated disclosure,
    and a 12-month backport window for the previous major. Shipped; kept in the
