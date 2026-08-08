@@ -15,6 +15,7 @@ const sidebarSections = [
     title: "Packages",
     links: [
       { href: "/docs/packages/core", label: "@thexjs/core" },
+      { href: "/docs/packages/auth", label: "@thexjs/auth" },
       { href: "/docs/packages/cli", label: "@thexjs/cli" },
       { href: "/docs/packages/env", label: "@thexjs/env" },
       { href: "/docs/packages/adapter-vercel", label: "@thexjs/adapter-vercel" },

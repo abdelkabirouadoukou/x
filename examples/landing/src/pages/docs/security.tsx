@@ -151,6 +151,17 @@ await fetch("/__x/actions/greet/greet", {
         <span className="text-foreground">verifyOrigin</span>,{" "}
         <span className="text-foreground">verifyCsrfToken</span>.
       </p>
+      <p className="mt-4 text-muted-foreground">
+        The same module runs automatically on{" "}
+        <a href="/docs/packages/auth" className="text-primary underline underline-offset-2">
+          @thexjs/auth
+        </a>{" "}
+        endpoints: its POST routes (<span className="text-foreground">signin</span>,{" "}
+        <span className="text-foreground">signout</span>) call{" "}
+        <span className="text-foreground">checkCsrf</span> under the hood, so auth mutations get the
+        same Origin/Referer (and optional double-submit token) verification as server functions, no
+        extra wiring needed.
+      </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">Security headers</h2>
       <p className="mt-3 text-muted-foreground">
