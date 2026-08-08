@@ -174,11 +174,11 @@ export function defineAuth(config: AuthConfig): Auth {
     if (typeof user.email === "string") snapshot.email = user.email;
     if (config.resolveRoles) {
       const granted = await config.resolveRoles(user);
-      if (Array.isArray(granted.roles)) snapshot.roles = granted.roles;
-      if (Array.isArray(granted.permissions)) snapshot.permissions = granted.permissions;
+      if (Array.isArray(granted.roles)) snapshot.roles = [...granted.roles];
+      if (Array.isArray(granted.permissions)) snapshot.permissions = [...granted.permissions];
     } else {
-      if (Array.isArray(user.roles)) snapshot.roles = user.roles;
-      if (Array.isArray(user.permissions)) snapshot.permissions = user.permissions;
+      if (Array.isArray(user.roles)) snapshot.roles = [...user.roles];
+      if (Array.isArray(user.permissions)) snapshot.permissions = [...user.permissions];
     }
     return snapshot;
   };

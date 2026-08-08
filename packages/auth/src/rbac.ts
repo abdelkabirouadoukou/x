@@ -25,6 +25,7 @@ export function hasRole(session: Session | null, role: string): boolean {
 
 /** True when the session is present and carries any of `roles`. */
 export function hasAnyRole(session: Session | null, roles: string[]): boolean {
+  if (session === null) return false;
   return roles.some((role) => hasRole(session, role));
 }
 
@@ -35,6 +36,7 @@ export function hasPermission(session: Session | null, permission: string): bool
 
 /** True when the session is present and carries every `permission`. */
 export function hasAllPermissions(session: Session | null, permissions: string[]): boolean {
+  if (session === null) return false;
   return permissions.every((permission) => hasPermission(session, permission));
 }
 

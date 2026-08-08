@@ -27,6 +27,23 @@ function sessionWith(roles: string[] = [], permissions: string[] = []): Session 
   };
 }
 
+function extractCookie(res: Response, name: string): string | null {
+  const cookies = res.headers.getSetCookie();
+  for (const c of cookies) {
+    const first = c.split(";")[0] ?? "";
+    const eq = first.indexOf("=");
+    if (eq !== -1 && first.slice(0, eq) === name) return first.slice(eq + 1);
+  }
+  return null;
+}
+
+/** The full `x_session=...` cookie header from a setSessionCookie response. */
+function requireSessionCookie(res: Response): string {
+  const cookie = extractCookie(res, SESSION_COOKIE);
+  if (cookie === null) throw new Error("expected a session cookie in the response");
+  return `${SESSION_COOKIE}=${cookie}`;
+}
+
 describe("role checks", () => {
   test("hasRole is true only when the role is present", () => {
     expect(hasRole(sessionWith(["admin"]), "admin")).toBe(true);
@@ -51,6 +68,13 @@ describe("role checks", () => {
     const session = sessionWith([], ["posts:read", "posts:write"]);
     expect(hasAllPermissions(session, ["posts:read", "posts:write"])).toBe(true);
     expect(hasAllPermissions(session, ["posts:read", "posts:delete"])).toBe(false);
+  });
+
+  test("a null session fails closed even with an empty list", () => {
+    expect(hasAllPermissions(null, [])).toBe(false);
+    expect(hasAnyRole(null, [])).toBe(false);
+    expect(hasPermission(null, "")).toBe(false);
+    expect(hasRole(null, "")).toBe(false);
   });
 });
 
@@ -168,7 +192,7 @@ describe("middleware guards", () => {
       { id: "u_1", roles: ["admin"] },
       "local",
     );
-    const cookie = res.headers.getSetCookie()[0]?.split(";")[0] as string;
+    const cookie = requireSessionCookie(res);
 
     const middleware = auth.requireRole("admin");
     const next = await middleware(
@@ -198,7 +222,7 @@ describe("middleware guards", () => {
     });
 
     const res = await auth.setSessionCookie(new Response(null), { id: "u_1" }, "local");
-    const cookie = res.headers.getSetCookie()[0]?.split(";")[0] as string;
+    const cookie = requireSessionCookie(res);
     const session = await auth.getSession(
       new Request("http://localhost/", { headers: { cookie } }),
     );
@@ -211,6 +235,69 @@ describe("middleware guards", () => {
       async () => new Response("ok"),
     );
     expect(next.status).toBe(200);
+  });
+
+  test("session snapshot is immune to later source-array mutation (fallback path)", async () => {
+    const db = new Database(":memory:");
+    const auth = defineAuth({
+      secret: "test-secret",
+      store: createSQLiteSessionStore({ db }),
+      providers: [
+        {
+          id: "local",
+          name: "Local",
+          type: "credentials",
+          async authorize() {
+            return { id: "u_1", roles: ["admin"], permissions: ["posts:write"] };
+          },
+        },
+      ],
+    });
+
+    const user = { id: "u_1", roles: ["admin"], permissions: ["posts:write"] };
+    const res = await auth.setSessionCookie(new Response(null), user, "local");
+    const cookie = requireSessionCookie(res);
+
+    user.roles.push("root");
+    user.permissions.pop();
+
+    const session = await auth.getSession(
+      new Request("http://localhost/", { headers: { cookie } }),
+    );
+    expect(session?.user.roles).toEqual(["admin"]);
+    expect(session?.user.permissions).toEqual(["posts:write"]);
+  });
+
+  test("session snapshot is immune to later resolver-result mutation", async () => {
+    const db = new Database(":memory:");
+    const granted = { roles: ["admin"], permissions: ["posts:write"] };
+    const auth = defineAuth({
+      secret: "test-secret",
+      store: createSQLiteSessionStore({ db }),
+      resolveRoles: async () => granted,
+      providers: [
+        {
+          id: "local",
+          name: "Local",
+          type: "credentials",
+          async authorize() {
+            return { id: "u_1", email: "admin@example.com" };
+          },
+        },
+      ],
+    });
+
+    const res = await auth.setSessionCookie(new Response(null), { id: "u_1" }, "local");
+    const cookie = requireSessionCookie(res);
+
+    granted.roles.push("root");
+    granted.permissions.pop();
+
+    const session = await auth.getSession(
+      new Request("http://localhost/", { headers: { cookie } }),
+    );
+    expect(session?.user.roles).toEqual(["admin"]);
+    expect(session?.user.permissions).toEqual(["posts:write"]);
   });
 
   test("roles come from the provider's user when no resolveRoles hook is set", async () => {
@@ -235,7 +322,7 @@ describe("middleware guards", () => {
       { id: "u_1", roles: ["editor"] },
       "local",
     );
-    const cookie = res.headers.getSetCookie()[0]?.split(";")[0] as string;
+    const cookie = requireSessionCookie(res);
     const session = await auth.getSession(
       new Request("http://localhost/", { headers: { cookie } }),
     );
