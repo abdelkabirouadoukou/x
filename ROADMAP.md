@@ -46,10 +46,19 @@ writing.
 - Broaden the Vercel adapter integration test to cover layouts + middleware
   chains and islands in the rendered output.
 
-## Enterprise readiness (tracking)
+## Enterprise readiness
 
 What needs to hold before teams run this in production at scale. This is a
 tracking list, not a commitment schedule — each item gets its own design first.
+Shipped items are listed with a pointer to where they landed.
+
+### Shipped
+
+- **Release discipline** — first tagged release (`1.0.0` baseline across all
+  `@thexjs/*` packages) shipped via the changesets flow; versioning policy in
+  `VERSIONING.md`, operations in `CONTRIBUTING.md#releasing`.
+
+### Tracking (remaining)
 
 1. **Observability**: production-grade metrics. The framework currently emits
    health/readyz endpoints and an error-reporter hook; OTel/Prometheus metric
@@ -61,12 +70,10 @@ tracking list, not a commitment schedule — each item gets its own design first
 3. **Scale validation**: load and concurrency testing. No published
    benchmarks or soak tests for SSR throughput, the rate limiter under load,
    or shared-store behavior across replicas.
-4. **Release discipline**: first tagged release with strict semver + changelog
-   via changesets for all `@thexjs/*` packages (currently pre-1.0, in flux).
-5. **Backup / disaster recovery**: documented backup and restore story for the
+4. **Backup / disaster recovery**: documented backup and restore story for the
    SQLite/Postgres data layer, plus runbook guidance for multi-instance
    deployments.
-6. **Security response**: a security disclosure SLA. `SECURITY.md` documents
+5. **Security response**: a security disclosure SLA. `SECURITY.md` documents
    reporting, but there is no committed response-time target or coordinated
    disclosure process yet.
 

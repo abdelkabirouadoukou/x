@@ -113,8 +113,8 @@ Short description of the change, written from the user's perspective.
 ```
 
 Bump levels: `patch` for fixes/refactors, `minor` for new features, `major`
-for breaking changes (the `@thexjs/*` packages are pre-1.0, so prefer `patch`
-unless something genuinely breaks).
+for breaking changes. See `VERSIONING.md` for what counts as breaking, the
+deprecation window before removal, and how pre-release (canary/next) tags work.
 
 ### What happens on merge to main
 
