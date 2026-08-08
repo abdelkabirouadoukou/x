@@ -51,10 +51,11 @@ writing.
 What needs to hold before teams run this in production at scale. This is a
 tracking list, not a commitment schedule — each item gets its own design first.
 
-1. **Observability**: production-grade metrics. The framework currently emits
-   health/readyz endpoints and an error-reporter hook; OTel/Prometheus metric
-   emission (request counts, latency histograms, build/runtime errors) is not
-   wired up.
+1. **Observability**: production-grade metrics. `createInMemoryMetrics()`
+   (Prometheus text `/metrics`) + `createOtlpMetricsReporter()` wired into
+   `createApp` via `observability.metrics` — request counts, latency histograms,
+   error and rate-limit-rejection counters. Shipped; keep tracking until
+   reporter flush on shutdown is exercised end-to-end in a test.
 2. **Authorization**: role-based access control / permissions layer. Sessions
    exist (`@thexjs/auth`), but there is no framework-level concept of roles,
    scopes, or per-route authorization guards.
