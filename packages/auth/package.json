@@ -1,0 +1,45 @@
+{
+  "name": "@thexjs/auth",
+  "version": "1.0.0",
+  "description": "Plug-and-play authentication for x framework apps: credentials (Argon2 via Bun.password), OAuth2 and GitHub providers, session stores on the x data layer, and a catch-all API handler wired to the core CSRF module.",
+  "keywords": [
+    "auth",
+    "authentication",
+    "oauth2",
+    "github",
+    "sessions",
+    "credentials",
+    "argon2",
+    "bun",
+    "react",
+    "framework",
+    "x"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --target node18",
+    "prepublishOnly": "bun run build"
+  },
+  "peerDependencies": {
+    "@thexjs/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@thexjs/core": "workspace:*",
+    "tsup": "^8.3.0"
+  }
+}
