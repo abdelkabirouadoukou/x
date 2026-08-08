@@ -7,6 +7,7 @@ import {
   Database,
   FileJson,
   Globe,
+  KeyRound,
   Layers,
   Layout,
   MousePointerClick,
@@ -46,6 +47,12 @@ const packageSections = [
     title: "@thexjs/core",
     desc: "Rendering engine: routing, SSR/SSG, islands, server functions, data layer.",
     href: "/docs/packages/core",
+  },
+  {
+    icon: KeyRound,
+    title: "@thexjs/auth",
+    desc: "Plug-and-play auth: credentials and OAuth2 (GitHub), sessions, and CSRF.",
+    href: "/docs/packages/auth",
   },
   {
     icon: Terminal,

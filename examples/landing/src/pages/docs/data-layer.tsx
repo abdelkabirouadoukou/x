@@ -137,6 +137,18 @@ export { db };`}
         filenames, so you can log or test which migrations ran.
       </p>
 
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Sessions, not hand-rolled</h2>
+      <p className="mt-3 text-muted-foreground">
+        If you need sessions on top of this,{" "}
+        <a href="/docs/packages/auth" className="text-primary underline underline-offset-2">
+          @thexjs/auth
+        </a>{" "}
+        provides prebuilt credentials and OAuth2 (GitHub) sign-in backed by an{" "}
+        <span className="text-foreground">x_sessions</span> table in SQLite or Postgres — HMAC'd,
+        revocable session tokens, Argon2 password hashing, and automatic CSRF on auth endpoints —
+        instead of hand-rolling your own session store.
+      </p>
+
       <div className="mt-16 border-t border-border pt-8">
         <a
           href="/docs"
