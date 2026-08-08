@@ -1,0 +1,87 @@
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { renderToString } from "react-dom/server";
+import { Island, IslandProvider, createIslandRegistry } from "./island";
+import { generateHydrateEntry } from "./island-bundle";
+
+const FIXTURE_DIR = join(import.meta.dir, "__fixtures__/islands");
+const ROUTE_PATH = join(FIXTURE_DIR, "route.tsx");
+
+const ROUTE_SOURCE = `import { useState } from "react";
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount((c) => c + 1)}>Like {count}</button>;
+}
+
+export const islands = { Counter };
+`;
+
+// SSR an island exactly as the request pipeline does (IslandProvider + Island),
+// so the markup that reaches the browser carries the data-island wrapper.
+async function ssrIsland(): Promise<string> {
+  const registry = createIslandRegistry();
+  const { Counter } = await import(ROUTE_PATH);
+  return renderToString(
+    <IslandProvider registry={registry}>
+      <Island name="Counter">
+        <Counter />
+      </Island>
+    </IslandProvider>,
+  );
+}
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 30));
+
+let entryIndex = 0;
+
+// Each test writes a fresh entry file so the dynamic import isn't cached — the
+// hydration code must actually run against that test's DOM.
+async function hydrate(): Promise<void> {
+  const entryPath = join(FIXTURE_DIR, `entry-${entryIndex++}.tsx`);
+  writeFileSync(entryPath, generateHydrateEntry(ROUTE_PATH));
+  await import(entryPath);
+  await tick();
+}
+
+beforeAll(() => {
+  mkdirSync(FIXTURE_DIR, { recursive: true });
+  writeFileSync(ROUTE_PATH, ROUTE_SOURCE);
+  GlobalRegistrator.register();
+});
+
+afterAll(() => {
+  GlobalRegistrator.unregister();
+  rmSync(FIXTURE_DIR, { recursive: true, force: true });
+});
+
+describe("island hydration runtime", () => {
+  test("SSR island output survives the hydration round-trip", async () => {
+    document.body.innerHTML = await ssrIsland();
+    expect(document.querySelector("button")?.textContent).toBe("Like 0");
+
+    await hydrate();
+
+    const island = document.querySelector("[data-island='Counter']");
+    expect(island).not.toBeNull();
+    const button = island?.querySelector("button");
+    expect(button).not.toBeNull();
+    expect(button?.textContent).toBe("Like 0");
+  });
+
+  test("event handlers wired during hydration actually fire", async () => {
+    document.body.innerHTML = await ssrIsland();
+    await hydrate();
+
+    const button = document.querySelector("button");
+    expect(button?.textContent).toBe("Like 0");
+    button?.click();
+    await tick();
+    expect(document.querySelector("button")?.textContent).toBe("Like 1");
+    document.querySelector("button")?.click();
+    await tick();
+    expect(document.querySelector("button")?.textContent).toBe("Like 2");
+  });
+});

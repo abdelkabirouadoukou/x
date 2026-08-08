@@ -24,7 +24,7 @@ writing.
 | Content collections (`scanContent`) | beta | yes | `content.test.ts`; frontmatter parser is a small custom YAML subset |
 | Data layer (SQLite/Postgres migrations) | beta | yes | `data/migrate.test.ts`; thin wrapper over `bun:sqlite` / `Bun.sql` |
 | Auth (`@thexjs/auth`) | stable | yes | `auth.test.ts` + `auth-failures.test.ts` (store outage, store swap, generic OAuth2) |
-| Islands / client hydration | beta | partial | build emits islands; runtime hydration tested via examples only |
+| Islands / client hydration | beta | yes | build emits islands; runtime hydration pinned by `island-bundle.test.ts` (mount, SSR round-trip, event wiring) |
 | Content-MDX | experimental | no | `.mdx` support exists but is the least exercised surface |
 | Observability (health/readyz, metrics) | beta | partial | health checked in `createApp-request.test.ts`; reporter flushing untested |
 
@@ -35,11 +35,9 @@ writing.
    connection behaviors are not.
 2. **Content pipeline**: frontmatter parsing edge cases, content route
    generation, `.mdx` compile path.
-3. **Islands runtime**: hydration lifecycle, island props serialization,
-   event wiring.
-4. **Observability reporters**: error reporter flush on shutdown, metric
+3. **Observability reporters**: error reporter flush on shutdown, metric
    emission.
-5. **CLI `dev`**: dev-mode file watching / route rebuild (exercised manually,
+4. **CLI `dev`**: dev-mode file watching / route rebuild (exercised manually,
    not automated).
 
 ## Near-term (0.x)

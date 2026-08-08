@@ -21,7 +21,9 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.31.1",
+    "@happy-dom/global-registrator": "^20.11.2",
     "@types/bun": "latest",
+    "happy-dom": "^20.11.2",
     "typescript": "^5.9.3"
   },
   "overrides": {
