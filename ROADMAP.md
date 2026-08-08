@@ -15,7 +15,7 @@ writing.
 | SSR / static rendering (`mode`) | stable | yes | `phase3.test.ts`, `createApp-request.test.ts` |
 | API routes (method dispatch, 405) | stable | yes | `createApp-request.test.ts` |
 | Server functions (dispatch, CSRF) | stable | yes | `server-functions.test.ts` |
-| Security headers / rate limiting | stable | yes | `security/security.test.ts`, `createApp-request.test.ts` |
+| Security headers / rate limiting | stable | yes | `security/security.test.ts`, `security/rate-limit-redis.test.ts` |
 | Image proxy (SSRF allow-list) | stable | yes | `images/proxy.test.ts` |
 | Env validation (`@thexjs/env`) | stable | yes | `packages/env/src/index.test.ts` |
 | Build toolchain (`x build`, `.x/` output) | stable | yes | `build.test.ts`, `cli.test.ts` |
