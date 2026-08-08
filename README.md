@@ -60,6 +60,7 @@ Other templates: `basic` (pages + API + auth + dashboard), `blog` (markdown cont
 packages/core           file-based router, SSR renderer, middleware
 packages/cli             x dev / x build / x start
 packages/env             typed env variable validation
+packages/auth            credentials + OAuth2/GitHub auth, sessions, CSRF
 packages/create-thexjs-app  the scaffolder (bun create thexjs-app@latest)
 examples/default         minimal starter
 examples/basic           pages, API routes, auth, dashboard
@@ -220,6 +221,24 @@ const imageProxy = createImageProxyHandler({ remoteHosts: ["cdn.example.com"] })
 
 Drop a `_middleware.ts` in any pages folder it runs for that folder and everything under it. Useful for auth checks, redirects, logging.
 
+## Authentication
+
+`@thexjs/auth` adds credentials (username/password) and OAuth2 (including a GitHub preset) sign-in with one `defineAuth()` call. Passwords are hashed with Argon2 via `Bun.password`, session tokens are HMAC'd at rest and revocable, sessions live in SQLite or Postgres through the data layer, and auth POST endpoints run the core CSRF module automatically. Mount it on a single catch-all API route:
+
+```ts
+import { defineAuth, createSQLiteSessionStore } from "@thexjs/auth";
+
+export const auth = defineAuth({
+  secret: process.env.AUTH_SECRET!,
+  store: createSQLiteSessionStore(),
+  providers: [{ id: "github", name: "GitHub", type: "oauth", clientId: "...", clientSecret: "..." }],
+});
+
+// api/auth/[...auth].ts — forward GET/POST to auth.handleRequest(req)
+```
+
+See [packages/auth/README.md](packages/auth/README.md) for the endpoint map (`/api/auth/signin/:id`, `/callback/:id`, `/signout`, `/session`) and `getSession()` usage.
+
 ## Data layer
 
 Built-in SQLite (`connectSQLite`, zero config, good for dev) and Postgres (`connectPostgres`, connection pooling, for production) with versioned migrations for both.
@@ -262,7 +281,7 @@ signal you should pin versions (`^0.1.0` will still allow `0.1.x → 0.2.0`).
   `NPM_TOKEN` secret, which is currently not configured (see
   `.github/workflows/release.yml`).
 - Published packages: `@thexjs/core`, `@thexjs/cli`, `@thexjs/env`,
-  `@thexjs/adapter-vercel`, `create-thexjs-app`.
+  `@thexjs/auth`, `@thexjs/adapter-vercel`, `create-thexjs-app`.
 
 ## Known limitations
 

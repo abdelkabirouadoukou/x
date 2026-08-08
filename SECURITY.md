@@ -154,17 +154,33 @@ STRIPE_SECRET_KEY=sk_live_...
 
 ## Authentication & sessions
 
-The framework does not ship an opinionated auth system; it ships the
-primitives you build one on (cookies, middleware, server functions, data
-layer). The `basic` and `saas` templates include a **demo** auth (hardcoded
-`admin` / `admin`, no password hashing, no expiry) that is explicitly marked
-DEMO ONLY. Before shipping:
+`@thexjs/auth` is the framework's opt-in auth package: credentials
+(username/password) and OAuth2 (including a GitHub preset) providers, session
+stores on the data layer (SQLite/Postgres), and a catch-all API handler. Its
+security properties:
 
-- Store **hashed** passwords (e.g. `Bun.password.hash` / Argon2).
-- Add session expiry and revocation.
-- Use `Secure; HttpOnly; SameSite=Lax` cookies (the templates and CSRF cookie
-  set `Secure` automatically when `NODE_ENV=production`).
-- Protect routes with `_middleware.ts`.
+- **Passwords** — hashed with Argon2id via `Bun.password` (`hashPassword` /
+  `verifyPassword`). Never store plaintext.
+- **Session tokens** — opaque random 128-bit strings. Only an HMAC-SHA256
+  digest of the token (keyed by `AUTH_SECRET`) is stored, so a database leak
+  does not expose usable session cookies. Sessions expire after
+  `sessionMaxAge` (default 7 days) and are individually revocable.
+- **OAuth state** — a `x_oauth_state` cookie challenge (HMAC'd, 5-minute
+  expiry) must match the `state` param on the callback, preventing
+  login-CSRF / session-fixation via crafted callbacks.
+- **CSRF** — auth `POST` endpoints (`signin`, `signout`) run the core
+  `checkCsrf` (Origin/Referer verification; see above) and return `403` on
+  failure. To add the double-submit token to auth endpoints, set
+  `security.csrf.requireToken: true` — auth routes honor it automatically.
+- **Cookies** — `HttpOnly; SameSite=Lax`, plus `Secure` when
+  `NODE_ENV=production`. Set a **stable** `secret` in production; an omitted
+  secret generates a per-process value that doesn't survive restarts.
+
+The framework itself still ships the primitives you'd build auth on
+(cookies, middleware, server functions, data layer), and the `basic` and
+`saas` templates include a **demo** auth (hardcoded `admin` / `admin`, no
+password hashing, no expiry) that is explicitly marked DEMO ONLY — replace it
+with `@thexjs/auth` (or your own) before shipping.
 
 ## Health endpoints
 

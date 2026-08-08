@@ -132,6 +132,17 @@
         "tsup": "^8.3.0",
       },
     },
+    "packages/auth": {
+      "name": "@thexjs/auth",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@thexjs/core": "workspace:*",
+        "tsup": "^8.3.0",
+      },
+      "peerDependencies": {
+        "@thexjs/core": "workspace:*",
+      },
+    },
     "packages/cli": {
       "name": "@thexjs/cli",
       "version": "1.0.0",
@@ -517,6 +528,8 @@
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.3.3", "", { "os": "win32", "cpu": "x64" }, "sha512-yJ0pwIVc/nYeGoV02WtsN8KYyLQv7kyI2wDnkezyJlGGjkd4QLwDGAwl47YpPJeuI0M0ObaXGSPjvWDPeTPggw=="],
 
     "@thexjs/adapter-vercel": ["@thexjs/adapter-vercel@workspace:packages/adapter-vercel"],
+
+    "@thexjs/auth": ["@thexjs/auth@workspace:packages/auth"],
 
     "@thexjs/cli": ["@thexjs/cli@workspace:packages/cli"],
 
