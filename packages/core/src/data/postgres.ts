@@ -1,6 +1,18 @@
-export interface PostgresClient {
-  unsafe(query: string): Promise<unknown>;
+/** A Postgres client scoped to a single transaction (auto-commit/rollback). */
+export interface PostgresTransactionClient {
+  unsafe(query: string, params?: unknown[]): Promise<unknown>;
   (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown>;
+}
+
+export interface PostgresClient {
+  unsafe(query: string, params?: unknown[]): Promise<unknown>;
+  (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown>;
+  /**
+   * Runs `fn` inside a transaction. The callback receives a transaction-scoped
+   * client; when it resolves the transaction commits, when it throws it rolls
+   * back — so a group of statements either all apply or none do.
+   */
+  begin<T>(fn: (tx: PostgresTransactionClient) => Promise<T>): Promise<T>;
 }
 
 export type PostgresSslMode = "disable" | "prefer" | "require" | "verify-ca" | "verify-full";
@@ -125,7 +137,11 @@ export function connectPostgres(options: PostgresOptions = {}): PostgresClient {
   return new Proxy(sql, {
     get(target, prop, receiver) {
       if (prop === "unsafe") {
-        return (query: string) => run(() => client.unsafe(query));
+        return (query: string, params?: unknown[]) => run(() => client.unsafe(query, params));
+      }
+      if (prop === "begin") {
+        return <T>(fn: (tx: PostgresTransactionClient) => Promise<T>) =>
+          run(() => client.begin(async (tx) => fn(tx as unknown as PostgresTransactionClient)));
       }
       const value = Reflect.get(target, prop, receiver);
       return typeof value === "function" ? value.bind(target) : value;
