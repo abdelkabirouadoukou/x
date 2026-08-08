@@ -34,8 +34,15 @@ export function runSQLiteMigrations(db: Database, migrationsDir: string): Migrat
       continue;
     }
     const sql = readFileSync(join(migrationsDir, file), "utf-8");
-    db.run(sql);
-    db.run("INSERT INTO _x_migrations (name) VALUES (?1)", [file]);
+    // Run the migration SQL and its bookkeeping insert in a single
+    // transaction (auto-commit on success, rollback if anything throws). A
+    // migration that fails partway otherwise leaves the schema half-applied
+    // with no record it was attempted, so a retry replays broken statements
+    // against the already-mutated schema.
+    db.transaction(() => {
+      db.run(sql);
+      db.run("INSERT INTO _x_migrations (name) VALUES (?1)", [file]);
+    })();
     console.log(`[x] migration applied: ${file}`);
     result.applied.push(file);
   }
@@ -79,8 +86,15 @@ export async function runPostgresMigrations(
       continue;
     }
     const raw = readFileSync(join(migrationsDir, file), "utf-8");
-    await client.unsafe(raw);
-    await client.unsafe(`INSERT INTO _x_migrations (name) VALUES ('${file}')`);
+    // Same all-or-nothing guarantee as the SQLite runner: migration SQL +
+    // bookkeeping insert run inside one transaction, so a failing migration
+    // rolls back cleanly and can be retried after a fix. The insert is
+    // parameterized ($1) instead of string-interpolated, so a migration
+    // filename can't inject SQL into the bookkeeping statement.
+    await client.begin(async (tx) => {
+      await tx.unsafe(raw);
+      await tx.unsafe("INSERT INTO _x_migrations (name) VALUES ($1)", [file]);
+    });
     console.log(`[x] migration applied: ${file}`);
     result.applied.push(file);
   }
