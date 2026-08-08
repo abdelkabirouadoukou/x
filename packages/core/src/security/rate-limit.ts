@@ -141,26 +141,27 @@ export async function rateLimitMiddleware(
 }
 
 /**
- * Shared rate-limit store backed by Redis, so limits are enforced across
- * multiple server instances. Uses Bun's built-in `bun:redis` (no npm
- * dependency) and connects lazily on first use. Pass the result as
- * `store` in `createRateLimiter`/`security.rateLimit`.
+ * The subset of a Redis client the store needs. Matches `bun:redis`'s
+ * `RedisClient#sendCommand`, so the store works with any RESP-capable client.
  */
-export function createRedisRateLimitStore(options: { url?: string } = {}): RateLimitStore {
-  type RedisClientLike = { sendCommand(...args: string[]): Promise<unknown> };
-  let client: RedisClientLike | null = null;
-  let connecting: Promise<RedisClientLike> | null = null;
+export interface RedisClientLike {
+  sendCommand(...args: string[]): Promise<unknown>;
+}
 
-  async function connect(): Promise<RedisClientLike> {
+/** Yields a connected Redis client. Injectable for tests and custom transports. */
+export type RedisClientFactory = () => Promise<RedisClientLike>;
+
+/** Connects to Redis via Bun's built-in `bun:redis` (no npm dependency). */
+function createBunRedisClient(options: { url?: string }): RedisClientFactory {
+  return async () => {
     // Loaded lazily through import.meta.require (like bun:sqlite) so this
     // module still type-checks and loads on runtimes where bun:redis isn't
     // available — the failure only surfaces if someone actually uses the Redis
     // store — and so the browser bundle never sees a `node:module` import.
     const require = import.meta.require;
     const mod = require("bun:redis") as {
-      RedisClient: new (opts?: { url?: string }) => {
+      RedisClient: new (opts?: { url?: string }) => RedisClientLike & {
         connect(): Promise<unknown>;
-        sendCommand(...args: string[]): Promise<unknown>;
       };
     };
     const instance = options.url
@@ -168,7 +169,28 @@ export function createRedisRateLimitStore(options: { url?: string } = {}): RateL
       : new mod.RedisClient();
     await instance.connect();
     return instance;
-  }
+  };
+}
+
+/**
+ * Shared rate-limit store backed by Redis, so limits are enforced across
+ * multiple server instances. Connects lazily on first use and keeps retrying
+ * after a failed connection attempt. Pass the result as `store` in
+ * `createRateLimiter`/`security.rateLimit`.
+ */
+export function createRedisRateLimitStore(options: { url?: string } = {}): RateLimitStore {
+  return createRedisRateLimitStoreFromClient(createBunRedisClient(options));
+}
+
+/**
+ * Builds the Redis-backed store from an explicit client factory. Exposed for
+ * testing and custom transports; the default factory is Bun's `bun:redis`.
+ */
+export function createRedisRateLimitStoreFromClient(
+  clientFactory: RedisClientFactory,
+): RateLimitStore {
+  let client: RedisClientLike | null = null;
+  let connecting: Promise<RedisClientLike> | null = null;
 
   function getClient(): Promise<RedisClientLike> {
     if (client) return Promise.resolve(client);
@@ -176,7 +198,7 @@ export function createRedisRateLimitStore(options: { url?: string } = {}): RateL
       // Clear `connecting` on failure so a transient blip (Redis briefly
       // unreachable at boot) doesn't poison every later request with the same
       // rejected promise — the store keeps retrying on each subsequent call.
-      connecting = connect().then(
+      connecting = clientFactory().then(
         (c) => {
           client = c;
           return c;
