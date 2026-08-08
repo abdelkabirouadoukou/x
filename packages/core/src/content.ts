@@ -121,6 +121,33 @@ function renderListBlock(block: string): string {
   return `<${tag}>${items}</${tag}>`;
 }
 
+const ALLOWED_LINK_SCHEMES = new Set(["http", "https", "mailto"]);
+const LINK_SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i;
+
+/** Percent-decodes a link URL for validation, tolerating malformed escapes. */
+function decodeLinkUrl(url: string): string {
+  try {
+    return decodeURIComponent(url);
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * True when a markdown link URL is safe to emit in an `href` attribute.
+ * `escapeHtml` neutralizes `& < > "` but not URL schemes, so an href like
+ * `javascript:alert(1)` — including a percent-encoded variant such as
+ * `javascript:alert%281%29` or `java%73cript:...` — would otherwise produce a
+ * live `javascript:` link that executes on click. Only the `http`, `https`
+ * and `mailto` schemes are allowed; any other scheme-prefixed URL is rejected.
+ * Relative and scheme-relative URLs (`/foo`, `./foo`, `../foo`, `#anchor`,
+ * `?q=1`, `//cdn.example.com`) carry no scheme and pass through.
+ */
+function isSafeLinkUrl(url: string): boolean {
+  const scheme = LINK_SCHEME_RE.exec(decodeLinkUrl(url.trim()))?.[1]?.toLowerCase();
+  return scheme === undefined || ALLOWED_LINK_SCHEMES.has(scheme);
+}
+
 export function renderMarkdown(md: string): string {
   const inlineCodes: string[] = [];
   // Escape the entire source before any markup pass runs. `escapeHtml` only
@@ -147,7 +174,9 @@ export function renderMarkdown(md: string): string {
     })
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, href) =>
+      isSafeLinkUrl(href) ? `<a href="${href}">${text}</a>` : text,
+    )
     .replace(/__X_CODE_(\d+)__/g, (_m, i) => `<code>${inlineCodes[Number.parseInt(i)]}</code>`);
 
   const blocks = html.split(/\n\n+/);

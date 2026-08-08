@@ -136,3 +136,64 @@ describe("renderMarkdown", () => {
     expect(html).toContain("&lt;script&gt;");
   });
 });
+
+describe("renderMarkdown link URL sanitization", () => {
+  test("renders a javascript: link as plain text, never as an anchor", () => {
+    const html = renderMarkdown("[run](javascript:alert(1))");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+    expect(html).toContain("run");
+  });
+
+  test("rejects an uppercase JavaScript: scheme", () => {
+    const html = renderMarkdown("[run](JavaScript:alert(1))");
+    expect(html).not.toContain("<a");
+    expect(html).toContain("run");
+  });
+
+  test("rejects a percent-encoded javascript: URL", () => {
+    const html = renderMarkdown("[run](javascript:alert%281%29)");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+    expect(html).toContain("run");
+  });
+
+  test("rejects a scheme-encoded (mixed) javascript: URL", () => {
+    const html = renderMarkdown("[run](java%73cript:alert(1))");
+    expect(html).not.toContain("<a");
+    expect(html).toContain("run");
+  });
+
+  test("rejects a data: URL", () => {
+    const html = renderMarkdown(
+      "[x](data:text/html,\u003cscript\u003ealert(1)\u003c/script\u003e)",
+    );
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("<script>");
+    expect(html).not.toContain("href");
+  });
+
+  test("rejects vbscript: and other unknown schemes", () => {
+    const html = renderMarkdown("[x](vbscript:msgbox(1)) [y](ftp://files.example.com/a)");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+  });
+
+  test("keeps http/https links as anchors", () => {
+    const html = renderMarkdown("[docs](https://example.com) [api](http://localhost/api?x=1&y=2)");
+    expect(html).toContain('<a href="https://example.com">docs</a>');
+    expect(html).toContain('<a href="http://localhost/api?x=1&amp;y=2">api</a>');
+  });
+
+  test("keeps mailto and relative links as anchors", () => {
+    const html = renderMarkdown(
+      "[mail](mailto:hi@example.com) [home](/foo) [rel](./bar) [up](../up) [anchor](#top) [proto](//cdn.example.com/x)",
+    );
+    expect(html).toContain('<a href="mailto:hi@example.com">mail</a>');
+    expect(html).toContain('<a href="/foo">home</a>');
+    expect(html).toContain('<a href="./bar">rel</a>');
+    expect(html).toContain('<a href="../up">up</a>');
+    expect(html).toContain('<a href="#top">anchor</a>');
+    expect(html).toContain('<a href="//cdn.example.com/x">proto</a>');
+  });
+});
