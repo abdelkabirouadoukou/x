@@ -1,5 +1,19 @@
 # @thexjs/auth
 
+## 2.0.0
+
+### Patch Changes
+
+- 79c4c3f: `getSession()` now fails closed when the session store is unavailable (e.g.
+  database down / connection lost): it logs a warning and returns `null` instead
+  of propagating the store error, so `/api/auth/session` and authenticated
+  requests respond as signed-out rather than crashing with a 500.
+- Updated dependencies [e5cb7b4]
+- Updated dependencies [c2f1af9]
+- Updated dependencies [c3761c0]
+- Updated dependencies [d59c5b0]
+  - @thexjs/core@1.1.0
+
 ## 1.1.0
 
 ### Minor Changes
