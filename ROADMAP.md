@@ -19,6 +19,7 @@ writing.
 | Image proxy (SSRF allow-list) | stable | yes | `images/proxy.test.ts` |
 | Env validation (`@thexjs/env`) | stable | yes | `packages/env/src/index.test.ts` |
 | Build toolchain (`x build`, `.x/` output) | stable | yes | `build.test.ts`, `cli.test.ts` |
+| Dev server (file watching, route rebuild) | beta | yes | `createApp-watcher.test.ts` |
 | Vercel adapter (output v3, config.json) | stable | yes | `adapter.test.ts` |
 | Layouts / middleware chains | stable | partial | scanning tested; multi-layer rendering less so |
 | Content collections (`scanContent`) | beta | yes | `content.test.ts`; frontmatter parser is a small custom YAML subset |
@@ -37,8 +38,6 @@ writing.
    generation, `.mdx` compile path.
 3. **Observability reporters**: error reporter flush on shutdown, metric
    emission.
-4. **CLI `dev`**: dev-mode file watching / route rebuild (exercised manually,
-   not automated).
 
 ## Near-term (0.x)
 
