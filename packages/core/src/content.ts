@@ -105,15 +105,41 @@ export function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * Converts a contiguous block of `- item` / `1. item` lines into a `<ul>` /
+ * `<ol>` element. Returns the block untouched when it isn't a list.
+ */
+function renderListBlock(block: string): string {
+  const lines = block.split("\n");
+  const isUl = lines.every((l) => /^\s*[-*]\s+/.test(l));
+  const isOl = lines.every((l) => /^\s*\d+\.\s+/.test(l));
+  if (!isUl && !isOl) return block;
+  const tag = isUl ? "ul" : "ol";
+  const items = lines
+    .map((l) => `<li>${l.replace(/^\s*[-*]\s+/, "").replace(/^\s*\d+\.\s+/, "")}</li>`)
+    .join("");
+  return `<${tag}>${items}</${tag}>`;
+}
+
 export function renderMarkdown(md: string): string {
   const inlineCodes: string[] = [];
-  let html = md
+  // Escape the entire source before any markup pass runs. `escapeHtml` only
+  // touches `&`, `<`, `>`, `"` so every markdown construct (headings, code
+  // fences, backticks, brackets) survives untouched, but raw `<script>` or
+  // HTML tags in prose, fenced code, and inline code all arrive pre-escaped.
+  // The tags we emit below are introduced after escaping, so they stay real
+  // HTML while user content can never execute. Without this, markdown bodies
+  // were injected via dangerouslySetInnerHTML with unescaped prose, so a
+  // `<script>` in a .md/.mdx file ran in the visitor's browser.
+  let html = escapeHtml(md)
     .replace(/^### (.+)$/gm, "<h3>$1</h3>")
     .replace(/^## (.+)$/gm, "<h2>$1</h2>")
     .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    // The fence body was already escaped up front — re-escaping here would
+    // double-encode the `&` → `&amp;` entities just produced.
     .replace(
       /`{3}(\w*)\n([\s\S]*?)`{3}/gm,
-      (_m, _lang, code) => `<pre><code>${escapeHtml(code.trim())}</code></pre>`,
+      (_m, _lang, code) => `<pre><code>${code.trim()}</code></pre>`,
     )
     .replace(/`([^`]+)`/g, (_m, code) => {
       inlineCodes.push(code);
@@ -129,6 +155,8 @@ export function renderMarkdown(md: string): string {
     .map((b) => {
       const t = b.trim();
       if (!t) return "";
+      const listBlock = renderListBlock(t);
+      if (listBlock !== t) return listBlock;
       if (t.startsWith("<h") || t.startsWith("<pre") || t.startsWith("<ul") || t.startsWith("<ol"))
         return t;
       return `<p>${t}</p>`;
