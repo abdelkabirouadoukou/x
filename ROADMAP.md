@@ -23,6 +23,7 @@ writing.
 | Layouts / middleware chains | stable | partial | scanning tested; multi-layer rendering less so |
 | Content collections (`scanContent`) | beta | yes | `content.test.ts`; frontmatter parser is a small custom YAML subset |
 | Data layer (SQLite/Postgres migrations) | beta | yes | `data/migrate.test.ts`; thin wrapper over `bun:sqlite` / `Bun.sql` |
+| Auth (`@thexjs/auth`) | stable | yes | `auth.test.ts` + `auth-failures.test.ts` (store outage, store swap, generic OAuth2) |
 | Islands / client hydration | beta | partial | build emits islands; runtime hydration tested via examples only |
 | Content-MDX | experimental | no | `.mdx` support exists but is the least exercised surface |
 | Observability (health/readyz, metrics) | beta | partial | health checked in `createApp-request.test.ts`; reporter flushing untested |
