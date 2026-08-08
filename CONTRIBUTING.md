@@ -9,6 +9,7 @@ Nothing exotic. It's a normal Bun workspaces monorepo:
 
 ```
 packages/core                framework runtime (router, SSR/SSG, islands, server functions, data layer)
+packages/auth                credentials + OAuth2/GitHub auth, sessions, CSRF
 packages/cli                 x dev / x build / x start
 packages/env                 type-safe env validation
 packages/adapter-vercel      Vercel Build Output API adapter
