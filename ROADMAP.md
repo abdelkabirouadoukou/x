@@ -56,8 +56,10 @@ tracking list, not a commitment schedule — each item gets its own design first
    emission (request counts, latency histograms, build/runtime errors) is not
    wired up.
 2. **Authorization**: role-based access control / permissions layer. Sessions
-   exist (`@thexjs/auth`), but there is no framework-level concept of roles,
-   scopes, or per-route authorization guards.
+   carry roles/permissions (via `resolveRoles`), and `requireRole`/
+   `requirePermission`/`requireAuth` guards plug into route middleware.
+   Shipped in `@thexjs/auth`; keep tracking until an example app exercises a
+   full roles + scopes flow end-to-end.
 3. **Scale validation**: load and concurrency testing. No published
    benchmarks or soak tests for SSR throughput, the rate limiter under load,
    or shared-store behavior across replicas.

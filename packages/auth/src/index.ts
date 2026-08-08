@@ -20,4 +20,19 @@ export type {
   GitHubProviderConfig,
   OAuthTokens,
 } from "./providers";
+export {
+  hasRole,
+  hasAnyRole,
+  hasPermission,
+  hasAllPermissions,
+  requireAuth,
+  requireRole,
+  requirePermission,
+  toMiddleware,
+} from "./rbac";
+export type {
+  AuthGuardResult,
+  SessionGuard,
+  GuardMiddlewareOptions,
+} from "./rbac";
 export type { AuthUser, Session } from "./types";

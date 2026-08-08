@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { checkCsrf } from "@thexjs/core";
+import type { MiddlewareFn } from "@thexjs/core";
 import { readCookie } from "./cookies";
 import {
   type CredentialsProvider,
@@ -11,6 +12,14 @@ import {
   fetchUserInfo,
   toOAuth2,
 } from "./providers";
+import {
+  type GuardMiddlewareOptions,
+  type SessionGuard,
+  requireAuth as requireAuthGuard,
+  requirePermission as requirePermissionGuard,
+  requireRole as requireRoleGuard,
+  toMiddleware,
+} from "./rbac";
 import type { SessionStore } from "./session";
 import type { AuthUser, Session } from "./types";
 
@@ -38,6 +47,14 @@ export interface AuthConfig {
   successRedirect?: string;
   /** Where to redirect the browser after sign-out. Default: `/`. */
   signOutRedirect?: string;
+  /**
+   * Resolves the roles/permissions granted to a user at session creation.
+   * The result is snapshotted into the session's `user` object, so RBAC
+   * guards (`auth.requireRole`, `auth.requirePermission`) read it without a
+   * per-request lookup. When omitted, roles come from the provider's
+   * `authorize`/`profile` result (its `roles`/`permissions` fields).
+   */
+  resolveRoles?: (user: AuthUser) => Promise<Partial<Pick<AuthUser, "roles" | "permissions">>>;
 }
 
 export interface ResolvedAuthConfig {
@@ -74,6 +91,27 @@ export interface Auth {
   setSessionCookie(res: Response, user: AuthUser, provider: string): Promise<Response>;
   /** Clears the session cookie from `res` and revokes the session, if any. */
   clearSessionCookie(res: Response, req?: Request): Promise<Response>;
+  /**
+   * Route guard middleware: requires a signed-in session for the route.
+   * Returns a core `MiddlewareFn` for `export const middleware` / `export const auth`.
+   */
+  requireAuth(options?: GuardMiddlewareOptions): MiddlewareFn;
+  /**
+   * Route guard middleware: requires the session's user to have any of the
+   * given roles (a single role string or an array). Fail-closed: signed out →
+   * 401, signed in but unauthorized → 403. Pass `redirectTo` to redirect
+   * signed-out users instead of returning 401.
+   */
+  requireRole(roles: string | string[], options?: GuardMiddlewareOptions): MiddlewareFn;
+  /**
+   * Route guard middleware: requires the session's user to have every one of
+   * the given permissions (a single string or an array). Fail-closed: signed
+   * out → 401, signed in but unauthorized → 403. Pass `redirectTo` to
+   * redirect signed-out users instead of returning 401.
+   */
+  requirePermission(permissions: string | string[], options?: GuardMiddlewareOptions): MiddlewareFn;
+  /** Low-level guard combinator: `auth.guard(requireRole("admin"), { redirectTo: "/login" })`. */
+  guard(guard: SessionGuard, options?: GuardMiddlewareOptions): MiddlewareFn;
 }
 
 /** Resolves `config` against defaults and returns the auth helper. */
@@ -130,10 +168,18 @@ export function defineAuth(config: AuthConfig): Auth {
     return res;
   };
 
-  const snapshotUser = (user: AuthUser): AuthUser => {
+  const snapshotUser = async (user: AuthUser): Promise<AuthUser> => {
     const snapshot: AuthUser = { id: user.id };
     if (typeof user.name === "string") snapshot.name = user.name;
     if (typeof user.email === "string") snapshot.email = user.email;
+    if (config.resolveRoles) {
+      const granted = await config.resolveRoles(user);
+      if (Array.isArray(granted.roles)) snapshot.roles = granted.roles;
+      if (Array.isArray(granted.permissions)) snapshot.permissions = granted.permissions;
+    } else {
+      if (Array.isArray(user.roles)) snapshot.roles = user.roles;
+      if (Array.isArray(user.permissions)) snapshot.permissions = user.permissions;
+    }
     return snapshot;
   };
 
@@ -144,7 +190,7 @@ export function defineAuth(config: AuthConfig): Auth {
       token: await hash(token),
       userId: user.id,
       provider,
-      user: snapshotUser(user),
+      user: await snapshotUser(user),
       expiresAt: now + resolved.sessionMaxAge * 1000,
       createdAt: now,
     };
@@ -313,5 +359,19 @@ export function defineAuth(config: AuthConfig): Auth {
     getSession,
     setSessionCookie,
     clearSessionCookie,
+    requireAuth(options) {
+      return toMiddleware(getSession, requireAuthGuard(), options);
+    },
+    requireRole(roles, options) {
+      const list = Array.isArray(roles) ? roles : [roles];
+      return toMiddleware(getSession, requireRoleGuard(...list), options);
+    },
+    requirePermission(permissions, options) {
+      const list = Array.isArray(permissions) ? permissions : [permissions];
+      return toMiddleware(getSession, requirePermissionGuard(...list), options);
+    },
+    guard(guard, options) {
+      return toMiddleware(getSession, guard, options);
+    },
   };
 }
