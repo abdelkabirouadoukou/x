@@ -4,3 +4,4 @@ dist/
 *.log
 .vercel/
 scripts/bench/results/
+packages/core/src/__fixtures__/bench/
