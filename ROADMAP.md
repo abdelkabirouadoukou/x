@@ -49,6 +49,30 @@ writing.
 - Broaden the Vercel adapter integration test to cover layouts + middleware
   chains and islands in the rendered output.
 
+## Enterprise readiness (tracking)
+
+What needs to hold before teams run this in production at scale. This is a
+tracking list, not a commitment schedule — each item gets its own design first.
+
+1. **Observability**: production-grade metrics. The framework currently emits
+   health/readyz endpoints and an error-reporter hook; OTel/Prometheus metric
+   emission (request counts, latency histograms, build/runtime errors) is not
+   wired up.
+2. **Authorization**: role-based access control / permissions layer. Sessions
+   exist (`@thexjs/auth`), but there is no framework-level concept of roles,
+   scopes, or per-route authorization guards.
+3. **Scale validation**: load and concurrency testing. No published
+   benchmarks or soak tests for SSR throughput, the rate limiter under load,
+   or shared-store behavior across replicas.
+4. **Release discipline**: first tagged release with strict semver + changelog
+   via changesets for all `@thexjs/*` packages (currently pre-1.0, in flux).
+5. **Backup / disaster recovery**: documented backup and restore story for the
+   SQLite/Postgres data layer, plus runbook guidance for multi-instance
+   deployments.
+6. **Security response**: a security disclosure SLA. `SECURITY.md` documents
+   reporting, but there is no committed response-time target or coordinated
+   disclosure process yet.
+
 ## Post-1.0 considerations
 
 - Node.js compatibility story (currently Bun-only by design).
