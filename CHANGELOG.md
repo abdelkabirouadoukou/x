@@ -7,6 +7,17 @@ dates. This is a pre-1.0 project — expect breaking changes between releases.
 
 ## Unreleased
 
+### Added
+
+- **New package: `@thexjs/auth` (v1.1.0).** Plug-and-play authentication for x
+  apps: credentials (username/password) and OAuth2 — including a preconfigured
+  GitHub provider — behind a single `defineAuth()` call. Sessions live in SQLite
+  or Postgres via the framework's data layer, with Argon2id password hashing
+  (`Bun.password`), HMAC'd, revocable session tokens, OAuth state challenges,
+  and automatic CSRF on mutating endpoints. It replaces the hand-rolled auth
+  previously baked into `examples/basic` and `examples/saas`. See
+  `packages/auth/README.md` for the full reference.
+
 ### Security
 
 - **Rate limiting is now per-client-IP.** The default limiter previously keyed

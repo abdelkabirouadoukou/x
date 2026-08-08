@@ -143,6 +143,10 @@ systemctl enable --now my-x-app
 |-------------|---------|------------------------------------------|
 | `PORT`      | `3000`  | HTTP port the server listens on          |
 | `NODE_ENV`  | `production` | Set to `development` for dev mode    |
+| `DATABASE_URL` | —     | Postgres connection string for `@thexjs/core/data` `connectPostgres`; only needed when using Postgres |
+| `AUTH_SECRET` | —     | Secret used to HMAC `@thexjs/auth` session/state cookies; required in production — without it sessions won't survive restarts |
+| `GITHUB_CLIENT_ID` | — | OAuth app client ID for the `@thexjs/auth` GitHub provider; only needed if you use GitHub sign-in |
+| `GITHUB_CLIENT_SECRET` | — | OAuth app client secret for the `@thexjs/auth` GitHub provider; only needed if you use GitHub sign-in |
 
 ## Architecture
 
