@@ -100,6 +100,39 @@ describe("renderMarkdown", () => {
     expect(html).not.toContain("<script>");
   });
 
+  test("keeps a heading inside a fenced code block as literal text", () => {
+    const html = renderMarkdown("```\n# not a heading\n```");
+    expect(html).toContain("<pre><code># not a heading</code></pre>");
+    expect(html).not.toContain("<h1>");
+  });
+
+  test("keeps subheadings inside a fenced code block as literal text", () => {
+    const html = renderMarkdown("```\n## two\n### three\n```");
+    expect(html).toContain("<pre><code>## two\n### three</code></pre>");
+    expect(html).not.toContain("<h2>");
+    expect(html).not.toContain("<h3>");
+  });
+
+  test("keeps bold/italic inside a fenced code block as literal text", () => {
+    const html = renderMarkdown("```\n**not bold** and *not italic*\n```");
+    expect(html).toContain("<pre><code>**not bold** and *not italic*</code></pre>");
+    expect(html).not.toContain("<strong>");
+    expect(html).not.toContain("<em>");
+  });
+
+  test("keeps a markdown link inside a fenced code block as literal text", () => {
+    const html = renderMarkdown("```\n[not a link](https://example.com)\n```");
+    expect(html).toContain("<pre><code>[not a link](https://example.com)</code></pre>");
+    expect(html).not.toContain("<a");
+  });
+
+  test("keeps a fenced block intact when prose follows it", () => {
+    const html = renderMarkdown("```\n# heading\n```\n\nAfter, with **bold**.");
+    expect(html).toContain("<pre><code># heading</code></pre>");
+    expect(html).not.toContain("<h1>");
+    expect(html).toContain("<p>After, with <strong>bold</strong>.</p>");
+  });
+
   test("escapes entity-like text without double-encoding ampersands", () => {
     const html = renderMarkdown("a & b");
     expect(html).toContain("a &amp; b");

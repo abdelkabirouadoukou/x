@@ -150,6 +150,7 @@ function isSafeLinkUrl(url: string): boolean {
 
 export function renderMarkdown(md: string): string {
   const inlineCodes: string[] = [];
+  const fences: string[] = [];
   // Escape the entire source before any markup pass runs. `escapeHtml` only
   // touches `&`, `<`, `>`, `"` so every markdown construct (headings, code
   // fences, backticks, brackets) survives untouched, but raw `<script>` or
@@ -158,16 +159,25 @@ export function renderMarkdown(md: string): string {
   // HTML while user content can never execute. Without this, markdown bodies
   // were injected via dangerouslySetInnerHTML with unescaped prose, so a
   // `<script>` in a .md/.mdx file ran in the visitor's browser.
-  let html = escapeHtml(md)
+
+  // Pull fenced code blocks out into unique placeholders immediately after
+  // escaping, before any markup pass runs. The heading / inline-formatting /
+  // list / link regexes must never see fence contents: a `# heading`,
+  // `**bold**`, `*italic*`, or `[link](url)` inside a ``` block is literal
+  // code, not markdown, and converting it would break the block's verbatim
+  // promise. The placeholders are restored to their `<pre><code>` form
+  // (already escaped, never re-processed) right before paragraph wrapping.
+  let html = escapeHtml(md).replace(/`{3}(\w*)\n([\s\S]*?)`{3}/gm, (_m, _lang, code) => {
+    // The fence body was already escaped up front — re-escaping here would
+    // double-encode the `&` → `&amp;` entities just produced.
+    fences.push(`<pre><code>${code.trim()}</code></pre>`);
+    return `__X_FENCE_${fences.length - 1}__`;
+  });
+
+  html = html
     .replace(/^### (.+)$/gm, "<h3>$1</h3>")
     .replace(/^## (.+)$/gm, "<h2>$1</h2>")
     .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-    // The fence body was already escaped up front — re-escaping here would
-    // double-encode the `&` → `&amp;` entities just produced.
-    .replace(
-      /`{3}(\w*)\n([\s\S]*?)`{3}/gm,
-      (_m, _lang, code) => `<pre><code>${code.trim()}</code></pre>`,
-    )
     .replace(/`([^`]+)`/g, (_m, code) => {
       inlineCodes.push(code);
       return `__X_CODE_${inlineCodes.length - 1}__`;
@@ -178,6 +188,8 @@ export function renderMarkdown(md: string): string {
       isSafeLinkUrl(href) ? `<a href="${href}">${text}</a>` : text,
     )
     .replace(/__X_CODE_(\d+)__/g, (_m, i) => `<code>${inlineCodes[Number.parseInt(i)]}</code>`);
+
+  html = html.replace(/__X_FENCE_(\d+)__/g, (_m, i) => fences[Number.parseInt(i)] ?? "");
 
   const blocks = html.split(/\n\n+/);
   html = blocks
