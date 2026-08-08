@@ -137,6 +137,128 @@ export { db };`}
         filenames, so you can log or test which migrations ran.
       </p>
 
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Backup &amp; disaster recovery</h2>
+      <p className="mt-3 text-muted-foreground">
+        Back up the same data the app actually writes. That is the database plus — if you use{" "}
+        <a href="/docs/packages/auth" className="text-primary underline underline-offset-2">
+          @thexjs/auth
+        </a>{" "}
+        — the <span className="text-foreground">x_sessions</span> table. Migrations are not data:
+        the <span className="text-foreground">_x_migrations</span> table records history, so restore
+        the database and let the migration runner verify it's in the state your code expects.
+      </p>
+      <p className="mt-3 text-muted-foreground">
+        Two numbers to write down for any plan: <span className="text-foreground">RPO</span> (how
+        much data you can lose — dictates backup frequency) and{" "}
+        <span className="text-foreground">RTO</span> (how fast you must be back — dictates restore
+        procedure). The recipes below give you the mechanics; pick schedule and retention to meet
+        your own RPO/RTO.
+      </p>
+
+      <h3 className="mt-8 text-lg font-bold tracking-tight">SQLite (WAL mode)</h3>
+      <p className="mt-3 text-muted-foreground">
+        <span className="text-foreground">connectSQLite</span> enables WAL mode, which is exactly
+        what you want for backups: it allows a safe, consistent file snapshot while the app keeps
+        writing.{" "}
+        <strong>
+          Never copy the <span className="text-foreground">.db</span> file with a plain{" "}
+          <span className="text-foreground">cp</span> while the app is running
+        </strong>{" "}
+        — you can catch the file mid-write. Three safe options, in order of preference:
+      </p>
+      <CodeBlock
+        label="backup.sqlite.ts (hot backup, no downtime)"
+        code={`import { Database } from "bun:sqlite";
+
+const db = new Database("data/app.db");
+
+// Online backup API: consistent snapshot while the app keeps writing.
+await db.backup("backups/app-$(date -u +%FT%TZ).db");
+
+db.close();`}
+      />
+      <p className="mt-3 text-muted-foreground">
+        Prefer <span className="text-foreground">db.backup()</span> — it is the only option that is
+        safe with zero coordination. Alternatively, from a separate shell you can use the SQLite
+        <span className="text-foreground"> .backup</span> command:
+      </p>
+      <CodeBlock
+        label=""
+        lang="bash"
+        code={`# Safe: consistent snapshot via SQLite itself
+sqlite3 data/app.db ".backup 'backups/app-$(date -u +%FT%TZ).db'"
+
+# Safe too: checkpoint WAL first, then copy all three files together
+sqlite3 data/app.db "PRAGMA wal_checkpoint(FULL);"
+cp data/app.db data/app.db-wal data/app.db-shm backups/
+
+# NOT safe while running: a bare cp of just app.db
+# cp data/app.db backups/   # <- corrupt snapshot risk`}
+      />
+      <p className="mt-3 text-muted-foreground">
+        Restore is the reverse: stop the app, copy the snapshot back (removing any stale
+        <span className="text-foreground"> -wal</span>/<span className="text-foreground">-shm</span>{" "}
+        files first), then start the app. Because migrations are tracked in{" "}
+        <span className="text-foreground">_x_migrations</span>, you can restore to an older snapshot
+        than your current code and the runner will simply apply the missing migrations — but only{" "}
+        <em>forward</em>. Restoring an older snapshot after newer migrations already ran requires
+        either re-applying them or restoring a snapshot taken after they applied.
+      </p>
+
+      <h3 className="mt-8 text-lg font-bold tracking-tight">PostgreSQL</h3>
+      <p className="mt-3 text-muted-foreground">
+        Use the platform's built-in backups (RDS automated snapshots, Neon/Cloudflare D1-style
+        point-in-time recovery, Supabase backups) as the primary mechanism, plus logical{" "}
+        <span className="text-foreground">pg_dump</span> for portable, schema-safe snapshots and
+        cross-provider restore.
+      </p>
+      <CodeBlock
+        label=""
+        lang="bash"
+        code={`# Logical backup (portable, survives provider migration)
+pg_dump "$DATABASE_URL" -Fc -f backup.dump
+
+# Restore onto a fresh database
+createdb "$DATABASE_URL"   # if restoring into an empty DB
+pg_restore "$DATABASE_URL" -d "$DATABASE_URL" --clean --if-exists backup.dump`}
+      />
+      <p className="mt-3 text-muted-foreground">
+        If you run one-off scripts from inside the app (a cron worker or a daily task), prefer the
+        app's own <span className="text-foreground">connectPostgres</span> connection so the
+        connection-pool, TLS, and retry settings you configured are the ones doing the work.
+      </p>
+
+      <h3 className="mt-8 text-lg font-bold tracking-tight">Runbook checklist</h3>
+      <ul className="mt-3 list-disc space-y-2 pl-5 text-muted-foreground">
+        <li>
+          <strong>Test the restore, not just the backup.</strong> A backup that has never been
+          restored is a guess. Restore into a scratch database as part of CI or a monthly drill and
+          verify row counts and a couple of hand-picked rows.
+        </li>
+        <li>
+          <strong>Store snapshots off the same machine.</strong> Object storage (S3/R2) or a
+          separate volume; a backup on the same disk dies with the app.
+        </li>
+        <li>
+          <strong>Back up sessions too.</strong> If{" "}
+          <span className="text-foreground">@thexjs/auth</span> backs sessions with{" "}
+          <span className="text-foreground">x_sessions</span>, it is part of the database backup
+          automatically. If you ever point auth at a separate session store, add it to the backup
+          set. Restoring an older snapshot will log everyone out (sessions created after it don't
+          exist) — plan for a re-auth wave.
+        </li>
+        <li>
+          <strong>Multi-instance deploys:</strong> SQLite is single-node. For two or more app
+          instances behind a load balancer, use Postgres (or a dedicated SQLite host) so every
+          instance reads the same data. Back up from one instance's maintenance window, not from a
+          live replica mid-write.
+        </li>
+        <li>
+          <strong>Write down the runbook.</strong> RTO is set by how long restore takes when you are
+          panicking, so document the exact commands above somewhere your on-call can reach.
+        </li>
+      </ul>
+
       <h2 className="mt-12 text-xl font-bold tracking-tight">Sessions, not hand-rolled</h2>
       <p className="mt-3 text-muted-foreground">
         If you need sessions on top of this,{" "}

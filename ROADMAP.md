@@ -64,8 +64,9 @@ tracking list, not a commitment schedule — each item gets its own design first
 4. **Release discipline**: first tagged release with strict semver + changelog
    via changesets for all `@thexjs/*` packages (currently pre-1.0, in flux).
 5. **Backup / disaster recovery**: documented backup and restore story for the
-   SQLite/Postgres data layer, plus runbook guidance for multi-instance
-   deployments.
+   SQLite/Postgres data layer (hot backup via SQLite backup API, pg_dump/pg_restore,
+   restore runbook + checklist) in `docs/data-layer`, plus runbook guidance for
+   multi-instance deployments.
 6. **Security response**: a security disclosure SLA. `SECURITY.md` documents
    reporting, but there is no committed response-time target or coordinated
    disclosure process yet.
