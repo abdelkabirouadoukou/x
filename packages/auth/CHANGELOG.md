@@ -1,5 +1,12 @@
 # @thexjs/auth
 
+## 3.0.1
+
+### Patch Changes
+
+- Updated dependencies [baa688f]
+  - @thexjs/core@1.2.1
+
 ## 3.0.0
 
 ### Minor Changes
