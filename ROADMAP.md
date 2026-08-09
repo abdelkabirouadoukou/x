@@ -34,7 +34,10 @@ writing.
 
 1. **Data layer**: SQLite WAL/FK setup. The migration runner and Postgres
    retry/backoff + TLS behaviors are tested (`data/migrate.test.ts`,
-   `data/postgres.test.ts`), but the SQLite connection options are not.
+   `data/postgres.test.ts`). SQLite connection options (WAL journaling,
+   foreign keys, and their opt-outs) are now pinned by
+   `data/sqlite.test.ts` — including that FK enforcement actually rejects
+   orphan inserts and is genuinely lifted when disabled.
 2. **Content pipeline**: frontmatter parsing edge cases, content route
    generation, `.mdx` compile path.
 3. **Observability reporters**: error reporter flush on shutdown, metric
