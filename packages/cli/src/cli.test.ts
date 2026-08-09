@@ -137,20 +137,41 @@ export default function Home() {
     rmSync(empty, { recursive: true, force: true });
   });
 
-  test("doctor flags server-only env access in pages", () => {
+  test("doctor warns (non-fatally) about env access in island source", () => {
     const dirty = join(FIXTURE_DIR, "dirty-doctor");
     mkdirSync(join(dirty, "src/pages"), { recursive: true });
+    mkdirSync(join(dirty, "node_modules/@thexjs/core"), { recursive: true });
+    writeFileSync(
+      join(dirty, "package.json"),
+      JSON.stringify({
+        dependencies: { "@thexjs/core": "1.0.0" },
+      }),
+    );
+    writeFileSync(join(dirty, "x.config.ts"), 'export default { pagesDir: "src/pages" };\n');
+    writeFileSync(
+      join(dirty, "node_modules/@thexjs/core/package.json"),
+      JSON.stringify({ version: "1.0.0" }),
+    );
     writeFileSync(
       join(dirty, "src/pages/index.tsx"),
-      `export default function Home() {
+      `import type { ReactElement } from "react";
+
+export default function Home() {
   const url = process.env.DATABASE_URL;
   return <h1>{url}</h1>;
 }
+
+export function Like(): ReactElement | null {
+  return null;
+}
+
+export const islands = { Like: Like };
 `,
     );
     const res = runCli(["doctor", "--cwd", dirty]);
-    expect(res.status).not.toBe(0);
+    expect(res.status).toBe(0);
     expect(res.stderr + res.stdout).toContain("DATABASE_URL");
+    expect(res.stderr + res.stdout).toContain("referenced in island source");
     rmSync(dirty, { recursive: true, force: true });
   });
 });

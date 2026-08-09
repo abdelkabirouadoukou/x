@@ -4,11 +4,6 @@ import { findLeakedEnvKeys } from "@thexjs/core";
 import { detectOptionsFromConfig, findConfig } from "./config-detect.js";
 import { xDim, xError, xInfo, xSuccess, xWarn } from "./terminal.js";
 
-interface Leak {
-  file: string;
-  keys: string[];
-}
-
 function walkTs(dir: string): string[] {
   const out: string[] = [];
   let entries: string[];
@@ -112,29 +107,38 @@ export async function runDoctor(projectDir: string): Promise<number> {
     xSuccess(`@thexjs packages installed: ${names.length > 0 ? names.join(", ") : "(none)"}`);
   }
 
-  // 7. Rich: env-var isolation scan across pages + actions
-  const leaks: Leak[] = [];
-  for (const dir of [pagesDir, actionsDir]) {
-    if (!dir || !isDir(dir)) continue;
-    for (const file of walkTs(dir)) {
+  // 7. Rich: env-var isolation scan across client-shipped source. Only island
+  // modules are bundled into browser JS (see island-bundle.ts): plain pages
+  // and loaders render server-side, and actions are rewritten to fetch()
+  // wrappers. So scan files that export an `islands` map -- that's the one
+  // surface whose env references could reach the client bundle.
+  //
+  // This is a source-level heuristic, not the real gate: `x build` runs
+  // assertNoEnvLeakage on the compiled bundle, which is the authoritative
+  // check. Docstring examples that merely print `process.env.*` names never
+  // reach a client chunk, so this reports warnings instead of failing.
+  let leaks = 0;
+  if (pagesDir && isDir(pagesDir)) {
+    for (const file of walkTs(pagesDir)) {
       let code: string;
       try {
         code = readFileSync(file, "utf-8");
       } catch {
         continue;
       }
+      const hasIslands = /\bexport\s+(?:const|function)\s+islands\b/.test(code);
+      if (!hasIslands) continue;
       const keys = findLeakedEnvKeys(code);
-      if (keys.length > 0) leaks.push({ file, keys });
+      if (keys.length > 0) {
+        leaks += 1;
+        xWarn(
+          `${relative(projectDir, file)}: ${keys.join(", ")} referenced in island source — if reachable from a client bundle, prefix with ${"THEXJS_PUBLIC_"} or move into a loader/action (x build enforces this)`,
+        );
+      }
     }
   }
-  if (leaks.length === 0) {
-    xSuccess("no non-THEXJS_PUBLIC_ env references in client-bound source");
-  } else {
-    for (const { file, keys } of leaks) {
-      bad(
-        `server-only env access in ${relative(projectDir, file)}: ${keys.join(", ")} — only THEXJS_PUBLIC_* is safe client-side`,
-      );
-    }
+  if (leaks === 0) {
+    xSuccess("no non-THEXJS_PUBLIC_ env references in island (client-bound) source");
   }
 
   // 8. Rich: installed @thexjs package version consistency
@@ -169,6 +173,8 @@ export async function runDoctor(projectDir: string): Promise<number> {
   }
   for (const [name, range] of Object.entries(declared)) {
     if (!name.startsWith("@thexjs/")) continue;
+    // workspace:* is a monorepo link, not a version contract -- skip.
+    if (range === "workspace:*") continue;
     const short = name.slice("@thexjs/".length);
     const installed = installedVersions.get(short);
     if (installed && range !== "*" && !range.startsWith("^") && !range.startsWith("~")) {
