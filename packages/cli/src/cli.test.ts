@@ -96,4 +96,82 @@ export default function Home() {
     expect(res.status).not.toBe(0);
     expect(res.stderr).toContain('unknown command "frobnicate"');
   });
+
+  test("doctor exits 0 for a healthy project", () => {
+    const healthy = join(FIXTURE_DIR, "healthy-doctor");
+    mkdirSync(join(healthy, "src/pages"), { recursive: true });
+    mkdirSync(join(healthy, "node_modules/@thexjs/core"), { recursive: true });
+    mkdirSync(join(healthy, "node_modules/@thexjs/cli"), { recursive: true });
+    writeFileSync(
+      join(healthy, "package.json"),
+      JSON.stringify({
+        dependencies: { "@thexjs/core": "1.0.0" },
+      }),
+    );
+    writeFileSync(join(healthy, "x.config.ts"), `export default { pagesDir: "src/pages" };\n`);
+    writeFileSync(
+      join(healthy, "src/pages/index.tsx"),
+      "export default function Home() { return <h1>h</h1>; }\n",
+    );
+    writeFileSync(
+      join(healthy, "node_modules/@thexjs/core/package.json"),
+      JSON.stringify({ version: "1.0.0" }),
+    );
+    writeFileSync(
+      join(healthy, "node_modules/@thexjs/cli/package.json"),
+      JSON.stringify({ version: "1.0.0" }),
+    );
+    const res = runCli(["doctor", "--cwd", healthy]);
+    expect(res.status).toBe(0);
+    expect(res.stderr + res.stdout).toContain("no problems found");
+    rmSync(healthy, { recursive: true, force: true });
+  });
+
+  test("doctor flags a project with no pages directory", () => {
+    const empty = join(FIXTURE_DIR, "empty-doctor");
+    mkdirSync(empty, { recursive: true });
+    writeFileSync(join(empty, "package.json"), "{}");
+    const res = runCli(["doctor", "--cwd", empty]);
+    expect(res.status).not.toBe(0);
+    expect(res.stderr + res.stdout).toContain("node_modules/@thexjs is missing");
+    rmSync(empty, { recursive: true, force: true });
+  });
+
+  test("doctor warns (non-fatally) about env access in island source", () => {
+    const dirty = join(FIXTURE_DIR, "dirty-doctor");
+    mkdirSync(join(dirty, "src/pages"), { recursive: true });
+    mkdirSync(join(dirty, "node_modules/@thexjs/core"), { recursive: true });
+    writeFileSync(
+      join(dirty, "package.json"),
+      JSON.stringify({
+        dependencies: { "@thexjs/core": "1.0.0" },
+      }),
+    );
+    writeFileSync(join(dirty, "x.config.ts"), 'export default { pagesDir: "src/pages" };\n');
+    writeFileSync(
+      join(dirty, "node_modules/@thexjs/core/package.json"),
+      JSON.stringify({ version: "1.0.0" }),
+    );
+    writeFileSync(
+      join(dirty, "src/pages/index.tsx"),
+      `import type { ReactElement } from "react";
+
+export default function Home() {
+  const url = process.env.DATABASE_URL;
+  return <h1>{url}</h1>;
+}
+
+export function Like(): ReactElement | null {
+  return null;
+}
+
+export const islands = { Like: Like };
+`,
+    );
+    const res = runCli(["doctor", "--cwd", dirty]);
+    expect(res.status).toBe(0);
+    expect(res.stderr + res.stdout).toContain("DATABASE_URL");
+    expect(res.stderr + res.stdout).toContain("referenced in island source");
+    rmSync(dirty, { recursive: true, force: true });
+  });
 });

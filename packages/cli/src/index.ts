@@ -2,6 +2,13 @@
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
+import {
+  type DetectedOptions,
+  detectDefaultOptions,
+  detectOptionsFromConfig,
+  findConfig,
+} from "./config-detect.js";
+import { runDoctor } from "./doctor.js";
 import { xError, xInfo, xSuccess, xWarn } from "./terminal.js";
 
 // Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
@@ -74,106 +81,18 @@ function parseArgv(argv: string[]): {
 const { command, cwd, adapter, outDir: outDirFlag } = parseArgv(Bun.argv.slice(2));
 const projectDir = cwd ? resolve(process.cwd(), cwd) : process.cwd();
 
-function findConfig(): string | null {
-  const candidates = ["x.config.ts", "x.config.js", "x.config.mjs"];
-  for (const name of candidates) {
-    const full = join(projectDir, name);
-    if (existsSync(full)) return full;
-  }
-  return null;
-}
-
-interface DetectedOptions {
-  routesDir?: string;
-  pagesDir?: string;
-  apiDir?: string;
-  layoutsDir?: string;
-  actionsDir?: string;
-  contentDir?: string;
-  port: number;
-  /** Passed through untouched from x.config.ts — may hold live values (functions, reporters). */
-  security?: Record<string, unknown>;
-  observability?: Record<string, unknown>;
-  images?: Record<string, unknown>;
-}
-
-function dropUndefined<T extends Record<string, unknown>>(obj: T): T {
-  const out = {} as Record<string, unknown>;
-  for (const [k, v] of Object.entries(obj)) {
-    if (v !== undefined) out[k] = v;
-  }
-  return out as T;
-}
-
-function detectOptionsFromConfig(cfg: Record<string, unknown>): DetectedOptions {
-  const resolveDir = (dir: unknown) =>
-    typeof dir === "string" ? join(projectDir, dir) : undefined;
-  const guessPages = join(projectDir, "src", "pages");
-  const guessRoutes = join(projectDir, "src", "routes");
-  const defaultPagesDir =
-    typeof cfg.pagesDir === "string"
-      ? resolveDir(cfg.pagesDir)
-      : typeof cfg.routesDir === "string"
-        ? resolveDir(cfg.routesDir)
-        : existsSync(guessPages)
-          ? guessPages
-          : guessRoutes;
-  const contentDir =
-    typeof cfg.contentDir === "string"
-      ? resolveDir(cfg.contentDir)
-      : existsSync(join(projectDir, "content"))
-        ? join(projectDir, "content")
-        : undefined;
-  const actionsDir =
-    typeof cfg.actionsDir === "string"
-      ? resolveDir(cfg.actionsDir)
-      : existsSync(join(projectDir, "src", "actions"))
-        ? join(projectDir, "src", "actions")
-        : undefined;
-  return dropUndefined({
-    routesDir: resolveDir(cfg.routesDir) || undefined,
-    pagesDir: defaultPagesDir,
-    apiDir: resolveDir(cfg.apiDir) || undefined,
-    layoutsDir: resolveDir(cfg.layoutsDir) || undefined,
-    actionsDir,
-    contentDir,
-    port: (cfg.port as number) ?? 3000,
-    security: (cfg.security as Record<string, unknown>) ?? undefined,
-    observability: (cfg.observability as Record<string, unknown>) ?? undefined,
-    images: (cfg.images as Record<string, unknown>) ?? undefined,
-  }) as unknown as DetectedOptions;
-}
-
-function detectDefaultOptions(): DetectedOptions {
-  const guessPages = join(projectDir, "src", "pages");
-  const guessRoutes = join(projectDir, "src", "routes");
-  const pagesDir = existsSync(guessPages) ? guessPages : guessRoutes;
-  const contentDir = existsSync(join(projectDir, "content"))
-    ? join(projectDir, "content")
-    : undefined;
-  const actionsDir = existsSync(join(projectDir, "src", "actions"))
-    ? join(projectDir, "src", "actions")
-    : undefined;
-  return dropUndefined({
-    pagesDir,
-    actionsDir,
-    contentDir,
-    port: 3000,
-  }) as unknown as DetectedOptions;
-}
-
 async function detectOptions(): Promise<{ options: DetectedOptions; configPath: string | null }> {
-  const configPath = findConfig();
+  const configPath = findConfig(projectDir);
   if (configPath) {
     try {
       const mod = (await import(configPath)) as { default?: Record<string, unknown> };
-      return { options: detectOptionsFromConfig(mod.default ?? {}), configPath };
+      return { options: detectOptionsFromConfig(projectDir, mod.default ?? {}), configPath };
     } catch (err) {
       xWarn(`failed to load config: ${String(err)}`);
     }
   }
 
-  return { options: detectDefaultOptions(), configPath: null };
+  return { options: detectDefaultOptions(projectDir), configPath: null };
 }
 
 async function cmdDev(): Promise<void> {
@@ -391,6 +310,7 @@ Commands:
   dev     Start the development server with hot reload
   build   Build for production (static export + server bundle -> .x/)
   start   Start the production server (run "x build" first)
+  doctor  Diagnose the project: config, dirs, env isolation, dependency health
 
 Options:
   --cwd <dir>          Run as if started inside <dir> (default: current directory)
@@ -433,6 +353,9 @@ async function main(): Promise<void> {
       break;
     case "start":
       await cmdStart();
+      break;
+    case "doctor":
+      process.exitCode = await runDoctor(projectDir);
       break;
     case "--help":
     case "-h":
