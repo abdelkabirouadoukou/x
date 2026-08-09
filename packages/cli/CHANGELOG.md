@@ -1,5 +1,22 @@
 # @thexjs/cli
 
+## 1.1.0
+
+### Minor Changes
+
+- 43fa19d: Add `x doctor`: a project diagnostics command that checks Bun version, config
+  presence/parse, expected directories (pages/api/actions/layouts/content/public),
+  route-tree compilation, installed `@thexjs/*` packages, and -- for production
+  envs -- server-only env access across pages/actions and a missing `AUTH_SECRET`.
+  Exits non-zero when problems are found.
+
+### Patch Changes
+
+- Updated dependencies [fbd5e29]
+- Updated dependencies [58aa123]
+  - @thexjs/core@1.2.0
+  - @thexjs/adapter-vercel@1.0.1
+
 ## 1.0.0
 
 ### Major Changes
