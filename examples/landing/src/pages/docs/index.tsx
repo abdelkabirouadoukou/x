@@ -39,6 +39,12 @@ const startSections = [
     desc: "Project structure, your first page, and running the dev server.",
     href: "/docs/getting-started",
   },
+  {
+    icon: ArrowRight,
+    title: "Migration Guide",
+    desc: "Move an existing Next.js or TanStack app to x.",
+    href: "/docs/migration",
+  },
 ];
 
 const packageSections = [

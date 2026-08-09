@@ -22,6 +22,7 @@ const NAV_COMMANDS: Cmd[] = [
     href: "/docs/getting-started",
     icon: MapPin,
   },
+  { label: "Migration Guide", hint: "/docs/migration", href: "/docs/migration", icon: MapPin },
   { label: "Routing", hint: "/docs/routing", href: "/docs/routing", icon: MapPin },
   { label: "Pages & Loaders", hint: "/docs/pages", href: "/docs/pages", icon: MapPin },
   { label: "Layouts", hint: "/docs/layouts", href: "/docs/layouts", icon: MapPin },
