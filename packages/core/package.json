@@ -29,6 +29,10 @@
     "./data": {
       "types": "./dist/data.d.ts",
       "import": "./dist/data.js"
+    },
+    "./adapter": {
+      "types": "./dist/adapter.d.ts",
+      "import": "./dist/adapter.js"
     }
   },
   "files": ["dist", "README.md", "LICENSE"],
@@ -36,7 +40,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup --entry.index=src/index.ts --entry.data=src/data/index.ts --format esm --dts --clean --target node18 --external bun:sqlite --external react --external react-dom --external react/jsx-runtime",
+    "build": "tsup --entry.index=src/index.ts --entry.data=src/data/index.ts --entry.adapter=src/adapter/index.ts --format esm --dts --clean --target node18 --external bun:sqlite --external react --external react-dom --external react/jsx-runtime",
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
