@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, spyOn, test } from "bun:test";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { build } from "./build";
 import { buildIslandBundleInMemory } from "./island-bundle";
 import { EnvLeakageError } from "./security/env-isolation";
@@ -56,7 +57,7 @@ function writeRoute(path: string, body: string): void {
 beforeAll(() => {
   writeRoute(
     LEAK_ROUTE,
-    `import { Island } from "${ISLAND_PATH}";
+    `import { Island } from "${pathToFileURL(ISLAND_PATH).href}";
 
 export function Leaky() {
   const secret = process.env.API_SECRET_TOKEN;
@@ -81,7 +82,7 @@ export default function LeakPage() {
   );
   writeRoute(
     CLEAN_ROUTE,
-    `import { Island } from "${ISLAND_PATH}";
+    `import { Island } from "${pathToFileURL(ISLAND_PATH).href}";
 
 export function Counter() {
   const count = 0;
