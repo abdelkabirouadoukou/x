@@ -73,9 +73,10 @@ Shipped items are listed with a pointer to where they landed.
 4. **Backup / disaster recovery**: documented backup and restore story for the
    SQLite/Postgres data layer, plus runbook guidance for multi-instance
    deployments.
-5. **Security response**: a security disclosure SLA. `SECURITY.md` documents
-   reporting, but there is no committed response-time target or coordinated
-   disclosure process yet.
+5. **Security response**: disclosure SLA in `SECURITY.md` — 48h acknowledgement,
+   5-business-day triage, CVSS-aligned severity, 90-day coordinated disclosure,
+   and a 12-month backport window for the previous major. Shipped; kept in the
+   tracking list until the disclosure flow has been exercised once end-to-end.
 
 ## Post-1.0 considerations
 

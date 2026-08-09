@@ -212,7 +212,9 @@ Fly checks, Railway healthchecks).
 - Logging is structured JSON via `observability.logging`; disable it if you log
   at a reverse proxy instead.
 
-## Reporting a vulnerability
+## Vulnerability disclosure & response
+
+### Reporting
 
 Please **do not** open a public issue for security problems. Email the
 maintainer at the address in the repository profile, or open a GitHub
@@ -222,5 +224,62 @@ Security Advisory via the repo's **Security** tab (private). Include:
 - Steps to reproduce (minimal code/config).
 - Whether it affects a published package version.
 
-You'll get an acknowledgement within a few days and a fix plan. If you prefer,
-you can responsibly disclose through GitHub's coordinated disclosure flow.
+If you prefer, you can responsibly disclose through GitHub's coordinated
+disclosure flow.
+
+### Response-time SLA
+
+| Milestone | Target |
+|---|---|
+| Acknowledge receipt | within **48 hours** |
+| Initial triage (severity assessment + confirmation) | within **5 business days** |
+| Fix available for Critical/High (with a workaround if a full fix takes longer) | within **30 days** of confirmation |
+| Fix available for Medium/Low | at the next scheduled release, or **60 days** for Low |
+
+If a milestone cannot be met we'll say so and give a revised date — we'd rather
+under-promise than go silent.
+
+### Severity classification
+
+Severity is assigned from CVSS v3.1 base scores, with the qualitative mapping
+below. Context that matters for this framework: the attack surface is the
+client/server boundary (browser-visible code, `/__x/actions/*`, image proxy,
+auth/session handling), so issues are rated by what a remote or cross-site
+attacker can actually do, not by source-level severity alone.
+
+| Severity | CVSS | Examples in this codebase |
+|---|---|---|
+| **Critical** | 9.0–10.0 | Remote code execution; auth bypass that grants access without credentials; secret disclosure in client bundles |
+| **High** | 7.0–8.9 | Server-side request forgery via the image proxy; cross-site request forgery on auth endpoints; session token forgery/leak |
+| **Medium** | 4.0–6.9 | Reflected/stored XSS with mitigations; information disclosure of non-secret data; rate-limit bypass |
+| **Low** | 0.1–3.9 | Logging of sensitive fields; minor header misconfigurations; DoS under unusual load |
+
+### Coordinated disclosure
+
+We ask reporters to keep issues private until we've shipped a fix:
+
+- **90 days** of coordinated disclosure before public disclosure, **negotiable
+  to shorter** for issues under active exploitation (we'll coordinate a
+  disclosure date with you).
+- After a fix is released, a public advisory (via GitHub Security Advisories)
+  is published with credit to the reporter, consistent with their preference.
+- We will not publicly blame reporters or maintainers; the goal is safe fixes.
+
+### Patch & backport policy
+
+The framework follows the versioning policy in `VERSIONING.md` — `@thexjs/*`
+packages ship in lockstep on one versioning PR per cycle. Security fixes are
+subject to the same backport rule:
+
+- **Latest major**: all security fixes ship in the next patch/minor release.
+- **Previous major**: critical/high fixes are backported as patch releases for
+  **12 months** after the newer major ships, or until the older major is
+  retired, whichever is sooner. Medium/low fixes are backported on a
+  best-effort basis.
+- **Older majors**: no security patches. Users on old majors must upgrade.
+  Backport releases use the same lockstep versioning PR flow.
+- Deprecation of a major is announced at least one major in advance (see the
+  deprecation window in `VERSIONING.md`).
+
+If you're on an unsupported version and believe you're affected, report it
+anyway — we'll help you find a path (usually: upgrade, or a config workaround).
