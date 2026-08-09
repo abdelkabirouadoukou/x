@@ -1,9 +1,12 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import type { BuildManifest } from "@thexjs/core/adapter";
+import {
+  allModuleRefs,
+  bundleRenderFunction as bundleToStandaloneFile,
+  transpileModules,
+} from "@thexjs/core/adapter";
 import { generateEntrySource } from "./generate-entry";
-import { allModuleRefs } from "./scan";
-import { transpileModules } from "./transpile";
-import type { BuildManifest } from "./types";
 
 /**
  * Produces `.vercel/output/functions/render.func/index.mjs`: a single
@@ -11,6 +14,10 @@ import type { BuildManifest } from "./types";
  * (`@thexjs/core`, `react`, `react-dom`, every route/layout/middleware/action
  * module) so it runs on Vercel's `nodejs*.x` runtime with zero `node_modules`
  * and zero dynamic filesystem access at request time.
+ *
+ * The generic pipeline (build manifest resolution, transpile, bundle) is the
+ * `@thexjs/core` adapter SDK; Vercel contributes the Platform-specific entry
+ * (Node bridge) and output tree on top.
  */
 export async function bundleRenderFunction(
   manifest: BuildManifest,
@@ -28,37 +35,14 @@ export async function bundleRenderFunction(
   const scratchDir = join(functionDir, ".scratch");
   mkdirSync(scratchDir, { recursive: true });
 
-  try {
-    // 1. Transpile every referenced .tsx/.ts file (routes, layouts,
-    //    middleware, actions, 404, root layout) into plain Node-runnable ESM.
-    const refs = allModuleRefs(manifest);
-    await transpileModules(refs);
+  // 1. Transpile every referenced .tsx/.ts file (routes, layouts,
+  //    middleware, actions, 404, root layout) into plain Node-runnable ESM.
+  const refs = allModuleRefs(manifest);
+  await transpileModules(refs);
 
-    // 2. Generate the entry file that statically imports all of the above and
-    //    implements the request dispatcher + Node<->Web bridge.
-    const entryPath = join(scratchDir, "entry.mjs");
-    const entrySource = generateEntrySource(manifest, scratchDir);
-    writeFileSync(entryPath, entrySource, "utf-8");
-
-    // 3. Bundle the entry (this time with NO externals) into one standalone
-    //    file that becomes the function's handler.
-    const result = await Bun.build({
-      entrypoints: [entryPath],
-      target: "node",
-      format: "esm",
-      splitting: false,
-      minify: false,
-    });
-
-    if (!result.success || result.outputs.length === 0) {
-      const messages = result.logs.map((l) => l.message).join("\n");
-      throw new Error(`[adapter-vercel] failed to bundle render function:\n${messages}`);
-    }
-
-    const [output] = result.outputs;
-    const code = await (output as Blob).text();
-    writeFileSync(join(functionDir, "index.mjs"), code, "utf-8");
-  } finally {
-    rmSync(scratchDir, { recursive: true, force: true });
-  }
+  // 2. Compose the entry: generic createApp() boot from the adapter SDK plus
+  //    the Vercel Node<->Web bridge. Then bundle it (with NO externals) into
+  //    one standalone file that becomes the function's handler.
+  const entrySource = generateEntrySource(manifest, scratchDir);
+  await bundleToStandaloneFile(functionDir, entrySource);
 }
