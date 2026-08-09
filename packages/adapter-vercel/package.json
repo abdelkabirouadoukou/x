@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/adapter-vercel",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Vercel Build Output API (v3) adapter for the x framework -- deploy @thexjs apps to Vercel with zero vercel.json config.",
   "keywords": ["vercel", "adapter", "build-output-api", "bun", "react", "framework", "x"],
   "license": "MIT",
