@@ -72,6 +72,7 @@ export default function Home() {
 
   test("generateAdapterEntry emits a statically-imported, createApp-booting entry", async () => {
     const manifest: BuildManifest = {
+      projectRoot: "/s",
       pagesDirLabel: "src/pages",
       routes: [
         {
@@ -99,6 +100,51 @@ export default function Home() {
     expect(src).toContain("module: __x_page_1");
     expect(src).not.toContain("import(");
     expect(src).toContain("export { __x_app };");
+    // Build-machine absolute paths must not leak into the generated entry.
+    expect(src).not.toContain('"/s/about.tsx"');
+    expect(src).not.toContain('filePath: "/s/about.tsx"');
+  });
+
+  test("generateAdapterEntry relativizes emitted paths against the project root", () => {
+    const manifest: BuildManifest = {
+      projectRoot: "/s",
+      pagesDirLabel: "/s/src/pages",
+      routes: [
+        {
+          routePath: "/about",
+          paramNames: [],
+          isApi: false,
+          mode: "server",
+          route: {
+            sourcePath: "/s/src/pages/about.tsx",
+            compiledPath: "/s/.scratch/__x_page_1.mjs",
+            identifier: "__x_page_1",
+          },
+          layoutChain: [],
+          middlewareChain: [],
+        },
+      ],
+      actions: [],
+      hasServerSurface: true,
+    };
+    const src = generateAdapterEntry(manifest, "/tmp/e");
+    expect(src).toContain('"filePath":"./src/pages/about.tsx"');
+    expect(src).not.toContain('"/s/');
+    expect(src).toContain('pagesDir: "./src/pages"');
+  });
+
+  test("generateAdapterEntry rejects non-JSON-serializable runtime options", () => {
+    const manifest: BuildManifest = {
+      projectRoot: "/s",
+      pagesDirLabel: "src/pages",
+      routes: [],
+      actions: [],
+      hasServerSurface: true,
+      security: { errorReporter: () => {} },
+    };
+    expect(() => generateAdapterEntry(manifest, "/tmp/e")).toThrow(
+      /cannot serialize security\.errorReporter/,
+    );
   });
 
   test("bundleRenderFunction emits a standalone index.mjs", async () => {

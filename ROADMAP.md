@@ -57,6 +57,11 @@ Shipped items are listed with a pointer to where they landed.
 - **Release discipline** — first tagged release (`1.0.0` baseline across all
   `@thexjs/*` packages) shipped via the changesets flow; versioning policy in
   `VERSIONING.md`, operations in `CONTRIBUTING.md#releasing`.
+- **Adapter ecosystem** — `@thexjs/core` ships a platform-agnostic Adapter SDK
+  (`@thexjs/core/adapter`): build-manifest resolution, per-file transpile, and
+  render-function bundling are reusable, so third-party adapters only implement
+  their platform's output layer. `@thexjs/adapter-vercel` is the reference
+  implementation.
 
 ### Tracking (remaining)
 

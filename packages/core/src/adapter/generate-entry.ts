@@ -8,6 +8,31 @@ function importPath(from: string, ref: CompiledModuleRef): string {
 }
 
 /**
+ * Serializes runtime config (security / observability / images) into the
+ * generated entry. Only JSON-serializable values can cross the build
+ * boundary -- a `security.errorReporter` or `observability.logger` callback
+ * in `x.config.ts` must not silently vanish, or the deployed function would
+ * drift from `x start`. Fail the build loudly with the offending keys.
+ */
+export function serializeRuntimeOptions(
+  label: string,
+  options: Record<string, unknown> | undefined,
+): string {
+  if (options === undefined) return "{}";
+  const offenders: string[] = [];
+  JSON.stringify(options, (key, value) => {
+    if (typeof value === "function" || typeof value === "symbol") offenders.push(`${label}.${key}`);
+    return value;
+  });
+  if (offenders.length > 0) {
+    throw new Error(
+      `[@thexjs/core] cannot serialize ${offenders.join(", ")} into the adapter entry — only JSON-serializable values (no functions/symbols) can be forwarded to a serverless runtime. Move the callable into a server file or configure it directly on the platform.`,
+    );
+  }
+  return JSON.stringify(options) ?? "{}";
+}
+
+/**
  * Emits the source for the adapter render-function entry module.
  *
  * Every route/layout/middleware/action module is imported *statically* (no
@@ -37,9 +62,9 @@ export function generateAdapterEntry(manifest: BuildManifest, entryDir: string):
   );
 
   // -- security & observability config --------------------------------------
-  const securityOpts = JSON.stringify(manifest.security ?? {});
-  const observabilityOpts = JSON.stringify(manifest.observability ?? {});
-  const imagesOpts = JSON.stringify(manifest.images ?? {});
+  const securityOpts = serializeRuntimeOptions("security", manifest.security);
+  const observabilityOpts = serializeRuntimeOptions("observability", manifest.observability);
+  const imagesOpts = serializeRuntimeOptions("images", manifest.images);
   lines.push(
     `const __x_security = ${securityOpts};`,
     `const __x_observability = ${observabilityOpts};`,
@@ -82,13 +107,19 @@ export function generateAdapterEntry(manifest: BuildManifest, entryDir: string):
   lines.push("");
 
   // -- preloaded route manifest ----------------------------------------------
+  // Paths are emitted relative to the project root so the generated source is
+  // host-independent and doesn't leak the build machine's filesystem layout.
+  const rel = (abs: string) => {
+    const r = relative(manifest.projectRoot, abs).replaceAll("\\", "/");
+    return r.startsWith(".") ? r : `./${r}`;
+  };
   lines.push("const __x_preloadedRoutes = [");
   for (const r of manifest.routes) {
     const entryObj = {
       routePath: r.routePath,
       paramNames: r.paramNames,
       isApi: r.isApi,
-      filePath: r.route.sourcePath,
+      filePath: rel(r.route.sourcePath),
     };
     const layoutMods = r.layoutChain.map((l) => `${l.identifier}.default`).join(", ");
     const mwMods = r.middlewareChain.map((m) => `${m.identifier}.middleware`).join(", ");
@@ -110,7 +141,7 @@ export function generateAdapterEntry(manifest: BuildManifest, entryDir: string):
   // -- build the real app (same pipeline as `x start`) -----------------------
   lines.push(
     "const __x_app = await createApp({",
-    `  pagesDir: ${JSON.stringify(manifest.pagesDirLabel)},`,
+    `  pagesDir: ${JSON.stringify(rel(manifest.pagesDirLabel))},`,
     "  development: false,",
     "  port: parseInt(process.env.PORT || '3000', 10),",
     ...(manifest.stylesheetHref

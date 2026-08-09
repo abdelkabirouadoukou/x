@@ -2,11 +2,22 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Bundles the render function into a single standalone ESM file with the
- * whole SSR/API dependency graph inlined (`@thexjs/core`, `react`,
- * `react-dom`, every route/layout/middleware/action module) so it runs on a
- * platform's Node runtime with zero `node_modules` and zero dynamic
- * filesystem access at request time.
+ * The scratch directory that holds the transient (transpiled module / entry
+ * source) files the bundler reads before inlining everything into
+ * `index.mjs`. Part of the adapter SDK contract: the entry generator computes
+ * relative `import` paths off the directory the adapter creates via this
+ * helper, so both sides must agree on the same location.
+ */
+export function adapterScratchDir(functionDir: string): string {
+  return join(functionDir, ".scratch");
+}
+
+/**
+ * Bundles the pure `index.mjs` render function that inlines the whole
+ * SSR/API dependency graph (`@thexjs/core`, `react`, `react-dom`, every
+ * route/layout/middleware/action module) so it runs on a platform's Node
+ * runtime with zero `node_modules` and zero dynamic filesystem access at
+ * request time.
  *
  * `entrySource` (as produced by `generateAdapterEntry`, plus whatever
  * platform bridge the adapter appended) should reference the transpiled
@@ -19,7 +30,7 @@ export async function bundleRenderFunction(
   entrySource: string,
 ): Promise<void> {
   mkdirSync(functionDir, { recursive: true });
-  const scratchDir = join(functionDir, ".scratch");
+  const scratchDir = adapterScratchDir(functionDir);
   mkdirSync(scratchDir, { recursive: true });
 
   try {

@@ -25,8 +25,8 @@ export {
   allModuleRefs,
 } from "./scan";
 export { transpileModules } from "./transpile";
-export { generateAdapterEntry } from "./generate-entry";
-export { bundleRenderFunction } from "./bundle";
+export { generateAdapterEntry, serializeRuntimeOptions } from "./generate-entry";
+export { adapterScratchDir, bundleRenderFunction } from "./bundle";
 export type {
   AdapterOptions,
   BuildManifest,

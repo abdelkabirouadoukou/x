@@ -1,7 +1,6 @@
-import { mkdirSync } from "node:fs";
-import { join } from "node:path";
 import type { BuildManifest } from "@thexjs/core/adapter";
 import {
+  adapterScratchDir,
   allModuleRefs,
   bundleRenderFunction as bundleToStandaloneFile,
   transpileModules,
@@ -23,8 +22,6 @@ export async function bundleRenderFunction(
   manifest: BuildManifest,
   functionDir: string,
 ): Promise<void> {
-  mkdirSync(functionDir, { recursive: true });
-
   // Scratch dir lives *inside* functionDir (i.e. inside the project's own
   // `.vercel/output/` tree) rather than an OS tmpdir. Bun resolves bare
   // imports (`react`, `@thexjs/core`, ...) by walking up from the entry
@@ -32,8 +29,10 @@ export async function bundleRenderFunction(
   // relationship to the project tree, so that resolution could pick up the
   // wrong install (or nothing at all). Being inside the project tree
   // guarantees the walk-up reaches the project's real `node_modules`.
-  const scratchDir = join(functionDir, ".scratch");
-  mkdirSync(scratchDir, { recursive: true });
+  //
+  // `adapterScratchDir` is the SDK contract both generateEntrySource and
+  // bundleRenderFunction agree on.
+  const scratchDir = adapterScratchDir(functionDir);
 
   // 1. Transpile every referenced .tsx/.ts file (routes, layouts,
   //    middleware, actions, 404, root layout) into plain Node-runnable ESM.

@@ -162,6 +162,7 @@ export async function resolveBuildManifest(
     : undefined;
 
   return {
+    projectRoot,
     pagesDirLabel: pagesDir,
     routes,
     actions,

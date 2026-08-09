@@ -29,6 +29,7 @@ function touch(dir: string, relPath: string, content: string) {
 
 function unitManifest(overrides: Partial<BuildManifest> = {}): BuildManifest {
   return {
+    projectRoot: "/fixture",
     pagesDirLabel: "src/pages",
     routes: [
       {
@@ -121,6 +122,28 @@ describe("generateEntrySource", () => {
     expect(src).toContain("action_subscribe");
     expect(src).toContain('parentPath = "/api/subscribe"');
     expect(src).toContain("registerServerFunctions");
+  });
+
+  test("validates forwarded headers instead of trusting them blindly", () => {
+    const src = generateEntrySource(unitManifest(), "/tmp/e");
+    // Forwarded proto/host go through a validator; multiple/duplicated values
+    // are rejected and fall back instead of being blindly trusted.
+    expect(src).toContain(`forwardedHeader(req, "x-forwarded-proto")`);
+    expect(src).toContain(`forwardedHeader(req, "x-forwarded-host")`);
+    expect(src).toContain("/^[a-zA-Z0-9.\\-:]+$/.test(single)");
+  });
+
+  test("honors write backpressure and cancels the reader on disconnect", () => {
+    const src = generateEntrySource(unitManifest(), "/tmp/e");
+    expect(src).toContain(`res.on("close", cancel)`);
+    expect(src).toContain('res.once("drain"');
+    expect(src).toContain("reader.cancel");
+  });
+
+  test("does not write a 500 after headers have already been sent", () => {
+    const src = generateEntrySource(unitManifest(), "/tmp/e");
+    expect(src).toContain("if (res.headersSent)");
+    expect(src).toContain("res.destroy");
   });
 });
 

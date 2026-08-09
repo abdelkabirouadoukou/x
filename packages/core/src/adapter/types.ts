@@ -48,6 +48,8 @@ export interface ResolvedAction {
 }
 
 export interface BuildManifest {
+  /** The project root the build ran from (used to relativize emitted paths). */
+  projectRoot: string;
   pagesDirLabel: string;
   routes: ResolvedRoute[];
   actions: ResolvedAction[];
