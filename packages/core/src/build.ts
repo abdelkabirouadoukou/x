@@ -20,7 +20,7 @@ import {
   scanPages,
   scanRoutes,
 } from "./router";
-import { assertNoEnvLeakage } from "./security/env-isolation";
+import { EnvLeakageError, assertNoEnvLeakage } from "./security/env-isolation";
 import { registerServerFunctions } from "./server-functions";
 
 export type RouteMode = "static" | "server";
@@ -331,6 +331,13 @@ async function bundleRouteIslands(
       console.warn(`  [islands] build error: ${log.message}`);
     }
   } catch (err) {
+    // A leaked server-only env var is a security failure, not a routine build
+    // hiccup. Rethrow so `x build` fails loudly and CI/CD sees a non-zero
+    // exit — a build that silently ships a dead, non-interactive island is
+    // worse than no build at all. The guarantee (the secret never reaches the
+    // client) already holds; this makes the failure distinguishable from an
+    // ordinary Bun.build() error.
+    if (err instanceof EnvLeakageError) throw err;
     console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
   }
 

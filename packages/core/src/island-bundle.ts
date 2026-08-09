@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { assertNoEnvLeakage } from "./security/env-isolation";
+import { EnvLeakageError, assertNoEnvLeakage } from "./security/env-isolation";
 import { generateServerFunctionClient } from "./server-functions";
 
 export interface ActionModuleInfo {
@@ -156,6 +156,15 @@ export async function buildIslandBundleInMemory(
     assertNoEnvLeakage(code, entryPath);
     return wrapIslandBundle(code);
   } catch (err) {
+    // A leaked server-only env var isn't a routine build hiccup. Dev keeps
+    // serving the fallback stub (fast iteration wins), but the warning must
+    // be visually distinct so it can't be mistaken for a hot-reload error.
+    if (err instanceof EnvLeakageError) {
+      console.error(
+        `\x1b[1;31m🔒  SECURITY: [islands] ${err.message}\x1b[0m\n    Falling back to a non-interactive hydration stub — fix the env isolation (prefix with THEXJS_PUBLIC_ or move the access server-side) before relying on this page's client behavior.`,
+      );
+      return wrapIslandBundle(generateFallbackHydration(islandNames));
+    }
     console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
     return wrapIslandBundle(generateFallbackHydration(islandNames));
   } finally {
