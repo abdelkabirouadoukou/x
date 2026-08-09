@@ -197,6 +197,40 @@ describe("renderMarkdown link URL sanitization", () => {
     expect(html).toContain("run");
   });
 
+  test("rejects a javascript: URL with a literal tab splitting the scheme", () => {
+    const html = renderMarkdown("[run](java\tscript:alert%281%29)");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+    expect(html).toContain("run");
+  });
+
+  test("rejects a javascript: URL with a literal carriage return splitting the scheme", () => {
+    const html = renderMarkdown("[run](java\rscript:alert%281%29)");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+    expect(html).toContain("run");
+  });
+
+  test("rejects a javascript: URL with a literal newline splitting the scheme", () => {
+    const html = renderMarkdown("[run](java\nscript:alert%281%29)");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+    expect(html).toContain("run");
+  });
+
+  test("rejects a tab-split scheme with encoded parens and mixed-cased scheme", () => {
+    const html = renderMarkdown("[run](JaVa\tscript:alert%281%29)");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+    expect(html).toContain("run");
+  });
+
+  test("strips control characters from a safe URL and renders the cleaned href", () => {
+    const html = renderMarkdown("[docs](https://example.com/\tdocs)");
+    expect(html).toContain('<a href="https://example.com/docs">docs</a>');
+    expect(html).not.toContain("\t");
+  });
+
   test("rejects a data: URL", () => {
     const html = renderMarkdown(
       "[x](data:text/html,\u003cscript\u003ealert(1)\u003c/script\u003e)",
