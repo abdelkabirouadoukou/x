@@ -75,9 +75,12 @@ Shipped items are listed with a pointer to where they landed.
    `requirePermission`/`requireAuth` guards plug into route middleware.
    Shipped in `@thexjs/auth`; keep tracking until an example app exercises a
    full roles + scopes flow end-to-end.
-3. **Scale validation**: load and concurrency testing. No published
-   benchmarks or soak tests for SSR throughput, the rate limiter under load,
-   or shared-store behavior across replicas.
+3. **Scale validation**: load and concurrency testing. Load harness at
+   `scripts/bench/load.ts` (SSR throughput + percentiles, server-fn
+   throughput, rate-limiter burst) with methodology in `BENCHMARKS.md` and a
+   non-blocking CI job. Baseline ~3,000 RPS SSR / ~3,800 RPS server-fn on
+   Apple Silicon. Keep tracking until a shared-store (Redis) multi-replica
+   soak test is added.
 4. **Backup / disaster recovery**: documented backup and restore story for the
    SQLite/Postgres data layer (hot backup via SQLite backup API, pg_dump/pg_restore,
    restore runbook + checklist) in `docs/data-layer`, plus runbook guidance for

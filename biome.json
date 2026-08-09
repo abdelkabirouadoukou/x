@@ -8,7 +8,9 @@
       "**/*.lock",
       "**/public/styles.css",
       "**/.x/**",
-      "**/.vercel/**"
+      "**/.vercel/**",
+      "**/scripts/bench/results/**",
+      "**/packages/core/src/__fixtures__/bench/**"
     ]
   },
   "formatter": {
