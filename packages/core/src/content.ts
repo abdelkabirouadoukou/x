@@ -134,6 +134,19 @@ function decodeLinkUrl(url: string): string {
 }
 
 /**
+ * Strips the control characters the WHATWG URL spec removes from a URL
+ * wherever they occur before scheme parsing. A tab, newline, or carriage
+ * return embedded in the scheme portion — `java\tscript:` — defeats a naive
+ * scheme regex (which sees no scheme and assumes the link is safe) while a
+ * real browser still executes the resulting `javascript:` link. The strip
+ * must happen before scheme detection and before the value is written into
+ * the emitted `href` so no raw control character leaks into the output.
+ */
+function stripUrlControlChars(url: string): string {
+  return url.replace(/[\t\n\r]/g, "");
+}
+
+/**
  * True when a markdown link URL is safe to emit in an `href` attribute.
  * `escapeHtml` neutralizes `& < > "` but not URL schemes, so an href like
  * `javascript:alert(1)` — including a percent-encoded variant such as
@@ -144,7 +157,8 @@ function decodeLinkUrl(url: string): string {
  * `?q=1`, `//cdn.example.com`) carry no scheme and pass through.
  */
 function isSafeLinkUrl(url: string): boolean {
-  const scheme = LINK_SCHEME_RE.exec(decodeLinkUrl(url.trim()))?.[1]?.toLowerCase();
+  const clean = stripUrlControlChars(url);
+  const scheme = LINK_SCHEME_RE.exec(decodeLinkUrl(clean.trim()))?.[1]?.toLowerCase();
   return scheme === undefined || ALLOWED_LINK_SCHEMES.has(scheme);
 }
 
@@ -184,9 +198,10 @@ export function renderMarkdown(md: string): string {
     })
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, href) =>
-      isSafeLinkUrl(href) ? `<a href="${href}">${text}</a>` : text,
-    )
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, href) => {
+      const clean = stripUrlControlChars(href);
+      return isSafeLinkUrl(clean) ? `<a href="${clean}">${text}</a>` : text;
+    })
     .replace(/__X_CODE_(\d+)__/g, (_m, i) => `<code>${inlineCodes[Number.parseInt(i)]}</code>`);
 
   html = html.replace(/__X_FENCE_(\d+)__/g, (_m, i) => fences[Number.parseInt(i)] ?? "");
