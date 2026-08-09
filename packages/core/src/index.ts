@@ -85,6 +85,21 @@ export {
 } from "./security/env-isolation";
 export { logger, withRequestLogging, type Logger, type LogFields } from "./observability/logger";
 export {
+  createInMemoryMetrics,
+  createOtlpMetricsReporter,
+  withRequestMetrics,
+  noopMetrics,
+  DEFAULT_HISTOGRAM_BUCKETS_MS,
+  type MetricsReporter,
+  type MetricsSnapshot,
+  type CounterSeries,
+  type HistogramSeries,
+  type MetricLabels,
+  type OtelMeterLike,
+  type InMemoryMetricsOptions,
+  type InMemoryMetricsReporter,
+} from "./observability/metrics";
+export {
   setErrorReporter,
   getErrorReporter,
   reportException,

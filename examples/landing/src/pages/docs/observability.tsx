@@ -11,8 +11,9 @@ export default function DocPage(_props: RouteProps) {
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Observability</h1>
       <p className="mt-4 text-lg text-muted-foreground">
         x includes production-ready observability out of the box: structured JSON logging, container
-        health/readiness probes, and pluggable APM error tracing. All of it is optional and
-        configurable via the <span className="text-foreground">observability</span> key in{" "}
+        health/readiness probes, request metrics (Prometheus or OpenTelemetry), and pluggable APM
+        error tracing. All of it is optional and configurable via the{" "}
+        <span className="text-foreground">observability</span> key in{" "}
         <span className="text-foreground">x.config.ts</span>.
       </p>
 
@@ -119,6 +120,63 @@ export async function loader() {
         restart it. The handler itself is exported as{" "}
         <span className="text-foreground">createHealthCheckHandler</span> if you want to wire these
         endpoints into a custom server instead.
+      </p>
+
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Request metrics</h2>
+      <p className="mt-3 text-muted-foreground">
+        x can record production metrics for every request — counts, latency histograms, and error
+        and rate-limit-rejection counters. Two built-in reporters cover the two standard
+        destinations:
+      </p>
+      <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
+        <li>
+          <span className="text-foreground">createInMemoryMetrics()</span> — an in-process registry
+          that serves a <span className="text-foreground">/metrics</span> endpoint in Prometheus
+          text format, ready to be scraped by Prometheus/Grafana.
+        </li>
+        <li>
+          <span className="text-foreground">createOtlpMetricsReporter(meter)</span> — forwards
+          counters and histograms to an OpenTelemetry meter from your own OTel SDK setup (e.g. an
+          OTLP exporter to Grafana Tempo/Cloud, Datadog, or Honeycomb).
+        </li>
+      </ul>
+      <CodeBlock
+        label="prometheus"
+        code={`import { createInMemoryMetrics } from "@thexjs/core";
+
+observability: {
+  metrics: createInMemoryMetrics(),
+}
+
+// GET /metrics
+// # TYPE x_http_requests_total counter
+// x_http_requests_total{method="GET",status="200"} 42`}
+      />
+      <CodeBlock
+        label="open-telemetry"
+        code={`import { createOtlpMetricsReporter } from "@thexjs/core";
+import { metrics } from "@opentelemetry/api";
+
+observability: {
+  metrics: createOtlpMetricsReporter(metrics.getMeter("x")),
+}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        The metrics recorded per request are{" "}
+        <span className="text-foreground">x_http_requests_total</span> (labels{" "}
+        <span className="text-foreground">method</span>,{" "}
+        <span className="text-foreground">status</span>),{" "}
+        <span className="text-foreground">x_http_request_duration_ms</span> (histogram, label{" "}
+        <span className="text-foreground">method</span>),{" "}
+        <span className="text-foreground">x_http_errors_total</span> (per phase), and{" "}
+        <span className="text-foreground">x_rate_limit_rejections_total</span> (per method).
+      </p>
+      <p className="mt-4 text-muted-foreground">
+        The same pieces are exported for custom wiring:{" "}
+        <span className="text-foreground">withRequestMetrics(reporter, handler)</span> wraps any
+        fetch handler, and any object implementing the{" "}
+        <span className="text-foreground">MetricsReporter</span> interface works — including your
+        own exporter that posts to a statsd/Prometheus push gateway.
       </p>
 
       <h2 className="mt-12 text-xl font-bold tracking-tight">APM error tracing</h2>

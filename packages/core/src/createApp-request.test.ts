@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createApp } from "./createApp";
+import { createInMemoryMetrics } from "./observability/metrics";
 
 /**
  * Integration tests for the full request pipeline exposed by
@@ -212,6 +213,62 @@ describe("observability", () => {
     });
     const res = await a.fetch(new Request("http://localhost/healthz"));
     expect(res.status).toBe(200);
+  });
+
+  test("records request metrics and serves /metrics in Prometheus format", async () => {
+    const metrics = createInMemoryMetrics();
+    const a = await createApp({
+      pagesDir: PAGES_DIR,
+      apiDir: API_DIR,
+      development: false,
+      security: { headers: false },
+      observability: { logging: false, metrics },
+    });
+
+    const pageRes = await a.fetch(new Request("http://localhost/about"));
+    expect(pageRes.status).toBe(200);
+
+    const metricsRes = await a.fetch(new Request("http://localhost/metrics"));
+    expect(metricsRes.status).toBe(200);
+    const text = await metricsRes.text();
+    expect(text).toContain("# TYPE x_http_requests_total counter");
+    expect(text).toContain('x_http_requests_total{method="GET",status="200"} 1');
+    expect(text).toContain("# TYPE x_http_request_duration_ms histogram");
+    expect(text).toContain('x_http_request_duration_ms_sum{method="GET"}');
+  });
+
+  test("does not serve /metrics when no metrics reporter is configured", async () => {
+    const a = await createApp({
+      pagesDir: PAGES_DIR,
+      apiDir: API_DIR,
+      development: false,
+      security: { headers: false },
+      observability: { logging: false },
+    });
+    const res = await a.fetch(new Request("http://localhost/metrics"));
+    expect(res.status).toBe(404);
+  });
+
+  test("records rate-limit rejections as a metric", async () => {
+    const metrics = createInMemoryMetrics();
+    const a = await createApp({
+      pagesDir: PAGES_DIR,
+      apiDir: API_DIR,
+      development: false,
+      security: {
+        headers: false,
+        rateLimit: { limit: 1, windowMs: 60_000 },
+      },
+      observability: { logging: false, metrics },
+    });
+    const mk = () => new Request("http://localhost/about");
+    expect((await a.fetch(mk())).status).toBe(200);
+    expect((await a.fetch(mk())).status).toBe(429);
+
+    const snap = metrics.snapshot();
+    const rejected = snap.counters.find((c) => c.name === "x_rate_limit_rejections_total");
+    expect(rejected?.value).toBe(1);
+    expect(rejected?.labels.method).toBe("GET");
   });
 });
 

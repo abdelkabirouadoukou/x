@@ -11,6 +11,7 @@ import { type MiddlewareFn, composeMiddleware } from "./middleware";
 import DefaultNotFound from "./not-found";
 import { type HealthCheckOptions, createHealthCheckHandler } from "./observability/health";
 import { withRequestLogging } from "./observability/logger";
+import { type MetricsReporter, withRequestMetrics } from "./observability/metrics";
 import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
@@ -84,6 +85,14 @@ export interface CreateAppOptions {
     errorReporter?: ErrorReporter;
     /** /healthz and /readyz endpoints, served ahead of all other routing. */
     health?: HealthCheckOptions;
+    /**
+     * Metrics reporter for request counters/histograms. Pass
+     * `createInMemoryMetrics()` (serves `/metrics` in Prometheus text format)
+     * or `createOtlpMetricsReporter(meter)`. When set, request metrics are
+     * recorded and, if the reporter exposes `handleMetrics`, a `/metrics`
+     * endpoint is served ahead of all other routing.
+     */
+    metrics?: MetricsReporter;
   };
   /** Remote-image proxy at /_x/image?url=... — see ImageProxyOptions. Unset/empty remoteHosts means the route 404s. */
   images?: ImageProxyOptions;
@@ -297,6 +306,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     setErrorReporter(options.observability.errorReporter);
   }
   const healthHandler = createHealthCheckHandler(options.observability?.health ?? {});
+  const metricsReporter = options.observability?.metrics;
   const rateLimiter =
     options.security?.rateLimit === false
       ? null
@@ -343,6 +353,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         return new Response(`Method ${method} not allowed`, { status: 405 });
       } catch (err) {
         reportException(err, { route: route.routePath, phase: "api" });
+        metricsReporter?.incr("x_http_errors_total", 1, { phase: "api" });
         console.error("[x] API handler error:", err);
         if (dev) {
           return new Response(renderErrorOverlay(err), {
@@ -474,6 +485,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         return baseHandler({ params, request: req });
       } catch (err) {
         reportException(err, { route: route.routePath, phase: "ssr" });
+        metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
         console.error("[x] route handler error:", err);
         if (dev) {
           return new Response(renderErrorOverlay(err), {
@@ -845,9 +857,17 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const healthResult = await healthHandler(req);
       if (healthResult !== null) return healthResult;
 
+      if (metricsReporter?.handleMetrics) {
+        const metricsResult = await metricsReporter.handleMetrics(req);
+        if (metricsResult !== null) return metricsResult;
+      }
+
       if (rateLimiter) {
         const limited = await rateLimitMiddleware(rateLimiter, req, server);
-        if (limited !== null) return limited;
+        if (limited !== null) {
+          metricsReporter?.incr("x_rate_limit_rejections_total", 1, { method: req.method });
+          return limited;
+        }
       }
 
       if (url === "/__x/reload") {
@@ -932,7 +952,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       req: Request,
       server?: import("./security/rate-limit").RateLimitServer,
     ) => withResponseHardening(await devFetchInner(req, server));
-    const devFetch = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
+    const devFetchBase = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
+    const devFetch = metricsReporter
+      ? withRequestMetrics(metricsReporter, devFetchBase)
+      : devFetchBase;
 
     return {
       routes: {},
@@ -953,9 +976,17 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const healthResult = await healthHandler(req);
     if (healthResult !== null) return healthResult;
 
+    if (metricsReporter?.handleMetrics) {
+      const metricsResult = await metricsReporter.handleMetrics(req);
+      if (metricsResult !== null) return metricsResult;
+    }
+
     if (rateLimiter) {
       const limited = await rateLimitMiddleware(rateLimiter, req, server);
-      if (limited !== null) return limited;
+      if (limited !== null) {
+        metricsReporter?.incr("x_rate_limit_rejections_total", 1, { method: req.method });
+        return limited;
+      }
     }
 
     const revalidationResult = await handleRevalidation(req);
@@ -993,7 +1024,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     req: Request,
     server?: import("./security/rate-limit").RateLimitServer,
   ) => withResponseHardening(await prodFetchInner(req, server));
-  const prodFetch = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
+  const prodFetchBase = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
+  const prodFetch = metricsReporter
+    ? withRequestMetrics(metricsReporter, prodFetchBase)
+    : prodFetchBase;
 
   return {
     routes: {},
