@@ -108,4 +108,69 @@ describe("proxying", () => {
     const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.html"));
     expect(res?.status).toBe(502);
   });
+
+  test("returns 502 for SVG upstreams (served from our origin, they'd carry origin privileges)", async () => {
+    mockFetch(async () => new Response("<svg/>", { headers: { "content-type": "image/svg+xml" } }));
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.svg"));
+    expect(res?.status).toBe(502);
+  });
+});
+
+describe("redirect handling (SSRF)", () => {
+  test("follows an allow-listed redirect hop", async () => {
+    let calls = 0;
+    mockFetch(async (url) => {
+      calls++;
+      if (calls === 1) {
+        expect(String(url)).toBe("https://img.example.com/a.png");
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://img.example.com/cdn/a.png" },
+        });
+      }
+      expect(String(url)).toBe("https://img.example.com/cdn/a.png");
+      return new Response("fake-bytes", { headers: { "content-type": "image/png" } });
+    });
+
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(200);
+    expect(await res?.text()).toBe("fake-bytes");
+  });
+
+  test("rejects a redirect that leaves the allow-list", async () => {
+    mockFetch(
+      async () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: "http://169.254.169.254/latest/meta-data/" },
+        }),
+    );
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(403);
+  });
+
+  test("rejects a redirect to a non-http(s) scheme", async () => {
+    mockFetch(
+      async () => new Response(null, { status: 301, headers: { location: "file:///etc/passwd" } }),
+    );
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(403);
+  });
+
+  test("rejects more than 5 redirect hops", async () => {
+    mockFetch(
+      async () =>
+        new Response(null, {
+          status: 307,
+          headers: { location: "https://img.example.com/loop" },
+        }),
+    );
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(502);
+  });
 });

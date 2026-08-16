@@ -68,6 +68,20 @@ describe("runSQLiteMigrations", () => {
     db.close();
   });
 
+  test("orders migrations numerically, not lexically (10 before 2)", () => {
+    resetFixtures();
+    writeMigration("10_add_ten.sql", "CREATE TABLE ten (id INTEGER PRIMARY KEY);");
+    writeMigration("2_add_two.sql", "CREATE TABLE two (id INTEGER PRIMARY KEY);");
+
+    const db = new Database(":memory:");
+    const result = runSQLiteMigrations(db, FIXTURE_DIR);
+
+    expect(result.applied).toEqual(["2_add_two.sql", "10_add_ten.sql"]);
+    expect(tableExists(db, "two")).toBe(true);
+    expect(tableExists(db, "ten")).toBe(true);
+    db.close();
+  });
+
   test("skips migrations that were already applied", () => {
     resetFixtures();
     writeMigration("001_create_users.sql", "CREATE TABLE users (id INTEGER PRIMARY KEY);");

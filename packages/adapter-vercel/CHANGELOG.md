@@ -1,5 +1,12 @@
 # @thexjs/adapter-vercel
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [c8e7985]
+  - @thexjs/core@1.2.3
+
 ## 1.0.3
 
 ### Patch Changes

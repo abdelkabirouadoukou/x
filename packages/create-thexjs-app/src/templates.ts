@@ -64,6 +64,7 @@ export const BASE_DEPENDENCIES: Record<string, string> = {
 };
 
 export const BASE_DEV_DEPENDENCIES: Record<string, string> = {
+  "@types/bun": "latest",
   "@types/react": "^19.1.0",
   "@types/react-dom": "^19.1.0",
   typescript: "^5.8.0",

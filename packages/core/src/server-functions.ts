@@ -135,9 +135,17 @@ function extractActionParams(
   for (const name of paramNames) {
     const value = match[idx];
     if (value !== undefined) {
-      params[name] = value;
+      params[name] = safeDecodeURIComponent(value);
     }
     idx++;
   }
   return params;
+}
+
+function safeDecodeURIComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

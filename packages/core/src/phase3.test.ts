@@ -53,6 +53,19 @@ export default function Page() {
 }
 `,
   );
+  isrTouch(
+    "dynamic/[slug].tsx",
+    `import { createElement } from "react";
+export const mode = "static";
+export const revalidate = 3600;
+export async function loader({ params }: any) {
+  return { slug: params.slug };
+}
+export default function Page({ loaderData }: any) {
+  return createElement("h1", null, "Dynamic ISR: " + loaderData.slug);
+}
+`,
+  );
 });
 
 afterAll(() => {
@@ -280,6 +293,27 @@ describe("ISR revalidation", () => {
     expect(res2.headers.get("X-Revalidated")).toBe("hit");
   });
 
+  test("dynamic revalidate routes are cached per-URL, not per-pattern", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    const one = await app.fetch(new Request("http://localhost/dynamic/one"));
+    expect(one.headers.get("X-Revalidated")).toBe("miss");
+    expect(await one.text()).toContain("Dynamic ISR: one");
+
+    // Same pattern, different URL: must not serve the cached /dynamic/one HTML.
+    const two = await app.fetch(new Request("http://localhost/dynamic/two"));
+    expect(two.headers.get("X-Revalidated")).toBe("miss");
+    expect(await two.text()).toContain("Dynamic ISR: two");
+
+    // Both now cached under their own URLs.
+    const oneHit = await app.fetch(new Request("http://localhost/dynamic/one"));
+    expect(oneHit.headers.get("X-Revalidated")).toBe("hit");
+    expect(await oneHit.text()).toContain("Dynamic ISR: one");
+  });
+
   test("/__x/revalidate busts the cache", async () => {
     const app = await createApp({
       routesDir: ISR_DIR,
@@ -293,7 +327,7 @@ describe("ISR revalidation", () => {
     const revalRes = await app.fetch(
       new Request("http://localhost/__x/revalidate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
         body: JSON.stringify({ path: "/isr-static" }),
       }),
     );
@@ -316,11 +350,27 @@ describe("ISR revalidation", () => {
     const revalRes = await app.fetch(
       new Request("http://localhost/__x/revalidate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
         body: JSON.stringify({}),
       }),
     );
     expect(await revalRes.text()).toBe("Revalidated all");
+  });
+
+  test("/__x/revalidate rejects cross-site requests", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    const revalRes = await app.fetch(
+      new Request("http://localhost/__x/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: "https://evil.example" },
+        body: JSON.stringify({}),
+      }),
+    );
+    expect(revalRes.status).toBe(403);
   });
 
   test("route without revalidate has header X-Revalidated: none", async () => {

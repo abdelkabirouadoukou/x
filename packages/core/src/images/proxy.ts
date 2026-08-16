@@ -10,12 +10,14 @@ export interface ImageProxyOptions {
   remoteHosts?: string[];
 }
 
+// SVG is intentionally absent: served from our own origin, attacker-scriptable
+// SVGs would execute with our origin's privileges if ever embedded via
+// <object>/<iframe> or navigated to directly by a user.
 const ALLOWED_CONTENT_TYPES = new Set([
   "image/png",
   "image/jpeg",
   "image/gif",
   "image/webp",
-  "image/svg+xml",
   "image/avif",
   "image/x-icon",
 ]);
@@ -44,18 +46,42 @@ export function createImageProxyHandler(
     // Allow-list check first — this is what prevents the proxy from being
     // used as an open SSRF relay to internal hosts. Only http(s) to an
     // explicitly configured hostname is ever fetched.
-    if (
-      (parsed.protocol !== "http:" && parsed.protocol !== "https:") ||
-      !allowedHosts.has(parsed.hostname)
-    ) {
+    const allowedUrl = (u: URL): boolean =>
+      (u.protocol === "http:" || u.protocol === "https:") && allowedHosts.has(u.hostname);
+
+    if (!allowedUrl(parsed)) {
       return new Response("host not allow-listed for image proxy", { status: 403 });
     }
 
+    const isRedirect = (status: number): boolean =>
+      status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
+
     let upstream: Response;
     try {
-      upstream = await fetch(parsed);
+      // `redirect: "manual"` (the default in the fetch spec only for "restricted"
+      // sets) prevents automatic redirect-following, which could let an
+      // allow-listed origin redirect us to an internal/metadata endpoint. Each
+      // hop is instead followed by hand and re-checked against the allow-list.
+      upstream = await fetch(parsed, { redirect: "manual" });
+      for (let hop = 0; hop < 5; hop++) {
+        if (!isRedirect(upstream.status)) break;
+        const location = upstream.headers.get("location");
+        let next: URL;
+        try {
+          next = new URL(location ?? "", parsed);
+        } catch {
+          return new Response("upstream redirect was not a valid URL", { status: 502 });
+        }
+        if (!allowedUrl(next)) {
+          return new Response("upstream redirected off the allow-list", { status: 403 });
+        }
+        upstream = await fetch(next, { redirect: "manual" });
+      }
     } catch (err) {
       return new Response(`upstream fetch failed: ${String(err)}`, { status: 502 });
+    }
+    if (isRedirect(upstream.status)) {
+      return new Response("too many upstream redirects", { status: 502 });
     }
     if (!upstream.ok) {
       return new Response("upstream error", { status: 502 });

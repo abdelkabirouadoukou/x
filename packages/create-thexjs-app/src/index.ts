@@ -37,7 +37,7 @@ const ADDONS_ROOT = join(TEMPLATES_ROOT, "addons");
 
 // Fallback version used if the registry lookup fails (e.g. offline).
 // Bump this when you publish a new @thexjs/core / @thexjs/cli version.
-const FALLBACK_CORE_VERSION = "0.1.0";
+const FALLBACK_CORE_VERSION = "1.2.2";
 
 interface CliOptions {
   projectName?: string;

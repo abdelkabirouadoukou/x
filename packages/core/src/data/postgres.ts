@@ -130,7 +130,17 @@ export function connectPostgres(options: PostgresOptions = {}): PostgresClient {
     // first call, but awaiting every time closes the race where two queries
     // kicked off in the same tick (e.g. Promise.all) both see `primed` as set
     // and skip the retry/backoff that the first query is still running.
-    await prime();
+    try {
+      await prime();
+    } catch (error) {
+      // Reset the memo so a later query re-probes with backoff instead of
+      // replaying the rejected probe forever. Without this, a database that
+      // is briefly down when the app boots permanently wedges the client —
+      // every subsequent query would reject instantly even after the DB
+      // comes back.
+      primed = null;
+      throw error;
+    }
     return work();
   };
 
