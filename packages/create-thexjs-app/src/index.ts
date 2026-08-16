@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -145,6 +153,16 @@ function copyAddon(addon: FeatureId, targetDir: string): void {
   mergeTree(src, targetDir);
 }
 
+// npm strips files named `.gitignore` / `.npmignore` from published tarballs,
+// even inside nested directories. Templates therefore ship an `_gitignore`
+// file that we rename to `.gitignore` when scaffolding the project.
+function finalizeGitignore(targetDir: string): void {
+  const from = join(targetDir, "_gitignore");
+  if (!existsSync(from)) return;
+  const to = join(targetDir, ".gitignore");
+  renameSync(from, to);
+}
+
 function buildPackageJson(
   name: string,
   features: FeatureId[],
@@ -270,6 +288,7 @@ async function main(): Promise<void> {
 
   ensureDir(targetDir);
   mergeTree(BASE_TEMPLATE, targetDir);
+  finalizeGitignore(targetDir);
 
   for (const feature of features) {
     copyAddon(feature, targetDir);
@@ -289,10 +308,15 @@ async function main(): Promise<void> {
 
   if (options.git) {
     const initSpin = spinner();
-    initSpin.start("Initializing git repository");
-    const result = spawnSync("git", ["init", "-q"], { cwd: targetDir, stdio: "ignore" });
+    initSpin.start("Initializing git repository (main branch)");
+    // Force the default branch to "main" regardless of the user's local
+    // `init.defaultBranch` config (which may otherwise default to master).
+    const result = spawnSync("git", ["init", "-q", "-b", "main"], {
+      cwd: targetDir,
+      stdio: "ignore",
+    });
     if (result.status === 0) {
-      initSpin.stop("Git repository initialized");
+      initSpin.stop("Git repository initialized on main");
     } else {
       initSpin.stop("Git could not be initialized (is git installed?)");
     }
