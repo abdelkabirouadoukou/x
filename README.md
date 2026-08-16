@@ -217,6 +217,41 @@ import { Link, createImageProxyHandler } from "@thexjs/core";
 const imageProxy = createImageProxyHandler({ remoteHosts: ["cdn.example.com"] });
 ```
 
+### `<Image>` (next/image-equivalent)
+
+`@thexjs/core` ships an `<Image>` component that gets the parts of
+`next/image` that earn their keep without a build-time optimization pipeline:
+
+- **Responsive `srcset`/`sizes`** — remote images render width variants
+  (`&w=320` … `&w=3840`) through the `/_x/image` proxy.
+- **Auto remote-routing** — an absolute `src` whose host is in
+  `x.config.ts` `images.remoteHosts` is rewritten to the proxy automatically;
+  local/relative `src` passes through untouched.
+- **`priority`** — skips `loading="lazy"`, adds `fetchpriority="high"` for
+  LCP images.
+- **`fill`** — absolute-positioned `object-fit: cover` for hero/card layouts.
+- **`placeholder="blur"`** — optional `blurDataURL` shown as a CSS background
+  until the real image loads (no JS island needed).
+- **Dev warnings** — missing width/height (CLS), `fill`+dimensions conflict,
+  and remote hosts absent from `images.remoteHosts` (would 403).
+
+```tsx
+import { Image } from "@thexjs/core";
+
+<Image
+  src="https://cdn.example.com/team.jpg"
+  alt="The team"
+  width={1600}
+  height={900}
+  priority
+  sizes="(max-width: 768px) 100vw, 50vw"
+/>
+```
+
+`alt` is required. Format `<picture>` sources and resizing are reserved for a
+future optimization pipeline — the proxy currently passes images through
+unresized but validates `w`/`q` hints so the component API is stable.
+
 ## Middleware
 
 Drop a `_middleware.ts` in any pages folder it runs for that folder and everything under it. Useful for auth checks, redirects, logging.

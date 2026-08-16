@@ -15,6 +15,7 @@ export {
   type RouteProps,
 } from "./createApp";
 export { renderErrorOverlay } from "./error-overlay";
+export { buildSrcSet, Image, type ImageProps, SRCSET_WIDTHS, setImageRemoteHosts } from "./image";
 export { createImageProxyHandler, type ImageProxyOptions } from "./images/proxy";
 export { Island, type IslandEntry, type IslandMode, IslandProvider } from "./island";
 export { Link, type LinkProps } from "./link";

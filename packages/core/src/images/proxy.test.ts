@@ -174,3 +174,36 @@ describe("redirect handling (SSRF)", () => {
     expect(res?.status).toBe(502);
   });
 });
+
+describe("width/quality hints", () => {
+  test("accepts and ignores a valid w param (no resizer wired yet)", async () => {
+    mockFetch(async (url) => {
+      expect(String(url)).toBe("https://img.example.com/a.png");
+      return new Response("x", { headers: { "content-type": "image/png" } });
+    });
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png&w=640"));
+    expect(res?.status).toBe(200);
+    // no resizer: the body is untouched, not a resized variant
+    expect(await res?.text()).toBe("x");
+  });
+
+  test("accepts and ignores a valid q param", async () => {
+    mockFetch(async () => new Response("x", { headers: { "content-type": "image/png" } }));
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png&q=75"));
+    expect(res?.status).toBe(200);
+  });
+
+  test("rejects an out-of-range w param", async () => {
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png&w=99999"));
+    expect(res?.status).toBe(400);
+  });
+
+  test("rejects a non-numeric q param", async () => {
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png&q=abc"));
+    expect(res?.status).toBe(400);
+  });
+});

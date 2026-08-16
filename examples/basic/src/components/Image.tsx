@@ -1,27 +1,7 @@
-interface ImageProps {
-  src: string;
-  alt: string;
-  width?: number;
-  height?: number;
-  lazy?: boolean;
-  className?: string;
-}
+// The framework ships a next/image-equivalent <Image>. This local file is kept
+// as a thin re-export so existing imports of `@/components/Image` keep working;
+// new code should import { Image } from "@thexjs/core" directly.
 
-export default function Image({ src, alt, width, height, lazy = true, className }: ImageProps) {
-  return (
-    <img
-      src={src}
-      alt={alt}
-      width={width}
-      height={height}
-      loading={lazy ? "lazy" : "eager"}
-      decoding="async"
-      className={className}
-      style={{
-        maxWidth: "100%",
-        height: "auto",
-        ...(width && height ? { aspectRatio: `${width}/${height}` } : {}),
-      }}
-    />
-  );
-}
+export type { ImageProps } from "@thexjs/core";
+export { buildSrcSet, Image, SRCSET_WIDTHS, setImageRemoteHosts } from "@thexjs/core";
+export default Image;
