@@ -211,6 +211,10 @@ export default function About() {
         apiDir: API_DIR,
       });
     } catch (firstError) {
+      console.info(
+        "[adapter-vercel] first buildVercelOutput attempt failed; retrying in a fresh process. First error:",
+        firstError,
+      );
       await buildVercelOutputInFreshProcess();
     }
   });

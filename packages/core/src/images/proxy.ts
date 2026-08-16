@@ -53,6 +53,26 @@ export function createImageProxyHandler(
       return new Response("host not allow-listed for image proxy", { status: 403 });
     }
 
+    // Optional width/quality hints, forwarded by <Image> for responsive
+    // srcset generation. No resizer/transcoder is wired yet, so validate and
+    // ignore them (never fail the request) — the component API stays stable
+    // ahead of the resize pipeline. Must stay AFTER the allow-list check and
+    // affect only these optional params, never the URL being fetched.
+    const wParam = reqUrl.searchParams.get("w");
+    const qParam = reqUrl.searchParams.get("q");
+    if (wParam !== null) {
+      const w = Number.parseInt(wParam, 10);
+      if (!Number.isFinite(w) || w < 1 || w > 8192) {
+        return new Response("invalid w param", { status: 400 });
+      }
+    }
+    if (qParam !== null) {
+      const q = Number.parseInt(qParam, 10);
+      if (!Number.isFinite(q) || q < 1 || q > 100) {
+        return new Response("invalid q param", { status: 400 });
+      }
+    }
+
     const isRedirect = (status: number): boolean =>
       status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
 
