@@ -1,5 +1,12 @@
 # create-thexjs-app
 
+## 1.1.3
+
+### Patch Changes
+
+- b22e149: chore(deps-dev): bump @biomejs/biome from 1.9.4 to 2.5.8 and migrate config (formatting/lint fixes only)
+- db6cb35: chore(deps-dev): bump @types/node from 22.20.1 to 26.2.0
+
 ## 1.1.2
 
 ### Patch Changes

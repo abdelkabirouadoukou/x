@@ -1,5 +1,13 @@
 # @thexjs/adapter-vercel
 
+## 1.0.5
+
+### Patch Changes
+
+- b22e149: chore(deps-dev): bump @biomejs/biome from 1.9.4 to 2.5.8 and migrate config (formatting/lint fixes only)
+- Updated dependencies [b22e149]
+  - @thexjs/core@1.2.4
+
 ## 1.0.4
 
 ### Patch Changes
