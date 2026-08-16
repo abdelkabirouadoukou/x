@@ -8,6 +8,20 @@ export interface MigrationResult {
   skipped: string[];
 }
 
+// Migration files are conventionally numbered with a zero-padded prefix, but
+// lexicographic sort still mis-orders them once a prefix grows past the pad
+// width (10_x.sql before 2_x.sql). Compare numerically on a leading integer
+// when present, falling back to a plain string compare otherwise.
+function compareMigrationNames(a: string, b: string): number {
+  const numA = /^(\d+)/.exec(a)?.[1];
+  const numB = /^(\d+)/.exec(b)?.[1];
+  if (numA !== undefined && numB !== undefined) {
+    const diff = Number(numA) - Number(numB);
+    if (diff !== 0) return diff;
+  }
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 export function runSQLiteMigrations(db: Database, migrationsDir: string): MigrationResult {
   db.run(`CREATE TABLE IF NOT EXISTS _x_migrations (
     name TEXT PRIMARY KEY,
@@ -21,7 +35,7 @@ export function runSQLiteMigrations(db: Database, migrationsDir: string): Migrat
   try {
     files = readdirSync(migrationsDir)
       .filter((f) => f.endsWith(".sql"))
-      .sort();
+      .sort(compareMigrationNames);
   } catch {
     return { applied: [], skipped: [] };
   }
@@ -73,7 +87,7 @@ export async function runPostgresMigrations(
   try {
     files = readdirSync(migrationsDir)
       .filter((f) => f.endsWith(".sql"))
-      .sort();
+      .sort(compareMigrationNames);
   } catch {
     return { applied: [], skipped: [] };
   }
