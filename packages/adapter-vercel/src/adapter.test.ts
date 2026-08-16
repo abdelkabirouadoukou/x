@@ -27,6 +27,24 @@ function touch(dir: string, relPath: string, content: string) {
   writeFileSync(full, content);
 }
 
+const RUN_BUILD_SCRIPT = join(import.meta.dir, "__fixtures__/run-build.ts");
+
+async function buildVercelOutputInFreshProcess(): Promise<void> {
+  const proc = Bun.spawn({
+    cmd: ["bun", RUN_BUILD_SCRIPT, FIXTURE_DIR, OUTPUT_DIR, PAGES_DIR, API_DIR],
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [exitCode, stdout, stderr] = await Promise.all([
+    proc.exited,
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
+  if (exitCode !== 0) {
+    throw new Error(`subprocess build failed (exit ${exitCode})\n${stdout}${stderr}`);
+  }
+}
+
 function unitManifest(overrides: Partial<BuildManifest> = {}): BuildManifest {
   return {
     projectRoot: "/fixture",
@@ -177,12 +195,24 @@ export default function About() {
     );
     touch(PUBLIC_DIR, "styles.css", "body { color: red; }\n");
 
-    await buildVercelOutput({
-      projectRoot: FIXTURE_DIR,
-      outputDir: OUTPUT_DIR,
-      pagesDir: PAGES_DIR,
-      apiDir: API_DIR,
-    });
+    // Bun <1.4 on macOS intermittently fails repeated in-process `Bun.build`
+    // calls with a stale cached file descriptor (EBADF / EISDIR /
+    // "Unexpected reading file" on node_modules/.bun/*). Once triggered it
+    // stays poisoned for the rest of the process, so an in-process retry
+    // does NOT recover -- only a fresh process does (see CI: the same commit
+    // passes on the next run). Retry this build once in a subprocess to keep
+    // the integration test off the hook of that upstream bug
+    // (https://github.com/oven-sh/bun/pull/26310).
+    try {
+      await buildVercelOutput({
+        projectRoot: FIXTURE_DIR,
+        outputDir: OUTPUT_DIR,
+        pagesDir: PAGES_DIR,
+        apiDir: API_DIR,
+      });
+    } catch (firstError) {
+      await buildVercelOutputInFreshProcess();
+    }
   });
 
   afterAll(() => {
