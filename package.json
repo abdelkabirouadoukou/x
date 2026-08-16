@@ -19,7 +19,7 @@
     "postinstall": "bun run build:packages && cd packages/cli && bun link --force && echo '[x] \"x\" CLI linked globally. Make sure ~/.bun/bin is in your PATH.' || echo '[x] Could not link globally. Use \"bun run dev\" in the example instead.'"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.5.8",
     "@changesets/cli": "^3.0.0",
     "@happy-dom/global-registrator": "^20.11.2",
     "@types/bun": "latest",
