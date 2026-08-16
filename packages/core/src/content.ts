@@ -124,13 +124,28 @@ function renderListBlock(block: string): string {
 const ALLOWED_LINK_SCHEMES = new Set(["http", "https", "mailto"]);
 const LINK_SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i;
 
-/** Percent-decodes a link URL for validation, tolerating malformed escapes. */
+/**
+ * Percent-decodes a link URL for validation, repeating until the string
+ * stabilizes (bounded) so multi-layer percent-encoding can't hide a scheme
+ * from the allow-list check. Tolerates malformed escapes. A single decode
+ * lets `java%2573cript:alert(1)` collapse to `java%73cript:alert(1)` — the
+ * leftover `%` breaks the scheme regex, so the URL is wrongly reported as
+ * scheme-less (safe) while anything with a looser URL parser could still
+ * treat it as `javascript:`.
+ */
 function decodeLinkUrl(url: string): string {
-  try {
-    return decodeURIComponent(url);
-  } catch {
-    return url;
+  let prev = url;
+  for (let i = 0; i < 5; i++) {
+    let next: string;
+    try {
+      next = decodeURIComponent(prev);
+    } catch {
+      return prev;
+    }
+    if (next === prev) return next;
+    prev = next;
   }
+  return prev;
 }
 
 /**

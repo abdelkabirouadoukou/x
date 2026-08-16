@@ -211,6 +211,14 @@ export default function About() {
         apiDir: API_DIR,
       });
     } catch (firstError) {
+      // The first attempt may have failed for the known Bun flake *or* a
+      // genuine regression in the adapter. Surface the first error so a test
+      // failure is traceable, then retry once in a fresh process and let THAT
+      // result decide the outcome.
+      console.info(
+        "[adapter-vercel] first buildVercelOutput attempt failed; retrying in a fresh process. First error:",
+        firstError,
+      );
       await buildVercelOutputInFreshProcess();
     }
   });
