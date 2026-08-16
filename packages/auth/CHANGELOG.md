@@ -1,5 +1,16 @@
 # @thexjs/auth
 
+## 3.0.3
+
+### Patch Changes
+
+- c8e7985: Compare OAuth `state` and session tokens with a timing-safe digest comparison
+  instead of a plain string equality check, so an attacker probing the state
+  cookie can't distinguish byte-by-byte matches from mismatches via response
+  timing.
+- Updated dependencies [c8e7985]
+  - @thexjs/core@1.2.3
+
 ## 3.0.2
 
 ### Patch Changes
