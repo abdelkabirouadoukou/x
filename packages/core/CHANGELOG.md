@@ -1,5 +1,11 @@
 # @thexjs/core
 
+## 1.2.4
+
+### Patch Changes
+
+- b22e149: chore(deps-dev): bump @biomejs/biome from 1.9.4 to 2.5.8 and migrate config (formatting/lint fixes only)
+
 ## 1.2.3
 
 ### Patch Changes
