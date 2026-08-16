@@ -1,6 +1,6 @@
 {
   "name": "create-thexjs-app",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Scaffold a new x framework app (npm create thexjs-app@latest).",
   "keywords": [
     "react",
