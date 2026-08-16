@@ -48,10 +48,14 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --clean --target node18 --shims false --no-splitting",
+    "build:watch": "tsup src/index.ts --format esm --target node18 --shims false --no-splitting --watch",
     "prepublishOnly": "bun run build"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

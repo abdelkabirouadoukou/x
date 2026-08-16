@@ -1,6 +1,0 @@
-node_modules/
-.x/
-public/styles.css
-*.db
-.env
-.vercel/
