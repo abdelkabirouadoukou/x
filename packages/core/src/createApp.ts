@@ -31,7 +31,7 @@ import {
   scanRoutes,
   writeManifest,
 } from "./router";
-import type { CsrfOptions } from "./security/csrf";
+import { type CsrfOptions, checkCsrf } from "./security/csrf";
 import { type SecurityHeadersOptions, applySecurityHeaders } from "./security/headers";
 import {
   type RateLimitOptions,
@@ -156,6 +156,23 @@ interface RouteHandler {
 interface ContentHandler {
   entry: ContentEntry;
   handler: (req: Request) => Promise<Response>;
+}
+
+// Routes are matched in order in the fetch handler, so static (literal)
+// routes must sort before dynamic ones — otherwise /posts/[id] would shadow a
+// literal /posts/new depending on directory-scan order. Catch-alls go last.
+function sortRoutes(handlers: RouteHandler[]): RouteHandler[] {
+  return handlers.sort((a, b) => {
+    const bp = routeMatchesForSort(b.entry);
+    const ap = routeMatchesForSort(a.entry);
+    return ap - bp;
+  });
+}
+
+function routeMatchesForSort(entry: RouteEntry): number {
+  const isStatic = entry.paramNames.length === 0;
+  const isCatchAll = entry.routePath.includes("*");
+  return isStatic ? 0 : isCatchAll ? 2 : 1;
 }
 
 function projectRootFromRoutesDir(routesDir: string): string {
@@ -396,14 +413,15 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           params: Record<string, string>;
           request: Request;
         }) => {
-          let loaderData: Record<string, unknown> = {};
-          if (loader) {
-            const result = await loader(ctx);
-            if (result instanceof Response) return result;
-            loaderData = result;
-          }
+          const cacheKey = new URL(ctx.request.url).pathname;
 
           if (mode === "server") {
+            let loaderData: Record<string, unknown> = {};
+            if (loader) {
+              const result = await loader(ctx);
+              if (result instanceof Response) return result;
+              loaderData = result;
+            }
             const registry = createIslandRegistry();
             const content = createElement(
               IslandProvider,
@@ -432,17 +450,30 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
             });
           }
 
-          const cached = staticCache.get(route.routePath);
           const revalidateSeconds = revalidate ?? 0;
 
-          if (
-            revalidateSeconds > 0 &&
-            cached &&
-            Date.now() - cached.timestamp < revalidateSeconds * 1000
-          ) {
-            return new Response(cached.html, {
-              headers: { "Content-Type": "text/html; charset=utf-8", "X-Revalidated": "hit" },
-            });
+          // Cache check happens BEFORE the loader runs: a hit must serve
+          // straight from cache without re-executing data fetching. The key
+          // is the concrete URL, not the route pattern — otherwise every
+          // dynamic path (e.g. /blog/one and /blog/two for [slug].tsx) would
+          // share one cache entry and leak content across URLs.
+          if (revalidateSeconds > 0) {
+            const cached = staticCache.get(cacheKey);
+            if (cached && Date.now() - cached.timestamp < revalidateSeconds * 1000) {
+              return new Response(cached.html, {
+                headers: {
+                  "Content-Type": "text/html; charset=utf-8",
+                  "X-Revalidated": "hit",
+                },
+              });
+            }
+          }
+
+          let loaderData: Record<string, unknown> = {};
+          if (loader) {
+            const result = await loader(ctx);
+            if (result instanceof Response) return result;
+            loaderData = result;
           }
 
           const registry = createIslandRegistry();
@@ -463,7 +494,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           });
 
           if (revalidateSeconds > 0) {
-            staticCache.set(route.routePath, { html, timestamp: Date.now() });
+            staticCache.set(cacheKey, { html, timestamp: Date.now() });
           }
 
           return new Response(html, {
@@ -553,7 +584,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           }),
         });
       }
-      handlers = loaded;
+      handlers = sortRoutes(loaded);
       return;
     }
 
@@ -746,7 +777,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       });
     }
 
-    handlers = loaded;
+    handlers = sortRoutes(loaded);
 
     if (options.contentDir) {
       const content = scanContent(options.contentDir);
@@ -768,6 +799,13 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   async function handleRevalidation(req: Request): Promise<Response | null> {
     if (new URL(req.url).pathname !== "/__x/revalidate") return null;
     if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+    // Revalidation mutates the ISR cache, so it must be same-origin. Without
+    // this, any website could send a cross-site POST to farm a cache purge.
+    const csrfResult = checkCsrf(req, options.security?.csrf);
+    if (!csrfResult.ok) {
+      return new Response(`Forbidden: ${csrfResult.reason}`, { status: 403 });
+    }
 
     const body = (await req.json()) as { path?: string };
     if (body.path) {

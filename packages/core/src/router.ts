@@ -245,11 +245,22 @@ export function extractParams(
   for (const name of paramNames) {
     const value = match[idx];
     if (value !== undefined) {
-      params[name] = value;
+      // URL pathnames are percent-encoded; decparingly decode so loaders and
+      // components receive "hello world", not "hello%20world". Malformed
+      // escapes fall back to the raw value.
+      params[name] = safeDecodeURIComponent(value);
     }
     idx++;
   }
   return params;
+}
+
+function safeDecodeURIComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 export function generateManifestSource(routes: RouteEntry[]): string {

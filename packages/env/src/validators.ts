@@ -15,6 +15,9 @@ export function num(): EnvValidator<number> {
   return {
     parse(input) {
       if (input === undefined) throw new Error("Expected a number, got undefined");
+      // Number("") is 0 and Number("   ") is 0 — an empty numeric env var
+      // (e.g. PORT=) must not silently become 0.
+      if (input.trim() === "") throw new Error(`Expected a number, got "${input}"`);
       const n = Number(input);
       if (Number.isNaN(n)) throw new Error(`Expected a number, got "${input}"`);
       return n;

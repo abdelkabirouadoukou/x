@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { checkCsrf } from "@thexjs/core";
 import type { MiddlewareFn } from "@thexjs/core";
 import { readCookie } from "./cookies";
@@ -149,6 +149,14 @@ export function defineAuth(config: AuthConfig): Auth {
     return Promise.resolve(createHmac("sha256", resolved.secret).update(value).digest("hex"));
   };
 
+  // Timing-safe comparison of two hex digests, so an attacker probing the
+  // session/state cookie can't distinguish byte-by-byte matches from `<`.
+  const safeEqual = (expectedHex: string, actualHex: string): boolean => {
+    const expected = Buffer.from(expectedHex, "hex");
+    const actual = Buffer.from(actualHex, "hex");
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  };
+
   const createSessionToken = (): string => {
     return crypto.randomUUID().replace(/-/g, "") + Math.random().toString(36).slice(2);
   };
@@ -241,7 +249,7 @@ export function defineAuth(config: AuthConfig): Auth {
     if (!code || !state) return new Response("Missing code or state", { status: 400 });
 
     const stateToken = readCookie(req, OAUTH_STATE_COOKIE);
-    if (!stateToken || (await hash(stateToken)) !== state) {
+    if (!stateToken || !safeEqual(state, await hash(stateToken))) {
       return new Response("Invalid state", { status: 400 });
     }
 
