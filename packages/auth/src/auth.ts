@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { checkCsrf } from "@thexjs/core";
 import type { MiddlewareFn } from "@thexjs/core";
+import { checkCsrf } from "@thexjs/core";
 import { readCookie } from "./cookies";
 import {
   buildAuthorizationUrl,

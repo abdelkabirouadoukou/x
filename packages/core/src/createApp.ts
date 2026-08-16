@@ -30,7 +30,7 @@ import {
   writeManifest,
 } from "./router";
 import { type CsrfOptions, checkCsrf } from "./security/csrf";
-import { type SecurityHeadersOptions, applySecurityHeaders } from "./security/headers";
+import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
 import {
   createRateLimiter,
   type RateLimitOptions,
@@ -407,10 +407,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         const params =
           extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
 
-const baseHandler = async (ctx: {
-          params: Record<string, string>;
-          request: Request;
-        }) => {
+        const baseHandler = async (ctx: { params: Record<string, string>; request: Request }) => {
           const cacheKey = new URL(ctx.request.url).pathname;
 
           if (mode === "server") {
