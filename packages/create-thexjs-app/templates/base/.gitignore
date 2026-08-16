@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+.x/
+dist/
+
+# Runtime data (SQLite, uploads)
+data/
+*.db
+*.db-journal
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Compiled styles
+public/styles.css
+
+# Vercel
+.vercel/
+
+# Misc
+.DS_Store
+*.log
