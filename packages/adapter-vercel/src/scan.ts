@@ -1,5 +1,5 @@
 export {
-  resolveBuildManifest,
-  ModuleRegistry,
   allModuleRefs,
+  ModuleRegistry,
+  resolveBuildManifest,
 } from "@thexjs/core/adapter";

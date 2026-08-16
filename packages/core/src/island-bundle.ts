@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { EnvLeakageError, assertNoEnvLeakage } from "./security/env-isolation";
+import { assertNoEnvLeakage, EnvLeakageError } from "./security/env-isolation";
 import { generateServerFunctionClient } from "./server-functions";
 
 export interface ActionModuleInfo {

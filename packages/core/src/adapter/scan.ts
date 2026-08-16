@@ -1,11 +1,11 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import {
+  findLayoutChain,
+  findMiddlewareChain,
   type LayoutEntry,
   type MiddlewareEntry,
   type RouteEntry,
-  findLayoutChain,
-  findMiddlewareChain,
   scanApiDir,
   scanLayouts,
   scanLayoutsDir,
@@ -64,7 +64,6 @@ export async function resolveBuildManifest(
   const projectRoot = options.projectRoot ?? process.cwd();
   const pagesDir = options.pagesDir || options.routesDir || join(projectRoot, "src", "pages");
   const apiDir = options.apiDir;
-  const layoutsDir = options.layoutsDir || pagesDir;
   const actionsDir =
     options.actionsDir ??
     (existsSync(join(projectRoot, "src", "actions"))

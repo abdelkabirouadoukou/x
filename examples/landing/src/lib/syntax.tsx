@@ -159,12 +159,6 @@ function tokenizeLine(line: string): ReactNode[] {
   let i = 0;
   let key = 0;
 
-  const flushText = (start: number, end: number) => {
-    if (end > start) {
-      tokens.push(<span key={key++}>{line.slice(start, end)}</span>);
-    }
-  };
-
   while (i < line.length) {
     if (line[i] === " " || line[i] === "\t") {
       const start = i;

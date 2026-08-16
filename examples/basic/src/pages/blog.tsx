@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import { scanContent } from "@thexjs/core";
 import type { LoaderArgs, RouteProps } from "@thexjs/core";
+import { scanContent } from "@thexjs/core";
 
 export async function loader(_args: LoaderArgs) {
   const contentDir = join(import.meta.dir, "..", "..", "content");

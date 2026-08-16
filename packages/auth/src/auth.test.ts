@@ -1,14 +1,14 @@
 import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { checkCsrf, generateCsrfToken, withCsrfCookie } from "@thexjs/core";
-import { SESSION_COOKIE, defineAuth } from "./auth";
+import { defineAuth, SESSION_COOKIE } from "./auth";
 import { hashPassword, verifyPassword } from "./password";
 import { createSQLiteSessionStore } from "./session";
 import type { AuthUser } from "./types";
 
 const BASE_URL = "http://localhost:3000";
 
-function cookieHeader(req: Request): string {
+function _cookieHeader(req: Request): string {
   return req.headers.get("cookie") ?? "";
 }
 
@@ -276,7 +276,7 @@ describe("OAuth2 (GitHub) provider", () => {
       ],
     });
 
-    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = ((input: RequestInfo | URL, _init?: RequestInit) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       if (url.includes("login/oauth/access_token")) {
         return Promise.resolve(

@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { url, bool, createEnv, num, oneOf, str } from "./index";
-import { DEFAULT_CLIENT_PREFIX } from "./index";
+import { bool, createEnv, DEFAULT_CLIENT_PREFIX, num, oneOf, str, url } from "./index";
 
 /**
  * The env package is the type-safe boundary between `.env` and application

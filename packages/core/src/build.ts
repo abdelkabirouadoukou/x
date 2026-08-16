@@ -1,8 +1,8 @@
 import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { basename, join, relative } from "node:path";
-import { type ComponentType, type ReactNode, createElement } from "react";
+import { join, relative } from "node:path";
+import { type ComponentType, createElement, type ReactNode } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
-import { IslandProvider, createIslandRegistry } from "./island";
+import { createIslandRegistry, IslandProvider } from "./island";
 import {
   actionsRewritePlugin,
   generateFallbackHydration,
@@ -12,15 +12,15 @@ import {
 } from "./island-bundle";
 import { renderStaticPage } from "./render";
 import {
-  type RouteEntry,
   findLayoutChain,
+  type RouteEntry,
   scanApiDir,
   scanLayouts,
   scanLayoutsDir,
   scanPages,
   scanRoutes,
 } from "./router";
-import { EnvLeakageError, assertNoEnvLeakage } from "./security/env-isolation";
+import { assertNoEnvLeakage, EnvLeakageError } from "./security/env-isolation";
 import { registerServerFunctions } from "./server-functions";
 
 export type RouteMode = "static" | "server";
@@ -203,7 +203,7 @@ export async function build(options: BuildOptions): Promise<void> {
     const registry = createIslandRegistry();
     const pageContent = renderPageWithLayout(page.Component, params, page.layoutModules);
     const content = createElement(IslandProvider, { registry }, pageContent);
-    const html = renderStaticPage(content, { stylesheet: stylesheetHref });
+    const _html = renderStaticPage(content, { stylesheet: stylesheetHref });
 
     const outPath =
       page.entry.routePath === "/" ? "/index.html" : `${page.entry.routePath}/index.html`;
@@ -360,13 +360,7 @@ function renderPageWithLayout(
   return content;
 }
 
-function StaticContentPage({
-  content,
-  bodyHtml,
-}: {
-  content: ContentEntry;
-  bodyHtml: string;
-}) {
+function StaticContentPage({ content, bodyHtml }: { content: ContentEntry; bodyHtml: string }) {
   return createElement(
     "article",
     null,
@@ -424,7 +418,9 @@ function buildServerEntry(
     "",
     "const server = Bun.serve(app);",
     "",
-    "console.log(`[x] production server running at ${server.url}`);",
+    "console.log(`[x] production server running at " +
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: emitted code uses a runtime template literal
+      "${server.url}`);",
     "",
     "// Graceful shutdown: stop accepting new connections, flush the error",
     "// reporter, then exit after in-flight requests have a moment to drain.",
@@ -432,7 +428,9 @@ function buildServerEntry(
     "async function shutdown(signal: string): Promise<void> {",
     "  if (shuttingDown) return;",
     "  shuttingDown = true;",
-    "  console.log(`[x] received ${signal} - shutting down`);",
+    "  console.log(`[x] received " +
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: emitted code uses a runtime template literal
+      "${signal} - shutting down`);",
     "  try {",
     '    const { getErrorReporter } = await import("@thexjs/core");',
     "    await getErrorReporter().flush?.();",

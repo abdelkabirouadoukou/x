@@ -173,11 +173,7 @@ const guideSections = [
   },
 ];
 
-function SectionGrid({
-  sections,
-}: {
-  sections: typeof startSections;
-}) {
+function SectionGrid({ sections }: { sections: typeof startSections }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {sections.map((s) => (

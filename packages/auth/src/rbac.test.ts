@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
-import { SESSION_COOKIE, defineAuth } from "./auth";
+import { defineAuth, SESSION_COOKIE } from "./auth";
 import {
   hasAllPermissions,
   hasAnyRole,

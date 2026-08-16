@@ -42,7 +42,6 @@ export type { VercelAdapterOptions } from "./types";
  * function at all -- just static/ + a filesystem-only config.json.
  */
 export async function buildVercelOutput(options: VercelAdapterOptions = {}): Promise<void> {
-  const projectRoot = options.projectRoot ?? process.cwd();
   const outputDir = resolveOutputDir(options);
   const runtime = options.runtime ?? "nodejs20.x";
 

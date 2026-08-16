@@ -30,7 +30,7 @@ function TerminalBody({ code, lang }: { code: string; lang: string }) {
           const isDim = line.trim() === "" || line.includes("(recommended)");
 
           if (lang === "bash" && isPrompt) {
-            const [, ...rest] = line.split(/(?<=\$|\>)\s?/);
+            const [, ...rest] = line.split(/(?<=\$|>)\s?/);
             const cmd = rest.join("") || line.slice(1).trim();
             return (
               <div key={`${i}-${line.slice(0, 8)}`} className="flex gap-3">

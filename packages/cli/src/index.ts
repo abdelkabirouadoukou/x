@@ -106,7 +106,6 @@ async function cmdDev(): Promise<void> {
   const twOutput = join(projectDir, "public/styles.css");
   if (existsSync(twInput)) {
     xInfo("compiling Tailwind CSS...");
-    const { writeFileSync } = await import("node:fs");
     const { spawnSync } = await import("node:child_process");
     const r = spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], {
       cwd: projectDir,

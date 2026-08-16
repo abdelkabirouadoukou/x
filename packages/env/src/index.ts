@@ -1,7 +1,7 @@
 import type { EnvValidator } from "./validators";
 
-export { str, num, bool, oneOf, url } from "./validators";
 export type { EnvValidator } from "./validators";
+export { bool, num, oneOf, str, url } from "./validators";
 
 /**
  * Default prefix required of any variable exposed to client/browser code.

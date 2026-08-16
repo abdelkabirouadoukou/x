@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { PostgresClient } from "./postgres";
 
