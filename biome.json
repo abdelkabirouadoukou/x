@@ -1,16 +1,17 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "organizeImports": { "enabled": true },
+  "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "files": {
-    "ignore": [
-      "**/dist/**",
-      "**/node_modules/**",
-      "**/*.lock",
-      "**/public/styles.css",
-      "**/.x/**",
-      "**/.vercel/**",
-      "**/scripts/bench/results/**",
-      "**/packages/core/src/__fixtures__/bench/**"
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/*.lock",
+      "!**/public/styles.css",
+      "!**/.x",
+      "!**/.vercel",
+      "!**/scripts/bench/results",
+      "!**/packages/core/src/__fixtures__/bench"
     ]
   },
   "formatter": {
@@ -22,12 +23,12 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "preset": "recommended"
     }
   },
   "overrides": [
     {
-      "include": [
+      "includes": [
         "**/pages/**/*.tsx",
         "**/templates/**/pages/**",
         "**/examples/blog/**",
@@ -42,7 +43,7 @@
       }
     },
     {
-      "include": ["**/pages/docs/_layout.tsx", "**/templates/**/docs/_layout.tsx"],
+      "includes": ["**/pages/docs/_layout.tsx", "**/templates/**/docs/_layout.tsx"],
       "linter": {
         "rules": {
           "security": {
@@ -52,7 +53,11 @@
       }
     },
     {
-      "include": ["**/examples/landing/src/lib/syntax.tsx", "**/templates/**/syntax.tsx"],
+      "includes": [
+        "**/examples/landing/src/lib/syntax.tsx",
+        "**/examples/landing/src/components/code-block.tsx",
+        "**/templates/**/syntax.tsx"
+      ],
       "linter": {
         "rules": {
           "style": { "noNonNullAssertion": "off" },
@@ -61,11 +66,12 @@
       }
     },
     {
-      "include": ["**/examples/**", "**/templates/**"],
+      "includes": ["**/examples/**", "**/templates/**"],
       "linter": {
         "rules": {
           "a11y": {
             "noSvgWithoutTitle": "off",
+            "noStaticElementInteractions": "off",
             "useButtonType": "warn"
           }
         }
@@ -77,6 +83,11 @@
       "quoteStyle": "double",
       "semicolons": "always",
       "trailingCommas": "all"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   }
 }

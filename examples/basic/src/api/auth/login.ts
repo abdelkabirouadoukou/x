@@ -1,4 +1,3 @@
-import type { RouteProps } from "@thexjs/core";
 import { createSession, setSessionCookie } from "../../lib/auth";
 
 export async function POST(req: Request): Promise<Response> {

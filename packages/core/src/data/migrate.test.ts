@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { runPostgresMigrations, runSQLiteMigrations } from "./migrate";
-import { type PostgresClient, connectPostgres } from "./postgres";
+import { connectPostgres, type PostgresClient } from "./postgres";
 
 const FIXTURE_DIR = join(import.meta.dir, "__fixtures__/migrations");
 

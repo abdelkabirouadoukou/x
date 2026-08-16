@@ -3,7 +3,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
 import { createApp } from "./createApp";
-import { type MiddlewareFn, composeMiddleware } from "./middleware";
+import { composeMiddleware, type MiddlewareFn } from "./middleware";
 import { renderStreamingPage } from "./render";
 import { findMiddlewareChain, scanMiddleware, scanRoutes } from "./router";
 import { generateServerFunctionClient } from "./server-functions";
@@ -128,13 +128,13 @@ describe("middleware scanning", () => {
 describe("composeMiddleware", () => {
   test("executes middleware in correct order (onion pattern)", async () => {
     const order: number[] = [];
-    const mw1: MiddlewareFn = async (ctx, next) => {
+    const mw1: MiddlewareFn = async (_ctx, next) => {
       order.push(1);
       const res = await next();
       order.push(4);
       return res;
     };
-    const mw2: MiddlewareFn = async (ctx, next) => {
+    const mw2: MiddlewareFn = async (_ctx, next) => {
       order.push(2);
       const res = await next();
       order.push(3);
@@ -168,7 +168,7 @@ describe("composeMiddleware", () => {
   });
 
   test("single middleware works", async () => {
-    const mw: MiddlewareFn = async (ctx, next) => {
+    const mw: MiddlewareFn = async (_ctx, next) => {
       const res = await next();
       return new Response(res.body, {
         ...res,

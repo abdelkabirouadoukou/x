@@ -368,7 +368,7 @@ for (const file of files) {
     }
 
     // Find the actual content by aligning line counts
-    const oldLines = normalizedOld.split("\n").length;
+    const _oldLines = normalizedOld.split("\n").length;
     const contentLines = content.split("\n");
     let matchFound = false;
 

@@ -1,27 +1,25 @@
-import { type FSWatcher, existsSync, watch } from "node:fs";
+import { existsSync, watch } from "node:fs";
 import { join, resolve, sep } from "node:path";
-import { type ComponentType, type ReactNode, createElement } from "react";
+import { type ComponentType, createElement, type ReactNode } from "react";
 import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { renderErrorOverlay } from "./error-overlay";
-import { type ImageProxyOptions, createImageProxyHandler } from "./images/proxy";
-import { type IslandEntry, IslandProvider, createIslandRegistry } from "./island";
+import { createImageProxyHandler, type ImageProxyOptions } from "./images/proxy";
+import { createIslandRegistry, type IslandEntry, IslandProvider } from "./island";
 import { type ActionModuleInfo, buildIslandBundleInMemory, islandEntryId } from "./island-bundle";
-import { type MiddlewareFn, composeMiddleware } from "./middleware";
+import { composeMiddleware, type MiddlewareFn } from "./middleware";
 import DefaultNotFound from "./not-found";
-import { type HealthCheckOptions, createHealthCheckHandler } from "./observability/health";
+import { createHealthCheckHandler, type HealthCheckOptions } from "./observability/health";
 import { withRequestLogging } from "./observability/logger";
 import { type MetricsReporter, withRequestMetrics } from "./observability/metrics";
 import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
 import {
-  type LayoutEntry,
-  type NotFoundEntry,
-  type RouteEntry,
   extractParams,
   findLayoutChain,
   findMiddlewareChain,
+  type RouteEntry,
   scanApiDir,
   scanLayouts,
   scanLayoutsDir,
@@ -32,10 +30,10 @@ import {
   writeManifest,
 } from "./router";
 import type { CsrfOptions } from "./security/csrf";
-import { type SecurityHeadersOptions, applySecurityHeaders } from "./security/headers";
+import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
 import {
-  type RateLimitOptions,
   createRateLimiter,
+  type RateLimitOptions,
   rateLimitMiddleware,
 } from "./security/rate-limit";
 import {
@@ -321,7 +319,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       : applySecurityHeaders(res, securityHeadersOptions);
   }
 
-  async function renderNotFound(req?: Request): Promise<Response> {
+  async function renderNotFound(_req?: Request): Promise<Response> {
     const content = notFoundLayout
       ? createElement(notFoundLayout, null, createElement(notFoundComponent, { params: {} }))
       : createElement(notFoundComponent, { params: {} });
@@ -392,10 +390,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         const params =
           extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
 
-        const baseHandler = async (ctx: {
-          params: Record<string, string>;
-          request: Request;
-        }) => {
+        const baseHandler = async (ctx: { params: Record<string, string>; request: Request }) => {
           let loaderData: Record<string, unknown> = {};
           if (loader) {
             const result = await loader(ctx);
@@ -563,7 +558,6 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     islandFileCache.clear();
     const pagesDir: string = primaryDir;
     const apiDir: string | undefined = options.apiDir;
-    const layoutsDir: string = options.layoutsDir || pagesDir;
 
     let found: RouteEntry[] = scanPages(pagesDir);
 

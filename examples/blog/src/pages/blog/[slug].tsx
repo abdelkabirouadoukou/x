@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import { renderMarkdown, scanContent } from "@thexjs/core";
 import type { LoaderArgs, RouteProps } from "@thexjs/core";
+import { renderMarkdown, scanContent } from "@thexjs/core";
 
 interface PostLoaderData {
   html: string;
@@ -24,11 +24,11 @@ export async function loader({ params }: LoaderArgs) {
 }
 
 export default function BlogPostPage({ loaderData }: RouteProps) {
-  const data = loaderData as Record<string, unknown>;
-  const html = data.html as string;
-  const title = data.title as string;
-  const date = data.date as string;
-  const tags = Array.isArray(data.tags) ? (data.tags as string[]) : [];
+  const data = (loaderData ?? {}) as unknown as PostLoaderData;
+  const html = data.html;
+  const title = data.title;
+  const date = data.date;
+  const tags = Array.isArray(data.tags) ? data.tags : [];
   return (
     <article className="max-w-prose">
       <h1 className="text-4xl font-bold tracking-tight">{title}</h1>

@@ -2,8 +2,13 @@
   "name": "x-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "examples/*"],
-  "trustedDependencies": ["@thexjs/cli"],
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "trustedDependencies": [
+    "@thexjs/cli"
+  ],
   "scripts": {
     "test": "bun test",
     "changeset": "changeset",

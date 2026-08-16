@@ -19,14 +19,15 @@
  * request bridge + config files. Adapting different platform classes is just
  * a different write/route layer over an identical build core.
  */
+
+export { adapterScratchDir, bundleRenderFunction } from "./bundle";
+export { generateAdapterEntry, serializeRuntimeOptions } from "./generate-entry";
 export {
-  resolveBuildManifest,
-  ModuleRegistry,
   allModuleRefs,
+  ModuleRegistry,
+  resolveBuildManifest,
 } from "./scan";
 export { transpileModules } from "./transpile";
-export { generateAdapterEntry, serializeRuntimeOptions } from "./generate-entry";
-export { adapterScratchDir, bundleRenderFunction } from "./bundle";
 export type {
   AdapterOptions,
   BuildManifest,

@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
 export interface Frontmatter {
@@ -202,9 +202,9 @@ export function renderMarkdown(md: string): string {
       const clean = stripUrlControlChars(href);
       return isSafeLinkUrl(clean) ? `<a href="${clean}">${text}</a>` : text;
     })
-    .replace(/__X_CODE_(\d+)__/g, (_m, i) => `<code>${inlineCodes[Number.parseInt(i)]}</code>`);
+    .replace(/__X_CODE_(\d+)__/g, (_m, i) => `<code>${inlineCodes[Number.parseInt(i, 10)]}</code>`);
 
-  html = html.replace(/__X_FENCE_(\d+)__/g, (_m, i) => fences[Number.parseInt(i)] ?? "");
+  html = html.replace(/__X_FENCE_(\d+)__/g, (_m, i) => fences[Number.parseInt(i, 10)] ?? "");
 
   const blocks = html.split(/\n\n+/);
   html = blocks

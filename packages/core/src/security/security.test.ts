@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { checkCsrf, generateCsrfToken, verifyCsrfToken, verifyOrigin } from "./csrf";
-import { EnvLeakageError, assertNoEnvLeakage, findLeakedEnvKeys } from "./env-isolation";
+import { assertNoEnvLeakage, EnvLeakageError, findLeakedEnvKeys } from "./env-isolation";
 import { applySecurityHeaders, buildSecurityHeaders } from "./headers";
 import { createRateLimiter, rateLimitMiddleware } from "./rate-limit";
 

@@ -160,7 +160,9 @@ function createBunRedisClient(options: { url?: string }): RedisClientFactory {
     // store — and so the browser bundle never sees a `node:module` import.
     const require = import.meta.require;
     const mod = require("bun:redis") as {
-      RedisClient: new (opts?: { url?: string }) => RedisClientLike & {
+      RedisClient: new (opts?: {
+        url?: string;
+      }) => RedisClientLike & {
         connect(): Promise<unknown>;
       };
     };

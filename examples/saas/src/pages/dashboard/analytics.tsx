@@ -18,7 +18,9 @@ export default function AnalyticsPage({ loaderData }: RouteProps) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">Analytics</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          Welcome back, {(loaderData?.username as string | undefined) ?? "User"}
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">Track your performance metrics</p>
       </div>
 

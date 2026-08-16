@@ -1,8 +1,8 @@
 import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { SESSION_COOKIE, defineAuth } from "./auth";
+import { defineAuth, SESSION_COOKIE } from "./auth";
 import type { CredentialsProvider } from "./providers";
-import { type SessionStore, createSQLiteSessionStore } from "./session";
+import { createSQLiteSessionStore, type SessionStore } from "./session";
 
 const BASE_URL = "http://localhost:3000";
 

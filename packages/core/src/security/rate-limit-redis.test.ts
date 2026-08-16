@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
-  type RedisClientLike,
   createRateLimiter,
   createRedisRateLimitStoreFromClient,
+  type RedisClientLike,
 } from "./rate-limit";
 
 /**

@@ -3,7 +3,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { renderToString } from "react-dom/server";
-import { Island, IslandProvider, createIslandRegistry } from "./island";
+import { createIslandRegistry, Island, IslandProvider } from "./island";
 import { generateHydrateEntry } from "./island-bundle";
 
 const FIXTURE_DIR = join(import.meta.dir, "__fixtures__/islands");

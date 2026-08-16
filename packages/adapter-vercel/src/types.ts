@@ -1,10 +1,4 @@
-import type {
-  AdapterOptions,
-  BuildManifest,
-  CompiledModuleRef,
-  ResolvedAction,
-  ResolvedRoute,
-} from "@thexjs/core/adapter";
+import type { AdapterOptions } from "@thexjs/core/adapter";
 
 export type {
   AdapterOptions,

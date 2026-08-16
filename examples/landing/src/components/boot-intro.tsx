@@ -106,7 +106,7 @@ export default function BootIntro() {
         ".boot-star",
         { opacity: 0, scale: 0.2 },
         {
-          opacity: (i, el) => Number((el as HTMLElement).style.opacity),
+          opacity: (_i, el) => Number((el as HTMLElement).style.opacity),
           scale: 1,
           duration: 0.8,
           ease: "power2.out",
