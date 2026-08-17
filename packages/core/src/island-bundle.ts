@@ -171,3 +171,56 @@ export async function buildIslandBundleInMemory(
     rmSync(scratchDir, { recursive: true, force: true });
   }
 }
+
+/**
+ * Bundles a route's island hydration entry to a real file on disk under
+ * `islandsDir/<entryId>/<entryId>.js` and returns the public script URL.
+ * Used by the adapter build so server-mode routes ship their island bundles
+ * as static assets (which adapter-vercel copies into static/) instead of
+ * relying on the in-memory builder that needs the source tree at request
+ * time.
+ */
+export async function bundleRouteIslandsToDisk(
+  routeFilePath: string,
+  layoutFilePaths: string[],
+  islandNames: string[],
+  islandsDir: string,
+  actionModules: Map<string, ActionModuleInfo>,
+): Promise<string[]> {
+  const entryId = islandEntryId(routeFilePath);
+  const outdir = join(islandsDir, entryId);
+  mkdirSync(outdir, { recursive: true });
+  const bundlePath = join(outdir, `${entryId}.js`);
+
+  const hydrateEntry = generateHydrateEntry(routeFilePath, layoutFilePaths);
+  const entryPath = join(outdir, `${entryId}.tsx`);
+  writeFileSync(entryPath, hydrateEntry, "utf-8");
+
+  try {
+    const result = await Bun.build({
+      entrypoints: [entryPath],
+      target: "browser",
+      plugins: [actionsRewritePlugin(actionModules)],
+    });
+
+    if (result.success) {
+      const outputs = result.outputs.filter((o) => o.kind === "entry-point");
+      const built = outputs[0] ?? result.outputs[0];
+      if (built) {
+        const code = await built.text();
+        assertNoEnvLeakage(code, bundlePath);
+        writeFileSync(bundlePath, wrapIslandBundle(code), "utf-8");
+        return [`/_islands/${entryId}/${entryId}.js`];
+      }
+    }
+    for (const log of result.logs) {
+      console.warn(`  [islands] build error: ${log.message}`);
+    }
+  } catch (err) {
+    if (err instanceof EnvLeakageError) throw err;
+    console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
+  }
+
+  writeFileSync(bundlePath, wrapIslandBundle(generateFallbackHydration(islandNames)), "utf-8");
+  return [`/_islands/${entryId}/${entryId}.js`];
+}

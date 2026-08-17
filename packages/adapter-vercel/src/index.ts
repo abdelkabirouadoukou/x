@@ -67,7 +67,10 @@ export async function buildVercelOutput(options: VercelAdapterOptions = {}): Pro
 
     console.log("[adapter-vercel] resolving server-mode routes...");
     const manifestScratchDir = join(outputDir, ".scratch-routes");
-    const manifest = await resolveBuildManifest(options, manifestScratchDir);
+    const manifest = await resolveBuildManifest(
+      { ...options, islandsDir: join(coreOutDir, "client") },
+      manifestScratchDir,
+    );
 
     console.log(
       `[adapter-vercel] ${manifest.routes.length} server route(s), ${manifest.actions.length} action file(s)`,

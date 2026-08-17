@@ -16,6 +16,11 @@ export interface AdapterOptions {
   images?: {
     remoteHosts?: string[];
   };
+  /** Client build output dir. Server-mode routes' island bundles are emitted
+   *  into `<islandsDir>/_islands/` here so adapters can ship them as static
+   *  assets. Undefined skips island bundling (server HTML ships no island
+   *  script tags). */
+  islandsDir?: string;
 }
 
 /** A single file that needs to be transpiled from .ts/.tsx source into a
@@ -39,6 +44,9 @@ export interface ResolvedRoute {
   route: CompiledModuleRef;
   layoutChain: CompiledModuleRef[];
   middlewareChain: CompiledModuleRef[];
+  /** Public script URLs for the pre-bundled island hydration chunks this
+   *  route needs. Empty/omitted when the route uses no islands. */
+  islandScripts?: string[];
 }
 
 export interface ResolvedAction {
