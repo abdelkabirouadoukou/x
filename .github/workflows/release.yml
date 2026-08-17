@@ -39,6 +39,13 @@ jobs:
       - name: Run tests
         run: bun test
 
+      - name: Guard against workspace: protocol in publishable manifests
+        run: |
+          if grep -rn 'workspace:' packages/*/package.json; then
+            echo "::error::publishable package manifests must not use the workspace: protocol (Bun publishes it literally). Use a real semver range."
+            exit 1
+          fi
+
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:

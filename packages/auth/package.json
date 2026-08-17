@@ -40,10 +40,10 @@
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
-    "@thexjs/core": "workspace:*"
+    "@thexjs/core": "^1.3.0"
   },
   "devDependencies": {
-    "@thexjs/core": "workspace:*",
+    "@thexjs/core": "^1.3.0",
     "tsup": "^8.3.0"
   }
 }
