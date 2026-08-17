@@ -124,9 +124,9 @@
     },
     "packages/adapter-vercel": {
       "name": "@thexjs/adapter-vercel",
-      "version": "1.0.3",
+      "version": "1.0.6",
       "dependencies": {
-        "@thexjs/core": "workspace:*",
+        "@thexjs/core": "^1.3.0",
         "react": "^19.0.0",
       },
       "devDependencies": {
@@ -136,31 +136,31 @@
     },
     "packages/auth": {
       "name": "@thexjs/auth",
-      "version": "3.0.2",
+      "version": "3.0.5",
       "devDependencies": {
-        "@thexjs/core": "workspace:*",
+        "@thexjs/core": "^1.3.0",
         "tsup": "^8.3.0",
       },
       "peerDependencies": {
-        "@thexjs/core": "workspace:*",
+        "@thexjs/core": "^1.3.0",
       },
     },
     "packages/cli": {
       "name": "@thexjs/cli",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "bin": {
         "x": "./dist/index.js",
       },
       "dependencies": {
-        "@thexjs/core": "^1.2.0",
+        "@thexjs/core": "^1.2.4",
       },
       "devDependencies": {
-        "@thexjs/adapter-vercel": "^1.0.1",
+        "@thexjs/adapter-vercel": "^1.0.5",
         "react": "^19.0.0",
         "tsup": "^8.3.0",
       },
       "peerDependencies": {
-        "@thexjs/adapter-vercel": "^1.0.1",
+        "@thexjs/adapter-vercel": "^1.0.5",
       },
       "optionalPeers": [
         "@thexjs/adapter-vercel",
@@ -168,7 +168,7 @@
     },
     "packages/core": {
       "name": "@thexjs/core",
-      "version": "1.2.2",
+      "version": "1.3.0",
       "devDependencies": {
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
@@ -181,7 +181,7 @@
     },
     "packages/create-thexjs-app": {
       "name": "create-thexjs-app",
-      "version": "1.1.1",
+      "version": "1.1.3",
       "bin": {
         "create-thexjs-app": "./dist/index.js",
       },
@@ -195,7 +195,7 @@
     },
     "packages/env": {
       "name": "@thexjs/env",
-      "version": "1.0.0",
+      "version": "1.0.2",
       "devDependencies": {
         "tsup": "^8.3.0",
       },
