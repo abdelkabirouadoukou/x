@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { bundleRouteIslandsToDisk } from "../island-bundle";
 import {
   findLayoutChain,
   findMiddlewareChain,
@@ -87,6 +88,30 @@ export async function resolveBuildManifest(
   const nestedLayouts: LayoutEntry[] = existsSync(pagesDir) ? scanLayouts(pagesDir) : [];
   const layouts = [...dedicatedLayouts, ...nestedLayouts];
   const middlewareEntries: MiddlewareEntry[] = existsSync(pagesDir) ? scanMiddleware(pagesDir) : [];
+  const islandsDir = options.islandsDir;
+
+  const actions: ResolvedAction[] = [];
+  const actionModules = new Map<string, { parentPath: string; fnNames: string[] }>();
+  if (actionsDir && existsSync(actionsDir)) {
+    for (const actionFile of scanRoutes(actionsDir)) {
+      const segments = actionFile.routePath.split("/").filter(Boolean);
+      const fileName = segments[segments.length - 1] ?? "";
+      const parentPath =
+        fileName === "index" || !fileName
+          ? actionFile.routePath
+          : `/${segments.slice(0, -1).join("/")}`;
+      actions.push({
+        parentPath,
+        paramNames: actionFile.paramNames,
+        module: registry.ref(actionFile.filePath, "action"),
+      });
+      const actionMod = (await import(actionFile.filePath)) as Record<string, unknown>;
+      actionModules.set(actionFile.filePath, {
+        parentPath,
+        fnNames: Object.keys(actionMod).filter((k) => k !== "default"),
+      });
+    }
+  }
 
   const routes: ResolvedRoute[] = [];
 
@@ -112,6 +137,7 @@ export async function resolveBuildManifest(
       mode?: "static" | "server";
       revalidate?: number;
       actions?: unknown;
+      islands?: Record<string, unknown>;
     };
     if (!mod.default && !mod.actions) continue;
     if ((mod.mode ?? "server") === "static") continue;
@@ -123,6 +149,28 @@ export async function resolveBuildManifest(
     if (missingDedicated.length > 0) layoutChain.unshift(...missingDedicated);
     const mwChain = findMiddlewareChain(entry.filePath, middlewareEntries, pagesDir);
 
+    let islandScripts: string[] | undefined;
+    if (islandsDir) {
+      const islandNames = new Set<string>();
+      if (mod.islands) for (const key of Object.keys(mod.islands)) islandNames.add(key);
+      for (const layout of layoutChain) {
+        const layoutMod = (await import(layout.filePath)) as {
+          islands?: Record<string, unknown>;
+        };
+        if (layoutMod.islands)
+          for (const key of Object.keys(layoutMod.islands)) islandNames.add(key);
+      }
+      if (islandNames.size > 0) {
+        islandScripts = await bundleRouteIslandsToDisk(
+          entry.filePath,
+          layoutChain.map((l) => l.filePath),
+          [...islandNames],
+          join(islandsDir, "_islands"),
+          actionModules,
+        );
+      }
+    }
+
     routes.push({
       routePath: entry.routePath,
       paramNames: entry.paramNames,
@@ -132,24 +180,8 @@ export async function resolveBuildManifest(
       route: registry.ref(entry.filePath, "page"),
       layoutChain: layoutChain.map((l) => registry.ref(l.filePath, "layout")),
       middlewareChain: mwChain.map((m) => registry.ref(m.filePath, "mw")),
+      ...(islandScripts ? { islandScripts } : {}),
     });
-  }
-
-  const actions: ResolvedAction[] = [];
-  if (actionsDir && existsSync(actionsDir)) {
-    for (const actionFile of scanRoutes(actionsDir)) {
-      const segments = actionFile.routePath.split("/").filter(Boolean);
-      const fileName = segments[segments.length - 1] ?? "";
-      const parentPath =
-        fileName === "index" || !fileName
-          ? actionFile.routePath
-          : `/${segments.slice(0, -1).join("/")}`;
-      actions.push({
-        parentPath,
-        paramNames: actionFile.paramNames,
-        module: registry.ref(actionFile.filePath, "action"),
-      });
-    }
   }
 
   const notFoundEntry = existsSync(pagesDir) ? scanNotFound(pagesDir) : null;

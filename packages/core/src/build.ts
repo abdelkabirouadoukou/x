@@ -3,13 +3,7 @@ import { join, relative } from "node:path";
 import { type ComponentType, createElement, type ReactNode } from "react";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { createIslandRegistry, IslandProvider } from "./island";
-import {
-  actionsRewritePlugin,
-  generateFallbackHydration,
-  generateHydrateEntry,
-  islandEntryId,
-  wrapIslandBundle,
-} from "./island-bundle";
+import { bundleRouteIslandsToDisk } from "./island-bundle";
 import { renderStaticPage } from "./render";
 import {
   findLayoutChain,
@@ -20,7 +14,7 @@ import {
   scanPages,
   scanRoutes,
 } from "./router";
-import { assertNoEnvLeakage, EnvLeakageError } from "./security/env-isolation";
+
 import { registerServerFunctions } from "./server-functions";
 
 export type RouteMode = "static" | "server";
@@ -218,7 +212,7 @@ export async function build(options: BuildOptions): Promise<void> {
     let islandScripts: string[] = [];
     if (registry.entries.length > 0) {
       const uniqueNames = [...new Set(registry.entries.map((e) => e.name))];
-      islandScripts = await bundleRouteIslands(
+      islandScripts = await bundleRouteIslandsToDisk(
         page.filePath,
         page.layoutFilePaths,
         uniqueNames,
@@ -293,56 +287,6 @@ export async function build(options: BuildOptions): Promise<void> {
   }
 
   console.log(`[x] build complete -> ${outDir}`);
-}
-
-async function bundleRouteIslands(
-  routeFilePath: string,
-  layoutFilePaths: string[],
-  islandNames: string[],
-  islandsDir: string,
-  actionModules: Map<string, { parentPath: string; fnNames: string[] }>,
-): Promise<string[]> {
-  const entryId = islandEntryId(routeFilePath);
-  const outdir = join(islandsDir, entryId);
-  mkdirSync(outdir, { recursive: true });
-  const bundlePath = join(outdir, `${entryId}.js`);
-
-  const hydrateEntry = generateHydrateEntry(routeFilePath, layoutFilePaths);
-  const entryPath = join(outdir, `${entryId}.tsx`);
-  writeFileSync(entryPath, hydrateEntry, "utf-8");
-
-  try {
-    const result = await Bun.build({
-      entrypoints: [entryPath],
-      target: "browser",
-      plugins: [actionsRewritePlugin(actionModules)],
-    });
-
-    if (result.success) {
-      const outputs = result.outputs.filter((o) => o.kind === "entry-point");
-      const built = outputs[0] ?? result.outputs[0];
-      if (!built) throw new Error("bun build produced no output");
-      const code = await built.text();
-      assertNoEnvLeakage(code, bundlePath);
-      writeFileSync(bundlePath, wrapIslandBundle(code), "utf-8");
-      return [`/_islands/${entryId}/${entryId}.js`];
-    }
-    for (const log of result.logs) {
-      console.warn(`  [islands] build error: ${log.message}`);
-    }
-  } catch (err) {
-    // A leaked server-only env var is a security failure, not a routine build
-    // hiccup. Rethrow so `x build` fails loudly and CI/CD sees a non-zero
-    // exit — a build that silently ships a dead, non-interactive island is
-    // worse than no build at all. The guarantee (the secret never reaches the
-    // client) already holds; this makes the failure distinguishable from an
-    // ordinary Bun.build() error.
-    if (err instanceof EnvLeakageError) throw err;
-    console.warn(`  [islands] build failed for ${routeFilePath}:`, err);
-  }
-
-  writeFileSync(bundlePath, wrapIslandBundle(generateFallbackHydration(islandNames)), "utf-8");
-  return [`/_islands/${entryId}/${entryId}.js`];
 }
 
 function renderPageWithLayout(

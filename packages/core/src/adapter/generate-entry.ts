@@ -131,7 +131,7 @@ export function generateAdapterEntry(manifest: BuildManifest, entryDir: string):
       `    module: ${r.route.identifier},`,
       `    layoutModules: [${layoutMods}].filter(Boolean),`,
       `    middlewareModules: [${mwMods}].filter(Boolean),`,
-      "    islandScripts: [],",
+      `    islandScripts: ${JSON.stringify(r.islandScripts ?? [])},`,
       "  },",
     );
   }
