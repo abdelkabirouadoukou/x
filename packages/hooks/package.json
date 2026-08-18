@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/hooks",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SSR-safe React hooks for the x framework (debounce, media queries, intersection observer, forms, server actions, and more).",
   "keywords": [
     "react",
