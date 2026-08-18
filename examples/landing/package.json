@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "x dev",
     "start": "x start",
-    "build": "x build",
-    "vercel-build": "x build --adapter vercel"
+    "build": "x build && bun run scripts/gen-docs-search.ts",
+    "vercel-build": "x build --adapter vercel && bun run scripts/gen-docs-search.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
