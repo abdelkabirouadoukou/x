@@ -1,5 +1,5 @@
 ---
-"@thexjs/create-thexjs-app": minor
+"create-thexjs-app": minor
 ---
 
 Add a `--hooks` option that scaffolds `@thexjs/hooks` as a dependency in new
