@@ -1,0 +1,3335 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "route": "/docs/api-routes",
+      "title": "API routes",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "API Routes",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "API routes",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Build REST endpoints alongside your frontend pages. API routes live in src/api/ and share the same process as your pages.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "File-based API routing",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Like pages, API routes use the file system. A file at src/api/hello.ts becomes /api/hello . Handlers are plain functions: export the HTTP method you want to handle, receive the Request , return a Response . The Request is the standard fetch API request, so req.json() , req.formData() , and req.headers all work as expected.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export function GET(req: Request) { return Response.json({ message: \"Hello from x!\" });}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Request & response",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Each exported HTTP method receives the raw request and returns a standard Response . Dynamic segments work the same as pages: api/users/[id].ts → /api/users/:id . Return any Response , including Response.json(...) and new Response(stream) .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export async function GET(req: Request) { const users = await db.query(\"SELECT * FROM users\"); return Response.json(users);}export async function POST(req: Request) { const body = await req.json(); const result = await db.query( \"INSERT INTO users (name, email) VALUES (?, ?) RETURNING *\", [body.name, body.email], ); return Response.json(result, { status: 201 });}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "POST endpoint example",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "pre",
+          "text": "export async function POST(req: Request) { const form = await req.formData(); const email = form.get(\"email\"); const message = form.get(\"message\"); if (!email || !message) { return Response.json( { error: \"Email and message are required\" }, { status: 400 }, ); } await sendEmail({ email, message }); return Response.json({ success: true });}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "API route tree",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "API routes support the same file-tree conventions as pages: nested folders, dynamic segments, and index files.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "src/api/hello.ts -> GET /api/hellousers.ts -> GET, POST /api/usersusers/ [id].ts -> GET, PUT, DELETE /api/users/:idauth/ login.ts -> POST /api/auth/login register.ts -> POST /api/auth/register",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Process sharing",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "API routes run in the same Bun process as your pages and server functions. This means you can share database connections, in-memory caches, and configuration without any network overhead.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/build-deploy",
+      "title": "Build & deploy",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Build & Deploy",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Build & deploy",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x produces optimized production builds: prerendered HTML, island bundles, and a server entry point, all in one command.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Build command",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Run x build to produce a production build. The build output goes to a .x/ directory (override with --outDir ).",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "x build[x] resolving routes...[x] found 12 routes[x] building static pages...[x] building island bundles...[x] building server bundle...[x] build complete in 1.2s -> .xx build --outDir dist # write to ./dist instead of .x/",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Output structure",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "The .x/ directory contains everything needed to deploy:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": ".x/client/ // Static site: prerendered HTML + public/ assets index.html about/index.html blog/ hello-world/index.html _islands/ index-abc123/ // One hydration bundle per page&#x27;s islands index-abc123.js styles.css // Compiled Tailwind favicon.icoserver/ index.ts // Server entry for SSR/API/actions (run with x start)",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Static pages (and their public/ assets) live under .x/client/ and deploy to any static host. Server code ships as .x/server/index.ts , a single entry that re-imports your x.config.ts at runtime.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Static page export",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Pages with mode = \"static\" are rendered at build time, including their loader output. Dynamic segments generate one HTML file per unique path at build time.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Incremental static regeneration",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "A static page can opt into time-based revalidation with revalidate . The page is prerendered on first request, cached in memory for N seconds, then re-rendered on demand. Each response carries an X-Revalidated header ( hit / miss / none ).",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export const mode = \"static\";export const revalidate = 3600; // re-render at most once per hour",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Bust the cache programmatically with a POST to /__x/revalidate — send { \"path\": \"/pricing\" } to revalidate one page or an empty body to clear the whole cache.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Production server",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Use x start to run .x/server/index.ts . It serves static files and handles dynamic routes, and the entry handles SIGTERM / SIGINT gracefully: it stops accepting connections, flushes the error reporter, and drains in-flight requests for up to 3 seconds before exiting.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "x start[x] production server running at http://localhost:3000PORT=8080 x start # PORT env var overrides the default 3000",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "If a build has no server entry (every page is static and there are no API routes), x start falls back to serving .x/client/ as a plain static file server with an SPA index.html fallback.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Programmatic build",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "build() from @thexjs/core runs the same pipeline the CLI uses, useful for custom deploy scripts:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { build } from \"@thexjs/core\";await build({ pagesDir: \"src/pages\", apiDir: \"src/api\", actionsDir: \"src/actions\", outDir: \"dist\", configPath: \"x.config.ts\",});",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Docker deployment",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "Deploy with a minimal Docker image using the official Bun runtime:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "FROM oven/bun:1 AS buildWORKDIR /appCOPY package.json bun.lock .RUN bun installCOPY . .RUN bun run build:packagesRUN x build --outDir distFROM oven/bun:1-slimWORKDIR /appCOPY --from=build /app/dist distCOPY --from=build /app/node_modules node_modulesEXPOSE 3000CMD [\"x\", \"start\", \"--outDir\", \"dist\"]",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Deploy to Vercel",
+          "anchor": "#sec-7"
+        },
+        {
+          "kind": "p",
+          "text": "Vercel doesn&#x27;t run a long-lived Bun process, so it uses a different adapter: @thexjs/adapter-vercel builds a .vercel/output/ tree (Build Output API v3) directly, so no vercel.json is required.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add -d @thexjs/adapter-vercelx build --adapter vercelvercel deploy --prebuilt",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "If every page in your app uses mode = \"static\" (no API routes, no server actions), no function is emitted at all, just static files and filesystem routing. Server-mode pages, API routes, and server actions run inside a single bundled nodejs20.x function.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/client-navigation",
+      "title": "Client Navigation & Images",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Guides",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Client Navigation & Images",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Every plain tag on an x site already navigates client-side, with no router setup required. This page covers that behavior, the convenience component, the built-in remote image proxy, and the two error surfaces (dev overlay, 404 page).",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Client-side navigation, by default",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Every rendered page inlines a small navigation script ( CLIENT_NAV_SCRIPT ). It intercepts clicks on same-origin elements, fetches the destination page, and swaps the page content in place instead of doing a full browser navigation, so you get SPA-style transitions without adding a router or wrapping links in anything. It also prefetches on hover/focus and handles back/forward via popstate .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "// No import needed — this already does client-side nav + hover prefetch: href=\"/docs/routing\">Routing>",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Opt individual links out with data attributes:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "href=\"/legacy\" data-no-nav>Full page load> href=\"/heavy-page\" data-no-prefetch>No hover prefetch, still client nav>",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Links are skipped automatically if they cross origins, open a new tab ( target ), carry a download attribute, or use a # / mailto: / tel: scheme. Those always behave like normal anchors.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "The component",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "is a typed wrapper around the same behavior above. Use it when you want the opt-out props to be type-checked instead of stringly-typed data attributes:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { Link } from \"@thexjs/core\"; href=\"/docs\">Docs>// Same opt-outs, as real props: href=\"/legacy\" clientNav={false}>Full page load> href=\"/heavy-page\" prefetch={false}>No prefetch>",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Remote image proxy",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "createImageProxyHandler mounts a GET /_x/image route that fetches an allow-listed remote image server-side and streams it back from your own origin. The browser never makes a cross-origin image request, so a strict img-src &#x27;self&#x27; CSP (see Security ) still works even with remote images. This page&#x27;s own Stardance badge is proxied through it right now.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { createImageProxyHandler } from \"@thexjs/core\";const imageProxy = createImageProxyHandler({ remoteHosts: [\"stardance.hackclub.com\"], // required allow-list — empty means requests are rejected});",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "src={`/_x/image?url=${encodeURIComponent(\"https://stardance.hackclub.com/logo.png\")}`} /> >",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "It&#x27;s a proxy, not an optimizer. No resizing or format conversion happens. Only hosts in remoteHosts are ever fetched (this is what prevents the route from becoming an open SSRF relay), only a fixed set of image content types are allowed through, and successful responses are served with a one-day, immutable Cache-Control header.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Dev error overlay",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "When a loader, page, or API route throws during x dev , renderErrorOverlay renders a full-screen overlay with the error message and stack trace, instead of a bare 500 response. It&#x27;s dev-only: production builds never ship the overlay, they return a plain error response.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "404 handling",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Drop a src/pages/_404.tsx to customize the site-wide not-found page. If you don&#x27;t provide one, x falls back to DefaultNotFound , a minimal built-in page, so every project has a sane 404 without extra setup.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export default function NotFound() { return >Nothing here.>;}",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/configuration",
+      "title": "Configuration",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Configuration",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Configuration",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Configure x via x.config.ts at your project root. Use defineConfig from @thexjs/core for type-safe configuration.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "defineConfig",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "All configuration options are optional. x provides sensible defaults so you can start with zero configuration and add settings as needed.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "All options reference",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "h2",
+          "text": "pagesDir",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "The directory containing your page route files. Defaults to src/pages . Each .tsx file becomes a route based on its file path.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "layoutsDir",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "The directory for root layout components. Layouts wrap pages and can be nested using the _layout.tsx convention inside page directories.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "apiDir",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "The directory for API route files. Files here respond to HTTP methods ( GET , POST , etc.) and are served under /api/... .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "actionsDir",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "The directory for server functions. Exported async functions can be called from the browser via fetch(&#x27;/__x/actions/...&#x27;) . If you don&#x27;t set this, x auto-detects a src/actions directory.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "contentDir",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "The directory for markdown content collections. Files with frontmatter are scanned, and each becomes a route at its own path. Load content via scanContent and renderMarkdown .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "port",
+          "anchor": "#sec-7"
+        },
+        {
+          "kind": "p",
+          "text": "The port number for the dev server. Defaults to 3000 .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "security",
+          "anchor": "#sec-8"
+        },
+        {
+          "kind": "p",
+          "text": "Nested options for the security guardrails: csrf (origin verification + optional double-submit token), headers (CSP, HSTS, frame options, nosniff), and rateLimit (per-IP fixed-window limiter, optionally backed by a Redis store). Pass false for any of them to disable it. See Security for the full reference.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "observability",
+          "anchor": "#sec-9"
+        },
+        {
+          "kind": "p",
+          "text": "logging toggles structured JSON request logs, health enables the /healthz and /readyz probes, and errorReporter plugs exceptions into Sentry, OTel, or your own handler. See Observability .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "images",
+          "anchor": "#sec-10"
+        },
+        {
+          "kind": "p",
+          "text": "remoteHosts allow-lists hosts for the /_x/image?url=... proxy, so a strict img-src &#x27;self&#x27; CSP can still load remote images through your own origin.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "routesDir (legacy)",
+          "anchor": "#sec-11"
+        },
+        {
+          "kind": "p",
+          "text": "A legacy option for projects migrating from earlier versions of X. Maps to the same file-based routing convention. Prefer pagesDir for new projects.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/content-collections",
+      "title": "Content collections",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Content Collections",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Content collections",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Write content in Markdown with frontmatter, and x automatically turns it into pages. Perfect for blogs, documentation, and any content-driven site.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Configuration",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Point the content directory in x.config.ts to a folder with your markdown files.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig } from \"@thexjs/core\";export default defineConfig({ contentDir: \"content\",});",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Markdown with frontmatter",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Each markdown file starts with frontmatter (YAML between --- delimiters) followed by markdown content.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "---title: Hello Worlddate: 2026-03-15tags: [getting-started, tutorial]author: Jane Doe---## Welcome to X!This is your first post using X&#x27;s content collection system.You can write **markdown** with all the usual syntax:- Lists- **Bold** and *italic* text- `inline code` and code blocks```tsconst greeting = \"Hello from x!\";console.log(greeting);```",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Reading content in a loader",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Use scanContent to discover files and renderMarkdown to convert markdown to HTML in your loaders.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "scanContent API",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "scanContent(directory) scans a subdirectory of your content folder and returns an array of content entries. Each entry includes slug , body (the raw markdown), and frontmatter (parsed YAML). Both this and renderMarkdown are synchronous — no await needed.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "interface ContentEntry { slug: string; // \"posts/hello-world\" — route-safe path body: string; // markdown after the frontmatter block frontmatter: Record, string | number | boolean | string[] | null>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "renderMarkdown API",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "renderMarkdown(markdownString) converts markdown to an HTML string. It is a lightweight, dependency-free renderer: headings, paragraphs, lists, links, inline code, code blocks, bold/italic, and blockquotes are supported, and all output is HTML-escaped by default ( escapeHtml is exported separately too). It does not run a full markdown engine or syntax highlighter, so for heavy-duty content you can swap in your own renderer and feed the result to dangerouslySetInnerHTML .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Auto-routes",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "Every .md / .mdx file under contentDir becomes a route at its own path during build and dev. The blog template is a working example: content/posts/*.md with a [slug].tsx page that renders each post via renderMarkdown .",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/data-layer",
+      "title": "Data layer",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Data Layer",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Data layer",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x provides built-in SQLite and PostgreSQL integrations via @thexjs/core/data . Connect to a database, run file-based migrations, and query data directly from loaders and server functions.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "SQLite",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Use connectSQLite to connect to a local SQLite database file. It wraps bun:sqlite and turns on WAL mode and foreign_keys by default. SQLite requires zero configuration and is perfect for development and single-server deployments.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { Database } from \"bun:sqlite\";import { connectSQLite, runSQLiteMigrations } from \"@thexjs/core/data\";const db = connectSQLite({ path: \"data/app.db\" });await runSQLiteMigrations(db, \"data/migrations\");export { db };export type DB = typeof db;",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Querying SQLite",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "The returned object is the standard bun:sqlite Database , so db.query(...).all() and db.run(...) work as expected.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "PostgreSQL",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "For production deployments, use connectPostgres with a url (or the DATABASE_URL env var). It wraps Bun.sql with a connection pool, TLS enforcement (defaults to require in production), and retry with backoff so the app tolerates a database that is still coming up.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { connectPostgres, runPostgresMigrations } from \"@thexjs/core/data\";const db = connectPostgres({ url: process.env.DATABASE_URL, max: 20, // connection pool size ssl: \"verify-full\", ca: process.env.POSTGRES_CA, // PEM CA, for verify-ca/verify-full retryAttempts: 5, // reconnect with backoff before failing});await runPostgresMigrations(db, \"data/migrations\");export { db };",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "connectPostgres requires Bun and will throw on non-Bun runtimes (such as Vercel&#x27;s Node functions) — for those, connect with your own Postgres client and pass it around instead.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Migrations",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Both runSQLiteMigrations and runPostgresMigrations take a directory of .sql files, applied in filename order. Applied migrations are tracked in a _x_migrations table and never re-run.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "data/migrations/001_create_users.sql002_create_posts.sql003_add_posts_index.sql",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "CREATE TABLE IF NOT EXISTS users ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, created_at TEXT DEFAULT (datetime(&#x27;now&#x27;)));",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The result is a { applied, skipped } list of filenames, so you can log or test which migrations ran.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Backup & disaster recovery",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Back up the same data the app actually writes. That is the database plus — if you use @thexjs/auth — the x_sessions table. Migrations are not data: the _x_migrations table records history, so restore the database and let the migration runner verify it&#x27;s in the state your code expects.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Two numbers to write down for any plan: RPO (how much data you can lose — dictates backup frequency) and RTO (how fast you must be back — dictates restore procedure). The recipes below give you the mechanics; pick schedule and retention to meet your own RPO/RTO.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "SQLite (WAL mode)",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "connectSQLite enables WAL mode, which is exactly what you want for backups: it allows a safe, consistent file snapshot while the app keeps writing. Never copy the .db file with a plain cp while the app is running — you can catch the file mid-write. Three safe options, in order of preference:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { Database } from \"bun:sqlite\";const db = new Database(\"data/app.db\");// Online backup API: consistent snapshot while the app keeps writing.await db.backup(\"backups/app-$(date -u +%FT%TZ).db\");db.close();",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Prefer db.backup() — it is the only option that is safe with zero coordination. Alternatively, from a separate shell you can use the SQLite .backup command:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "# Safe: consistent snapshot via SQLite itselfsqlite3 data/app.db \".backup &#x27;backups/app-$(date -u +%FT%TZ).db&#x27;\"# Safe too: checkpoint WAL first, then copy all three files togethersqlite3 data/app.db \"PRAGMA wal_checkpoint(FULL);\"cp data/app.db data/app.db-wal data/app.db-shm backups/# NOT safe while running: a bare cp of just app.db# cp data/app.db backups/ #",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Restore is the reverse: stop the app, copy the snapshot back (removing any stale -wal / -shm files first), then start the app. Because migrations are tracked in _x_migrations , you can restore to an older snapshot than your current code and the runner will simply apply the missing migrations — but only forward . Restoring an older snapshot after newer migrations already ran requires either re-applying them or restoring a snapshot taken after they applied.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "PostgreSQL",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "Use the platform&#x27;s built-in backups (RDS automated snapshots, Neon/Cloudflare D1-style point-in-time recovery, Supabase backups) as the primary mechanism, plus logical pg_dump for portable, schema-safe snapshots and cross-provider restore.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "# Logical backup (portable, survives provider migration)pg_dump \"$DATABASE_URL\" -Fc -f backup.dump# Restore onto a fresh databasecreatedb \"$DATABASE_URL\" # if restoring into an empty DBpg_restore \"$DATABASE_URL\" -d \"$DATABASE_URL\" --clean --if-exists backup.dump",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "If you run one-off scripts from inside the app (a cron worker or a daily task), prefer the app&#x27;s own connectPostgres connection so the connection-pool, TLS, and retry settings you configured are the ones doing the work.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Runbook checklist",
+          "anchor": "#sec-7"
+        },
+        {
+          "kind": "li",
+          "text": "Test the restore, not just the backup. A backup that has never been restored is a guess. Restore into a scratch database as part of CI or a monthly drill and verify row counts and a couple of hand-picked rows.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Store snapshots off the same machine. Object storage (S3/R2) or a separate volume; a backup on the same disk dies with the app.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Back up sessions too. If @thexjs/auth backs sessions with x_sessions , it is part of the database backup automatically. If you ever point auth at a separate session store, add it to the backup set. Restoring an older snapshot will log everyone out (sessions created after it don&#x27;t exist) — plan for a re-auth wave.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Multi-instance deploys: SQLite is single-node. For two or more app instances behind a load balancer, use Postgres (or a dedicated SQLite host) so every instance reads the same data. Back up from one instance&#x27;s maintenance window, not from a live replica mid-write.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Write down the runbook. RTO is set by how long restore takes when you are panicking, so document the exact commands above somewhere your on-call can reach.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Sessions, not hand-rolled",
+          "anchor": "#sec-8"
+        },
+        {
+          "kind": "p",
+          "text": "If you need sessions on top of this, @thexjs/auth provides prebuilt credentials and OAuth2 (GitHub) sign-in backed by an x_sessions table in SQLite or Postgres — HMAC&#x27;d, revocable session tokens, Argon2 password hashing, and automatic CSRF on auth endpoints — instead of hand-rolling your own session store.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/getting-started",
+      "title": "Get started with X",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Getting Started",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Get started with X",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Create a new X project, learn the project structure, and build your first page.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Create a project",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "The fastest way to start is with the project scaffolder. See Installation for prerequisites and template options. Quick version:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun create thexjs-app@latest my-appcd my-appbun run dev",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Press Enter at the template prompt to use default (recommended), a single home page. Your app will be running at http://localhost:3000 .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Manual setup",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "If you prefer to set up manually, create a directory and add X:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "mkdir my-app && cd my-appbun init -ybun add @thexjs/corecat x.config.tsimport { defineConfig } from \"@thexjs/core\";export default defineConfig({pagesDir: \"src/pages\",apiDir: \"src/api\", // optional: API routesactionsDir: \"src/actions\", // optional: server functions});EOF",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Project structure",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "A typical X project looks like this:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "my-app/x.config.tssrc/ pages/ // File-based routes index.tsx about.tsx _404.tsx blog/ [slug].tsx layouts/ // Nested layouts main.tsx api/ // API routes hello.ts actions/ // Server functions greet.tscontent/ // Markdown content posts/ hello-world.md",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Your first page",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Create src/pages/index.tsx with a simple component:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export default function Home() { return ( > className=\"text-4xl font-bold\">Hello x!> className=\"text-muted-foreground\">Welcome to your new app.> > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Running the dev server",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Start the development server with hot reload:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "x dev[x] dev server starting...✓ dev server running at http://localhost:3000",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The dev server watches your src/ directory and automatically reloads when files change.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs",
+      "title": "Everything you need to build with X",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Documentation",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Everything you need to build with X",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "A fullstack framework for Bun. Static sites, server-rendered pages, API routes, and server functions, all in a single process.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Start here",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "h3",
+          "text": "Introduction",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "What x is, how the packages fit together, and a minimal page.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Installation",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Prerequisites, create command, templates, and manual setup.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Getting Started",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Project structure, your first page, and running the dev server.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Migration Guide",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Move an existing Next.js or TanStack app to X.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Packages",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "h3",
+          "text": "@thexjs/core",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "Rendering engine: routing, SSR/SSG, islands, server functions, data layer.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "@thexjs/auth",
+          "anchor": "#sec-7"
+        },
+        {
+          "kind": "p",
+          "text": "Plug-and-play auth: credentials and OAuth2 (GitHub), sessions, and CSRF.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "@thexjs/cli",
+          "anchor": "#sec-8"
+        },
+        {
+          "kind": "p",
+          "text": "The x command: dev, build, start, and deployment output.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "@thexjs/env",
+          "anchor": "#sec-9"
+        },
+        {
+          "kind": "p",
+          "text": "Type-safe environment variable validation with fail-fast errors.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "@thexjs/adapter-vercel",
+          "anchor": "#sec-10"
+        },
+        {
+          "kind": "p",
+          "text": "Zero-config Vercel Build Output API v3 adapter for serverless deployment.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Guides",
+          "anchor": "#sec-11"
+        },
+        {
+          "kind": "h3",
+          "text": "Routing",
+          "anchor": "#sec-12"
+        },
+        {
+          "kind": "p",
+          "text": "File-based routing: static pages, dynamic segments, nested routes.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Pages & Loaders",
+          "anchor": "#sec-13"
+        },
+        {
+          "kind": "p",
+          "text": "Static pages, server-rendered pages, and data loading.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Layouts",
+          "anchor": "#sec-14"
+        },
+        {
+          "kind": "p",
+          "text": "Nested layouts, dedicated layout directories, and root layouts.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "API Routes",
+          "anchor": "#sec-15"
+        },
+        {
+          "kind": "p",
+          "text": "Build REST endpoints alongside your frontend pages.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Server Functions",
+          "anchor": "#sec-16"
+        },
+        {
+          "kind": "p",
+          "text": "Call server-side functions from the browser without REST.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Islands",
+          "anchor": "#sec-17"
+        },
+        {
+          "kind": "p",
+          "text": "Selective hydration: ship JS only for the interactive parts.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Incremental Static Regeneration",
+          "anchor": "#sec-18"
+        },
+        {
+          "kind": "p",
+          "text": "Static pages that revalidate on a timer or on demand.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Client Navigation & Images",
+          "anchor": "#sec-19"
+        },
+        {
+          "kind": "p",
+          "text": "SPA-style navigation on every tag by default, plus the remote image proxy.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Content Collections",
+          "anchor": "#sec-20"
+        },
+        {
+          "kind": "p",
+          "text": "Markdown files with frontmatter that become routes.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Middleware",
+          "anchor": "#sec-21"
+        },
+        {
+          "kind": "p",
+          "text": "Route-level middleware for auth, redirects, and validation.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Data Layer",
+          "anchor": "#sec-22"
+        },
+        {
+          "kind": "p",
+          "text": "SQLite and PostgreSQL integration with migrations.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Build & Deploy",
+          "anchor": "#sec-23"
+        },
+        {
+          "kind": "p",
+          "text": "Production builds, static export, and deployment.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Configuration",
+          "anchor": "#sec-24"
+        },
+        {
+          "kind": "p",
+          "text": "x.config.ts reference: all options and defaults.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Security",
+          "anchor": "#sec-25"
+        },
+        {
+          "kind": "p",
+          "text": "Env isolation, CSRF protection, security headers, and rate limiting.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Observability",
+          "anchor": "#sec-26"
+        },
+        {
+          "kind": "p",
+          "text": "Structured logging, health probes, and APM error tracing.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/installation",
+      "title": "Install x",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Installation",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Install x",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x requires the Bun runtime. Scaffold a new project with the create command, or add the packages manually to an existing app.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Prerequisites",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Install Bun first, since x uses Bun.serve , Bun.file , and other Bun-only APIs. Verify with:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun --version",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Create a new project",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "The fastest path is the project scaffolder. It copies a template, generates package.json , resolves the latest @thexjs/core and @thexjs/cli versions, and runs bun install .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun create thexjs-app@latest my-appcd my-appbun run dev",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "When prompted for a template, press Enter to accept default (recommended), a single home page to start from. Other templates include basic , blog , saas , and landing .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "Available templates:default Blank slate with a single home page. (recommended)basic Minimal starter: pages, API route, auth, dashboard.blog Markdown content collections.saas Dashboard, settings, pricing, auth, data layer.landing Marketing site with docs pages.Choose a template (default/basic/blog/saas/landing) (default):",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Pass a template explicitly with --template or -t :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun create thexjs-app@latest my-app --template default",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Add to an existing project",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Install the core packages and wire up scripts in package.json :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add @thexjs/corebun add -d @thexjs/cli",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "{ \"scripts\": { \"dev\": \"x dev\", \"build\": \"x build\", \"start\": \"x start\" }}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Create x.config.ts at the project root:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig } from \"@thexjs/core\";export default defineConfig({ pagesDir: \"./src/pages\", port: 3000,});",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Optional: environment validation",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Add @thexjs/env when you want typed, validated environment variables:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add @thexjs/env",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "See the @thexjs/env docs for the full API.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Verify the install",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "pre",
+          "text": "x dev[x] compiling Tailwind CSS...[x] dev server starting...✓ dev server running at http://localhost:3000",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "(The Tailwind line only appears when src/styles/globals.css exists, which the default template ships.)",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/introduction",
+      "title": "What is x?",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Introduction",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "What is x?",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x is a full-stack React framework built on Bun . File-based routing, SSR, static generation, API routes, server functions, islands, and a content layer all live in one process, with zero orchestration.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Why x exists",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Most stacks split concerns across multiple tools: a bundler, a server, a static host, a separate API layer. x keeps everything in one Bun process. Drop a file in src/pages , get a route. Mark a page static and it prerenders at build time. Leave it as server mode and it renders per request. API routes and server functions live alongside your pages, with the same types and the same runtime.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "The packages",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "x ships as a set of focused npm packages. You typically install @thexjs/cli and @thexjs/core through the project scaffolder; add @thexjs/env when you need validated environment variables, and @thexjs/adapter-vercel to deploy to Vercel.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "@thexjs/core",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Rendering engine: routing, SSR/SSG, islands, server functions, content, data layer.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "@thexjs/cli",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The x command: dev server, production build, and start.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "@thexjs/env",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Type-safe environment variable validation with fail-fast errors.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "A minimal page",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Every x app starts with file-based routes. Here is the simplest possible page:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps } from \"@thexjs/core\";export const mode = \"static\";export default function HomePage({}: RouteProps) { return >Hello from x>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Run x dev and visit http://localhost:3000 . That is the entire loop.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Static vs server",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Pages default to server-rendered (SSR). Opt into build-time prerendering per page:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export const mode: \"static\" | \"server\" = \"static\";",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Static pages ship as plain HTML in .x/client/ and deploy to any static host. Server pages need a running Bun process via x start .",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/islands",
+      "title": "Islands architecture",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Islands",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Islands architecture",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The server renders your full page as HTML, then only the pieces you mark as islands hydrate in the browser. Everything else ships zero JavaScript.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Why islands",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "A page full of interactive widgets doesn&#x27;t need to ship one giant bundle. Each island is a small, self-contained hydration entry: it imports only what it needs, hydrates in place, and nothing on the page outside an island is ever re-rendered on the client. That keeps first paint fast and the JS budget predictable.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Creating an island",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Wrap a component in and register it on the same page or layout with export const islands . Only registered islands get a hydration bundle, so an unregistered component never ships client JS even if you wrap it.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { useState } from \"react\";export default function LikeButton() { const [count, setCount] = useState(0); return ( onClick={() => setCount((c) => c + 1)} className=\"rounded-full border px-4 py-2\"> Like {count} > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { Island } from \"@thexjs/core\";import { LikeButton } from \"../../components/like-button\";export const islands = { LikeButton };export default function BlogPost({ post }) { return ( > className=\"text-3xl font-bold\">{post.title}> >{post.body}> name=\"LikeButton\" client=\"visible\"> /> > > > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Hydration triggers",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "The client prop picks when the island hydrates:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "client=\"visible\" — hydrate when the island scrolls into view. Good for content below the fold.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "client=\"idle\" — hydrate when the browser goes idle. Good for widgets the user isn&#x27;t waiting on.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "client=\"load\" — hydrate immediately on page load. Use for the first thing the user interacts with.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "How hydration works",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "At build time x bundles each island separately, server-renders the page to static HTML with the island&#x27;s markup inline, and drops in a small loader script. In the browser the loader fetches the island&#x27;s chunk on demand and hydrates only that subtree. Islands can be nested and reused across routes; each registered component gets exactly one entry per route.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/isr",
+      "title": "ISR",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Incremental Static Regeneration",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "ISR",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Static pages that stay fresh: prerender once, serve from cache, and revalidate on a timer. ISR gives you the speed of a static export with data that eventually updates.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Prerender with revalidation",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "A page that exports mode = \"static\" plus revalidate is prerendered at build time and then re-rendered on demand once the cache expires.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps, LoaderArgs } from \"@thexjs/core\";export const mode = \"static\";export const revalidate = 3600; // secondsexport async function loader({}: LoaderArgs) { const stats = await fetchStats(); return { stats };}export default function Stats({ loaderData }: RouteProps) { const { stats } = loaderData as { stats: unknown }; return ( > className=\"text-3xl font-bold\">Stats> >{JSON.stringify(stats, null, 2)}> > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "revalidate accepts dynamic pages too. A page with mode = \"server\" and revalidate behaves like the classic ISR model: the first request after a cache miss renders fresh, subsequent requests within the window are served from cache.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Cache headers",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Responses from a revalidated page carry an X-Revalidated header so you can tell how the page was served:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "X-Revalidated: hit # served from the static cacheX-Revalidated: miss # rendered fresh, cache was stale or emptyX-Revalidated: none # page has no revalidate window",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Invalidating on demand",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "You don&#x27;t have to wait for the timer. A POST /__x/revalidate request with a JSON body { \"path\": \"/stats\" } clears that page&#x27;s cache entry, so the next request renders fresh. An empty body clears the entire cache.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "await fetch(\"http://localhost:3000/__x/revalidate\", { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, body: JSON.stringify({ path: \"/stats\" }),});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "This is the hook for a CMS webhook or an admin action: a content edit can push a fresh render immediately instead of waiting for the revalidate window.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/layouts",
+      "title": "Layouts",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Layouts",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Layouts",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Layouts wrap your pages with shared UI. x supports nested layouts via a dedicated layouts directory and the _layout.tsx convention.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Layouts directory",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Configure a layouts directory in x.config.ts . Every file in it acts as a root-level layout and wraps all your routes.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig } from \"@thexjs/core\";export default defineConfig({ pagesDir: \"src/pages\", layoutsDir: \"src/layouts\",});",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Root layout",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Any layout in the dedicated layouts directory wraps every route page. Create src/layouts/main.tsx to add a header, footer, or global styling. A _layout.tsx at the root of pages/ also serves as the root layout for page routes (and is the one used to wrap the 404 page).",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { ReactNode } from \"react\";export default function RootLayout({ children }: { children: ReactNode }) { return ( className=\"flex min-h-screen flex-col bg-background\"> className=\"border-b border-border p-4\"> href=\"/docs\" className=\"text-lg font-bold\">My App> > className=\"flex-1\">{children}> className=\"border-t border-border p-4 text-center text-sm text-muted-foreground\"> © 2026 My App > > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Nested layouts with _layout.tsx",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Place a _layout.tsx file inside a pages folder to create a nested layout. All pages in that folder (and subfolders) inherit it.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "pages/_layout.tsx -> root layoutindex.tsxblog/ _layout.tsx -> nested layout for /blog/* index.tsx [slug].tsx",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Nested blog layout example",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "A nested layout can add a sidebar, breadcrumbs, or section-specific navigation.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { ReactNode } from \"react\";export default function BlogLayout({ children }: { children: ReactNode }) { return ( className=\"flex gap-8\"> className=\"w-64 shrink-0\"> className=\"space-y-2\"> href=\"/blog\" className=\"block font-semibold\">All posts> href=\"/blog/category/react\" className=\"block text-muted-foreground hover:text-foreground\">React> href=\"/blog/category/bun\" className=\"block text-muted-foreground hover:text-foreground\">Bun> > > className=\"min-w-0 flex-1\">{children}> > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Layout chain",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Layouts nest hierarchically. A page under pages/blog/[slug].tsx would be wrapped by blog/_layout.tsx and then the root layout. The chain is resolved automatically based on the page&#x27;s file path.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/middleware",
+      "title": "Middleware",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Middleware",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Middleware",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Route-level middleware lets you intercept page requests before they reach the page handler. Use it for authentication, redirects, logging, and validation.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "The _middleware.ts convention",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Place a _middleware.ts file in any route directory. It runs for all routes in that directory and its subdirectories.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "pages/_middleware.ts -> runs for all routesindex.tsxdashboard/ _middleware.ts -> runs only for /dashboard/* settings.tsx profile.tsxadmin/ _middleware.ts -> auth check for /admin/* index.tsx",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Middleware context",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "A middleware function receives a context object with params (dynamic route params) and request (the original Request), plus a next function as the second argument to continue the chain. It returns a Response .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { MiddlewareContext, MiddlewareNext } from \"@thexjs/core\";export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) { console.log(`[${ctx.request.method}] ${ctx.request.url}`); return next();}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Auth middleware example",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "A common use case is checking for an auth cookie and redirecting unauthenticated users.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { MiddlewareContext, MiddlewareNext } from \"@thexjs/core\";export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) { const session = ctx.request.headers.get(\"cookie\"); if (!session) { return new Response(null, { status: 302, headers: { Location: \"/login\" }, }); } const user = await validateSession(session); if (!user) { return new Response(null, { status: 302, headers: { Location: \"/login\" }, }); } return next();}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "MiddlewareNext",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Call next() (no arguments) to pass control to the next middleware or the route handler. Any mutations to ctx.params you make before the call flow through to downstream handlers.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Middleware applies to page routes only. API routes (in apiDir ) and content routes are dispatched without a middleware chain.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Redirect patterns",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Return a Response with a 302 status and a Location header to redirect. You can also return JSON responses for API middleware validation errors.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "// Redirect to loginreturn new Response(null, { status: 302, headers: { Location: \"/login?redirect=\" + ctx.request.url },});// Redirect back after successful authconst url = new URL(ctx.request.url);const redirectTo = url.searchParams.get(\"redirect\") || \"/\";return new Response(null, { status: 302, headers: { Location: redirectTo },});",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/migration",
+      "title": "Migrate an existing app to X",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Migration Guide",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Migrate an existing app to X",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Move a Next.js or TanStack app to x piece by piece. x shares the file-based, React-islands model you already know, so most of your components, loaders, and API routes port over with minimal churn.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Conceptual mapping",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "x is built around the same ideas you already use, under slightly different names:",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "1. Scaffold the shell",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Create a fresh X project and copy your package files, styles, and public assets into it:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun create thexjs-app@latest my-appcd my-appcp -r old-project/public .cp old-project/x.config.ts . 2>/dev/null || true",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "2. Port your data layer",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Move schemas into versioned SQL migration files and run them at boot. x ships migration runners for both SQLite and Postgres that track applied files in a _x_migrations table:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "CREATE TABLE users ( id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT);",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { connectSQLite, runSQLiteMigrations } from \"@thexjs/core/data\";import { join } from \"node:path\";const db = connectSQLite(process.env.SQLITE_PATH ?? \"./data/app.db\");runSQLiteMigrations(db, join(import.meta.dir, \"..\", \"data\", \"migrations\"));export default db;",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "3. Port pages + loaders",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "A server-rendered page with a loader is almost identical to the Next.js version. Change the export name and drop the framework-specific glue:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { LoaderArgs, RouteProps } from \"@thexjs/core\";import db from \"../lib/db\";export async function loader({ params }: LoaderArgs) { const post = db.query(\"SELECT * FROM posts WHERE slug = ?\").get(params.slug); if (!post) return { status: 404 }; return post;}export default function Post({ loaderData }: RouteProps) { const post = loaderData as { title: string; body: string }; return ( > >{post.title}> >{post.body}> > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Static pages set export const mode = \"static\" and export const revalidate for time-based regeneration, just like ISR:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export const mode = \"static\";export const revalidate = 3600;",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "4. Server functions",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Fold per-route server actions into a shared module under src/actions . Call them from loaders, API routes, forms, or islands -- the client bundle only ships a fetch() wrapper, never the server implementation:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export async function subscribe(email: string) { const user = await db.query(\"SELECT id FROM users WHERE email = ?\").get(email); if (!user) throw new Error(\"No account found for that email\"); await db.run(\"INSERT INTO subscribers (email) VALUES (?)\", [email]); return { ok: true };}",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { subscribe } from \"../actions/newsletter\";export const islands = { Form };function Form() { return ( onSubmit={(e) => { e.preventDefault(); subscribe(new FormData(e.currentTarget).get(\"email\")); }}> name=\"email\" type=\"email\" /> > >Subscribe> > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "5. API routes",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "Replace route.ts handlers with named export functions in src/api . Each receives the Request and returns a Response :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export function GET(request: Request) { return Response.json({ ok: true, ts: Date.now() });}export async function POST(request: Request) { const body = await request.json(); // ... return Response.json({ received: true }, { status: 201 });}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "6. Build, doctor, deploy",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "Run the diagnostics command to catch env-isolation violations, missing dirs, or dependency mismatches before you build, then ship like you did before:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "x doctor # config, dirs, env isolation, depsx build # -> .x/client + .x/server (Bun server)x build --adapter vercel # -> .vercel/output Build Output API v3",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "What doesn&#x27;t change",
+          "anchor": "#sec-7"
+        },
+        {
+          "kind": "li",
+          "text": "React stays React -- x renders with react-dom server-side and hydrates islands client-side.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Plain CSS, Tailwind (compiled by the dev server), and content collections slot in as-is.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Your environment split: variables prefixed THEXJS_PUBLIC_ reach the client; everything else stays server-only.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Deploy targets: a self-hosted Bun server, or Vercel via the bundled adapter.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Next step: read the Getting Started guide for the full walkthrough, or jump into Server Functions . If something from your framework doesn&#x27;t map cleanly, open an issue -- the migration story is being actively tuned.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/observability",
+      "title": "Observability",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Observability",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Observability",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x includes production-ready observability out of the box: structured JSON logging, container health/readiness probes, request metrics (Prometheus or OpenTelemetry), and pluggable APM error tracing. All of it is optional and configurable via the observability key in x.config.ts .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Configuration overview",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig, createSentryReporter } from \"@thexjs/core\";import * as Sentry from \"@sentry/bun\";Sentry.init({ dsn: process.env.SENTRY_DSN });export default defineConfig({ // ...pagesDir, apiDir, etc. observability: { logging: true, errorReporter: createSentryReporter(Sentry), health: { checks: { database: () => db.ping(), }, }, },});",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Structured JSON logging",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Every request is logged as one JSON line with timestamp , requestId , route , method , status , and durationMs . This is ready to ingest into Datadog, Grafana Loki, Kibana, or any JSON log pipeline.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "{\"timestamp\":\"2026-07-29T12:00:00.000Z\",\"level\":\"info\",\"message\":\"request completed\",\"requestId\":\"abc-123\",\"route\":\"/api/users\",\"method\":\"GET\",\"status\":200,\"durationMs\":42}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Logging is enabled by default. Disable it with logging: false .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "observability: { logging: false,}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "You can also use the logger export directly in loaders, server functions, and API routes:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { logger } from \"@thexjs/core\";export async function loader() { logger.info(\"fetching users\", { userId: 42 }); const users = await getUsers(); logger.info(\"users fetched\", { count: users.length }); return { users };}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Health & readiness probes",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Two endpoints are served ahead of all routing for container orchestrators:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "/healthz , the liveness probe. Returns { status: \"ok\" } when the Bun process is up and serving.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "/readyz , the readiness probe. Runs all configured checks and returns 200 only if every check passes, or 503 otherwise.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "observability: { health: { checks: { database: async () => { try { await db.query(\"SELECT 1\"); return true; } catch { return false; } }, redis: () => redis.ping(), }, },}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Kubernetes/Docker can poll these endpoints to decide whether to send traffic to a pod or restart it. The handler itself is exported as createHealthCheckHandler if you want to wire these endpoints into a custom server instead.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Request metrics",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "x can record production metrics for every request — counts, latency histograms, and error and rate-limit-rejection counters. Two built-in reporters cover the two standard destinations:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "createInMemoryMetrics() — an in-process registry that serves a /metrics endpoint in Prometheus text format, ready to be scraped by Prometheus/Grafana.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "createOtlpMetricsReporter(meter) — forwards counters and histograms to an OpenTelemetry meter from your own OTel SDK setup (e.g. an OTLP exporter to Grafana Tempo/Cloud, Datadog, or Honeycomb).",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { createInMemoryMetrics } from \"@thexjs/core\";observability: { metrics: createInMemoryMetrics(),}// GET /metrics// # TYPE x_http_requests_total counter// x_http_requests_total{method=\"GET\",status=\"200\"} 42",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { createOtlpMetricsReporter } from \"@thexjs/core\";import { metrics } from \"@opentelemetry/api\";observability: { metrics: createOtlpMetricsReporter(metrics.getMeter(\"x\")),}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The metrics recorded per request are x_http_requests_total (labels method , status ), x_http_request_duration_ms (histogram, label method ), x_http_errors_total (per phase), and x_rate_limit_rejections_total (per method).",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The same pieces are exported for custom wiring: withRequestMetrics(reporter, handler) wraps any fetch handler, and any object implementing the MetricsReporter interface works — including your own exporter that posts to a statsd/Prometheus push gateway.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "APM error tracing",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "When an uncaught exception occurs during SSR, a server action, or an API handler, x reports it to the configured error reporter. Two reporters are built in:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { createSentryReporter, createOtelReporter } from \"@thexjs/core\";// Sentryobservability: { errorReporter: createSentryReporter(Sentry),}// OpenTelemetryobservability: { errorReporter: createOtelReporter(trace.getTracer(\"x\")),}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "You can also combine multiple reporters, or write your own by implementing the ErrorReporter interface:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { combineReporters } from \"@thexjs/core\";const customReporter = { captureException(error, context) { // Send to your own error tracking service fetch(\"https://errors.example.com\", { method: \"POST\", body: JSON.stringify({ error: String(error), context }), }); },};observability: { errorReporter: combineReporters( createSentryReporter(Sentry), customReporter, ),}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "If no reporter is configured, errors are logged to the console and the request returns a generic 500. The reporter never blocks the response. If it throws, the error is caught and logged so it can&#x27;t take down the request.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Low-level APIs",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "The pieces behind the config are exported directly, so you can swap the wiring for custom logic:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { setErrorReporter, reportException, combineReporters, createSentryReporter,} from \"@thexjs/core\";setErrorReporter(combineReporters(createSentryReporter(Sentry), customReporter));try { // ...} catch (error) { reportException(error, { route: \"/dashboard\", phase: \"loader\" });}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "setErrorReporter installs a reporter at runtime, reportException fires it with an ErrorContext , and combineReporters fans an exception out to several reporters at once. Reporters may also implement an optional flush() (used to drain buffered events on graceful shutdown).",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "What&#x27;s captured",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "Every error report includes the phase it occurred in:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "interface ErrorContext { route?: string; // e.g. \"/dashboard\" requestId?: string; // matches the log entry for this request phase: \"ssr\" | \"action\" | \"api\" | \"loader\";}",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/packages/adapter-vercel",
+      "title": "@thexjs/adapter-vercel",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Packages",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "@thexjs/adapter-vercel",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Vercel Build Output API v3 adapter for X apps. Produces a .vercel/output/ tree directly, with no vercel.json required .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add -d @thexjs/adapter-vercelx build --adapter vercelvercel deploy --prebuilt",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "What it produces",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "The adapter writes a complete Build Output API v3 tree:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": ".vercel/output/config.json routes: filesystem first, then fallback -> renderstatic/ HTML, CSS, island JS chunks (served via Vercel&#x27;s CDN)functions/render.func/ .vc-config.json runtime: nodejs20.x, handler: index.mjs index.mjs standalone SSR + API bundle",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "If your app is 100% static (every page is mode = \"static\" , no API routes, no server actions), no function is emitted at all. config.json only does filesystem routing.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "How it works",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "li",
+          "text": "Runs @thexjs/core &#x27;s normal build() to prerender every static-mode page and content entry, and to compile island bundles. This becomes static/ .",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Separately resolves every server-mode page, API route, layout, middleware file, and server-action file at build time (reusing @thexjs/core &#x27;s own scanners), so nothing at request time depends on walking the filesystem or on a dynamic import(path) of a .tsx file — both of those only work under Bun.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Transpiles each of those files from Bun-flavored TSX/TS into plain Node ESM, then bundles them together with @thexjs/core and React into one standalone index.mjs .",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Bridges Vercel&#x27;s Node-style (req, res) function invocation to X&#x27;s Web-standard Request / Response handler, streaming the response body through (so renderToReadableStream -based SSR streams end-to-end, not just non-streaming pages).",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Options",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "The adapter accepts the same directory options as x.config.ts . Security and observability options are forwarded into the generated render function so your Vercel deployment gets the same CSRF protection, security headers, rate limiting, and structured logging as your Bun server.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Usage with x.config.ts",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Running x build --adapter vercel loads your x.config.ts , so no extra configuration is needed. Just install the adapter and run:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add -d @thexjs/adapter-vercelx build --adapter vercelvercel deploy --prebuilt",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Known limitations",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "li",
+          "text": "ISR-style revalidate caching (in-memory in the long-running Bun dev/prod server) doesn&#x27;t carry over to stateless serverless invocations. Use Vercel&#x27;s own Cache-Control /CDN caching on the response instead.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Markdown contentDir entries are always statically prerendered (matching @thexjs/core &#x27;s build() behavior today). There&#x27;s no server-mode content route yet.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Custom errorReporter functions and health.checks cannot be serialized into the standalone serverless bundle. The adapter provides /healthz (liveness) without custom readiness checks.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/packages/auth",
+      "title": "@thexjs/auth",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Packages",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "@thexjs/auth",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Plug-and-play authentication for X apps. Add credentials (username/password) and OAuth2 — including a preconfigured GitHub provider — with one defineAuth() call, a sessions table in SQLite or Postgres via the framework&#x27;s data layer, and a single catch-all API route.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add @thexjs/auth",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Quick start",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Define your providers and session store once:",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The github provider is a preset: give it a client ID and secret and the authorization, token, and user-info URLs are wired up for you. A generic OAuth2 provider is available too for any other authorization-code provider.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Wire it up with one catch-all API route:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { auth } from \"../../lib/auth\";export async function POST(req: Request) { return auth.handleRequest(req);}export async function GET(req: Request) { return auth.handleRequest(req);}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Create users at sign-up with hashPassword (Argon2id) and store the hash — never plaintext:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { hashPassword } from \"@thexjs/auth\";await hashPassword(\"correct horse battery staple\");",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Endpoints",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "handleRequest routes the path below api/auth :",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "A sign-in form POSTs to /api/auth/signin/local and, after success, the browser follows the 302 to successRedirect (default / ). For OAuth, the button or link is just a GET to /api/auth/signin/github .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Reading the session",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "pre",
+          "text": "const session = await auth.getSession(request);if (!session) return new Response(\"Unauthorized\", { status: 401 });session.user; // { id, name?, email? } snapshot from sign-in",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "getSession hashes the x_session cookie, looks up the token in the store, and returns null for expired or revoked sessions. setSessionCookie(res, user, provider) and clearSessionCookie(res, req?) are also exported for programmatic flows.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Security",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "li",
+          "text": "Passwords — Argon2id via Bun.password ( hashPassword / verifyPassword ).",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Session tokens — opaque random strings; only an HMAC-SHA256 digest (keyed by secret ) is stored, so a database leak doesn&#x27;t expose usable session cookies. Tokens are random 128-bit values, revocable, and expire after sessionMaxAge (default 7 days).",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "OAuth state — an x_oauth_state cookie challenge must match the state param on the callback (HMAC&#x27;d, 5-minute expiry), preventing login-CSRF and session-fixation via crafted callbacks.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "CSRF — POST endpoints ( signin , signout ) run the core checkCsrf automatically — Origin/Referer verification by default, or requireToken for double-submit defense in depth — and reject non-conforming requests with 403 . See Security for how the module is configured.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Cookies — HttpOnly , SameSite=Lax , Secure in production.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Set a stable secret in production. If omitted, a random per-process secret is generated and a warning is printed, which means sessions won&#x27;t survive restarts.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Session stores",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Both stores use a single x_sessions table and implement the SessionStore interface ( create , find , revoke ), so you can bring your own:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "createSQLiteSessionStore({ path: \"data/auth.db\" }); // default: data/auth.dbcreatePostgresSessionStore(connectPostgres({ url: process.env.DATABASE_URL }));",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The Postgres store ensures the table lazily on first use and takes a client returned by connectPostgres from @thexjs/core/data , so it inherits the connection pool, TLS policy, and retry behavior of the framework. See Data Layer for the underlying stores.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/packages/cli",
+      "title": "@thexjs/cli",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Packages",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "@thexjs/cli",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The x command-line tool: dev server, production build, and production start, built on Bun.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add @thexjs/cli",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Requires Bun on your PATH. The CLI shells out to bun and uses Bun-only APIs ( Bun.serve , Bun.argv ).",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Commands",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "pre",
+          "text": "x dev # start the dev server with hot reloadx build # build for production -> .x/x start # run the production server (run x build first)x run dev # \"run\" is optional, alias for npm/bun muscle memoryOptions:--cwd > # run as if started inside >--adapter > # build target, e.g. \"vercel\" (default: Bun server -> .x/)--outDir > # output directory for build/start (default: .x)-h, --help # show help-v, --version # print installed @thexjs/cli version",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x build --adapter vercel emits a .vercel/output tree (Build Output API v3) instead of .x/ , and --outDir relocates the build (used by the repo&#x27;s Dockerfile , which builds to dist ).",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "package.json scripts",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "pre",
+          "text": "{ \"scripts\": { \"dev\": \"x dev\", \"build\": \"x build\", \"start\": \"x start\" }}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Configuration",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "The CLI reads x.config.ts (or .js / .mjs ) and passes its defineConfig(...) export to @thexjs/core :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig } from \"@thexjs/core\";export default defineConfig({ pagesDir: \"./src/pages\", contentDir: \"./src/content\", port: 3000,});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Without a config file, defaults apply: src/pages for pages, content for content collections if a content/ directory is present, and src/actions is auto-detected for server functions. Port defaults to 3000 .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "What each command does",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "h3",
+          "text": "x dev",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Auto-compiles src/styles/globals.css via bunx tailwindcss when that file exists, watches src/styles , then starts createApp() under Bun.serve . If the port is taken, tries up to 20 ports upward.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "x build",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "Compiles Tailwind in production mode, then writes:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": ".x/client/ holds prerendered HTML for static pages, plus public/ assets. Deployable to any static host.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": ".x/server/index.ts is the server entry for SSR pages and API routes. Requires a Bun-capable host.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "x start",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "Runs .x/server/index.ts with NODE_ENV=production (or --outDir dist ). If the build has no server entry (all static), it serves .x/client/ as a plain static server with an SPA index.html fallback. Exits with an error if the build output is missing.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Deployment",
+          "anchor": "#sec-7"
+        },
+        {
+          "kind": "p",
+          "text": "If every page uses mode = \"static\" and you have no API routes, deploy .x/client/ to any static host. Server-mode pages need a host that keeps a Bun process running (Fly.io, Railway, Docker, VPS) and runs x start .",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/packages/core",
+      "title": "@thexjs/core",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Packages",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "@thexjs/core",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The rendering and routing engine behind x: file-based routing, SSR/SSG, islands, server functions, content collections, and a lightweight data layer.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add @thexjs/core",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Requires Bun. You typically do not install this directly. @thexjs/cli depends on it and drives x dev / x build / x start .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Quick start",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig } from \"@thexjs/core\";export default defineConfig({ pagesDir: \"./src/pages\", contentDir: \"./src/content\", port: 3000,});",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps } from \"@thexjs/core\";export const mode = \"static\";export default function HomePage({}: RouteProps) { return >Hello from x>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "File-based routing",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "pre",
+          "text": "File Route────────────────────────────────────────────src/pages/index.tsx /src/pages/about.tsx /aboutsrc/pages/blog/[slug].tsx /blog/:slugsrc/pages/blog/[...rest].tsx /blog/* (catch-all)src/api/users.ts /api/userssrc/pages/_layout.tsx Wraps routes in directorysrc/pages/_middleware.ts Runs before matching routessrc/pages/_404.tsx Custom not-found page",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Files and directories prefixed with _ or . are never treated as routes.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Route modes",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Every page defaults to server-rendered. Opt into build-time prerendering:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export const mode: \"static\" | \"server\" = \"static\";",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "static renders once at build time to HTML in .x/client/",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "server renders per request via x start or x dev",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Loaders",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps } from \"@thexjs/core\";export async function loader({ params }: { params: Record, string> }) { return { user: await getUser(params.id) };}export default function UserPage({ loaderData }: RouteProps) { const { user } = loaderData as { user: { name: string } }; return >{user.name}>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Islands",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Wrap interactive pieces in and register the component on the page or layout with export const islands . Only registered islands get a hydration bundle, so unregistered components never ship client JS. Full details on the Islands page .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { Island } from \"@thexjs/core\";import { LikeButton } from \"./like-button\";export const islands = { LikeButton };export default function Page() { return ( name=\"LikeButton\" client=\"visible\"> /> > > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "client accepts \"idle\" , \"visible\" , or \"load\" .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Typed routes",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "In dev, createApp writes src/x-routes.ts with a RouteMap type and a typed href() helper — routes can&#x27;t drift from your file tree, and dynamic segments are checked at compile time. Do not edit the file by hand.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { href } from \"../x-routes\";const url = href(\"/blog/[slug]\", { slug: \"hello-world\" }); // \"/blog/hello-world\"",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Incremental static regeneration",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "Static pages can revalidate on a timer with export const revalidate = N , and you can bust the cache via POST /__x/revalidate . See the ISR page .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Client navigation & images",
+          "anchor": "#sec-7"
+        },
+        {
+          "kind": "p",
+          "text": "Plain tags already get SPA-style navigation and hover prefetch on every page, with no router setup needed. is a typed convenience wrapper over the same behavior, and createImageProxyHandler streams allow-listed remote images through your own origin so a strict img-src &#x27;self&#x27; CSP still works. Full details on the Client Navigation & Images page .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { Link, createImageProxyHandler } from \"@thexjs/core\"; href=\"/docs\" prefetch>Docs>const imageProxy = createImageProxyHandler({ remoteHosts: [\"cdn.example.com\"] });",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Content collections",
+          "anchor": "#sec-8"
+        },
+        {
+          "kind": "pre",
+          "text": "import { scanContent, renderMarkdown } from \"@thexjs/core\";const posts = scanContent(\"./src/content/blog\");const html = renderMarkdown(posts[0].body);",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Data layer",
+          "anchor": "#sec-9"
+        },
+        {
+          "kind": "pre",
+          "text": "import { connectSQLite, runSQLiteMigrations } from \"@thexjs/core/data\";const db = connectSQLite({ path: \"./data/dev.db\" });await runSQLiteMigrations(db, \"./data/migrations\");",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { connectPostgres, runPostgresMigrations } from \"@thexjs/core/data\";const sql = connectPostgres({ url: process.env.DATABASE_URL! });await runPostgresMigrations(sql, \"./data/migrations\");",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Key exports",
+          "anchor": "#sec-10"
+        }
+      ]
+    },
+    {
+      "route": "/docs/packages/env",
+      "title": "@thexjs/env",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Packages",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "@thexjs/env",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Type-safe environment variable validation for X apps. Define a schema once, get parsed and typed values back, and fail fast with a clear error if something is missing or malformed.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add @thexjs/env",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Quick start",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "pre",
+          "text": "import { createEnv, str, num, bool, oneOf, url } from \"@thexjs/env\";export const env = createEnv({ server: { DATABASE_URL: url(), PORT: num(), NODE_ENV: oneOf([\"development\", \"production\", \"test\"]), }, client: { THEXJS_PUBLIC_API_URL: url(), }, clientPrefix: \"THEXJS_PUBLIC_\", runtimeEnv: process.env,});env.DATABASE_URL; // string, validated as a URLenv.PORT; // numberenv.NODE_ENV; // \"development\" | \"production\" | \"test\"",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "If any variable is missing or fails validation, createEnv throws a single error listing every failure:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "Environment validation failed: server.DATABASE_URL: Expected a valid URL, got \"not-a-url\" server.PORT: Expected a number, got undefined",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Validators",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "pre",
+          "text": "Validator Accepts Notes──────────────────────────────────────────────────────────────────────str() any non-undefined stringnum() numeric strings rejects NaNbool() \"true\"/\"1\" → true, \"false\"/\"0\" → falseoneOf([...values]) one of the given string literals narrows return typeurl() string parseable by new URL(...)",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Custom validators",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Each validator is { parse(input: string | undefined): T } . Write your own for anything not covered:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { EnvValidator } from \"@thexjs/env\";function json>(): EnvValidator> { return { parse(input) { if (input === undefined) throw new Error(\"Expected JSON, got undefined\"); return JSON.parse(input) as T; }, };}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "client / clientPrefix",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "The client schema is for variables safe to expose to the browser. clientPrefix enforces that every client key starts with that prefix. A key that does not match fails validation, so you cannot accidentally leak a server-only variable through the client schema.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "When using @thexjs/env with a @thexjs/core app, use the THEXJS_PUBLIC_ prefix (the default): @thexjs/core &#x27;s build-time env isolation only lets that prefix through to client bundles, and anything else referenced from client code fails the build. See Security for details.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Notes",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "li",
+          "text": "Every field is currently required, with no built-in optional() or default() . For optional vars, read from process.env directly or write a validator with a fallback.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "runtimeEnv is passed explicitly so this works on Bun, in bundlers that inline process.env.* at build time, or in tests with a mocked env object.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/pages",
+      "title": "Pages & loaders",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Pages",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Pages & loaders",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x supports two page modes, static prerendering and server-side rendering, both powered by loaders.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Page modes",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "By default, pages are server-rendered (SSR). Export mode = \"static\" to prerender at build time.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Static pages",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Static pages are rendered at build time and exported as HTML. Use this for marketing pages, blog posts, or any content that doesn&#x27;t need per-request rendering.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps } from \"@thexjs/core\";export const mode = \"static\";export default function About({}: RouteProps) { return ( className=\"max-w-2xl mx-auto py-12\"> className=\"text-4xl font-bold\">About> className=\"mt-4 text-muted-foreground\"> This page is prerendered at build time. > > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Server pages with loaders",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Server pages (the default) run a loader function on every request. The loader can fetch data, query a database, or call an external API.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Loader with dynamic params",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Combined with dynamic routing, loaders receive params parsed from the URL path.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "RouteProps type",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Page components receive RouteProps with params (a Record of dynamic segments) and loaderData (the loader&#x27;s return value). It is a plain non-generic type — cast loader data to its shape if you want inline types.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps } from \"@thexjs/core\";interface Product { id: string; name: string; description: string; price: number;}export default function ProductDetail({ loaderData,}: RouteProps) { const { product } = loaderData as { product: Product }; return ( > className=\"text-3xl font-bold\">{product.name}> className=\"mt-2 text-muted-foreground\">{product.description}> className=\"mt-4 text-2xl font-bold text-primary\">${product.price}> > );}",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/routing",
+      "title": "File-based routing",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Routing",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "File-based routing",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x uses the file system as your route table. Drop a file in src/pages/ , get a route.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "How it works",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Every .tsx file in your pages directory becomes a route. The file path determines the URL pattern.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "pages/index.tsx -> /pages/about.tsx -> /aboutpages/contact.tsx -> /contactpages/blog/index.tsx -> /blogpages/blog/[slug].tsx -> /blog/:slugpages/dashboard/ settings.tsx -> /dashboard/settings profile.tsx -> /dashboard/profilepages/_404.tsx -> catch-all 404",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Static routes",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Simple files map to exact URL paths. pages/about.tsx becomes /about .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export default function About() { return className=\"text-3xl font-bold\">About us>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Dynamic segments",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Wrap a filename in square brackets to create a dynamic segment. The value is available via the params object in loaders.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps, LoaderArgs } from \"@thexjs/core\";export async function loader({ params }: LoaderArgs) { const post = await getPost(params.slug); return { title: post.title, content: post.content };}export default function BlogPost({ loaderData }: RouteProps) { const { title, content } = loaderData as { title: string; content: string }; return ( > className=\"text-3xl font-bold\">{title}> >{content}> > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Multiple dynamic segments work too: pages/product/[category]/[id].tsx → /product/:category/:id .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Catch-all routes",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Prefix a dynamic segment with ... to match any number of remaining path segments. The full remaining path arrives as a single params value.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps, LoaderArgs } from \"@thexjs/core\";export async function loader({ params }: LoaderArgs) { return { slug: params.slug };}export default function DocsPage({ loaderData }: RouteProps) { const { slug } = loaderData as { slug: string }; return >Viewing docs for: {slug}>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "/docs/routing → params.slug === \"routing\" ; /docs/guides/overview → \"guides/overview\" . Catch-alls match one or more segments, so they don&#x27;t capture the parent route itself.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Nested routes with folders",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Organize routes in folders for nested URL structures. Each folder can have its own index.tsx .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "pages/dashboard/index.tsx -> /dashboardsettings.tsx -> /dashboard/settingsprofile.tsx -> /dashboard/profilebilling/ index.tsx -> /dashboard/billing history.tsx -> /dashboard/billing/history",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Catch-all 404 page",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "Create pages/_404.tsx to show a custom not-found page for unmatched routes.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export default function NotFound() { return ( className=\"text-center py-20\"> className=\"text-6xl font-bold text-muted-foreground\">404> className=\"mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted\">Page not found> href=\"/docs\" className=\"mt-6 inline-block text-primary hover:underline\"> Go home > > );}",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/security",
+      "title": "Security",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Security",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Security",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "x ships with production-grade security guardrails enabled by default: build-time env isolation, CSRF protection on server actions, security headers on every response, and a per-IP rate limiter. All of it is configurable or disableable per environment.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Configuration overview",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Security options live under the security key in x.config.ts :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig } from \"@thexjs/core\";export default defineConfig({ // ...pagesDir, apiDir, etc. security: { csrf: { allowedOrigins: [\"https://app.example.com\"], requireToken: true, }, headers: { contentSecurityPolicy: \"default-src &#x27;self&#x27;; script-src &#x27;self&#x27;\", hstsMaxAge: 31536000, }, rateLimit: { limit: 100, windowMs: 60_000, }, },});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "To disable any guardrail entirely, pass false :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "security: { csrf: false, headers: false, rateLimit: false,}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Build-time env isolation",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Only variables prefixed with THEXJS_PUBLIC_ may ever reach browser code. During x build , the bundler scans every client-shipped bundle for references to process.env.* , Bun.env.* , or import.meta.env.* that are not public — and if it finds any, the build halts with an EnvLeakageError .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "[x] server-only environment variable(s) leaked into client bundle \"src/components/widget.tsx\": DATABASE_URL, STRIPE_SECRET_KEY. Only \"THEXJS_PUBLIC_*\" variables may be referenced in client-shipped code — move this access into a loader, server function, or API route.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "This check runs on island hydration bundles too, so even selectively-hydrated components can&#x27;t accidentally ship secrets. Move env access into a loader or server function and pass the value as loaderData .",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The low-level pieces are exported too: findLeakedEnvKeys(code) , assertNoEnvLeakage(code, file) , and the PUBLIC_ENV_PREFIX constant — handy for custom build tooling or CI checks.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "CSRF protection",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "All requests to /__x/actions/* (server functions) are verified. Two independent checks are available:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Origin/Referer verification rejects cross-site requests whose Origin or Referer doesn&#x27;t match the app&#x27;s own origin. This is always on unless CSRF is disabled entirely.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Double-submit token — when requireToken: true is set, a token must be echoed in the x-csrf-token header on mutating requests.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Options",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "pre",
+          "text": "interface CsrfOptions { allowedOrigins?: string[]; // e.g. [\"https://app.example.com\"] requireToken?: boolean; // default: false disabled?: boolean; // default: false}",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Issuing the token cookie",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "The token cookie is not set automatically: your app sets it once, typically when a session starts (a login route), by wrapping the response with withCsrfCookie — or generate one yourself with generateCsrfToken . From the browser, read the cookie and echo it on every POST to /__x/actions/* :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { withCsrfCookie } from \"@thexjs/core\";export async function POST(req: Request) { // ...create a session... return withCsrfCookie(req, Response.json({ ok: true }));}",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "function getCsrfToken() { const match = document.cookie.match(/(?:^|;\\s*)x_csrf_token=([^;]+)/); return match ? match[1] : \"\";}await fetch(\"/__x/actions/greet/greet\", { method: \"POST\", headers: { \"Content-Type\": \"application/json\", \"x-csrf-token\": getCsrfToken(), }, body: JSON.stringify([\"world\"]),});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The other primitives are exported for custom pipelines: checkCsrf , verifyOrigin , verifyCsrfToken .",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The same module runs automatically on @thexjs/auth endpoints: its POST routes ( signin , signout ) call checkCsrf under the hood, so auth mutations get the same Origin/Referer (and optional double-submit token) verification as server functions, no extra wiring needed.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Security headers",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "Every response gets a set of security headers by default. These are applied by applySecurityHeaders in the request pipeline and can be customized or disabled:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "interface SecurityHeadersOptions { contentSecurityPolicy?: string | false; // default: conservative same-origin CSP hstsMaxAge?: number | false; // default: 15552000 (180 days) hstsIncludeSubDomains?: boolean; // default: true frameOptions?: string | false; // default: \"DENY\" contentTypeOptions?: string | false; // default: \"nosniff\" referrerPolicy?: string | false; // default: \"strict-origin-when-cross-origin\"}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The default CSP allows inline styles (for Tailwind) but blocks inline scripts and external resources. If you need to allow a specific domain, override the entire value:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "security: { headers: { contentSecurityPolicy: \"default-src &#x27;self&#x27;; script-src &#x27;self&#x27; &#x27;unsafe-inline&#x27;; img-src &#x27;self&#x27; data: https://images.unsplash.com\", },}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "To reuse the header builder without the request pipeline, call buildSecurityHeaders(options) directly.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Rate limiting",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "A lightweight fixed-window rate limiter is applied ahead of all routing. Buckets are keyed by the client&#x27;s real IP — resolved from the underlying socket (Bun server.requestIP ), falling back to x-forwarded-for / x-real-ip . When the limit is exceeded, the server returns a 429 Too Many Requests with a Retry-After header.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "interface RateLimitOptions { limit?: number; // default: 60 requests windowMs?: number; // default: 60_000 (1 minute) keyFn?: (req: Request) => string; // custom bucket key (e.g. by user ID) store?: RateLimitStore; // shared store for multi-instance}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "For multi-instance deployments, share counters with Redis via createRedisRateLimitStore (uses Bun&#x27;s built-in bun:redis , no npm dependency):",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig, createRedisRateLimitStore } from \"@thexjs/core\";export default defineConfig({ security: { rateLimit: { limit: 120, store: createRedisRateLimitStore({ url: process.env.REDIS_URL }), }, },});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "createRateLimiter and rateLimitMiddleware are also exported if you want to apply limits to a specific handler yourself (e.g. a login endpoint with a tighter budget).",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Disabling security",
+          "anchor": "#sec-7"
+        },
+        {
+          "kind": "p",
+          "text": "For local development or testing, you can disable everything:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export default defineConfig({ security: { csrf: false, headers: false, rateLimit: false, },});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Individual guards can be toggled independently. CSRF and headers are on by default in production; rate limiting is on by default in both dev and production.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/server-functions",
+      "title": "Server functions",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Server Functions",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Server functions",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Call server-side functions from the browser without writing REST endpoints. Server functions live in src/actions/ . Import one into a client component and call it like a normal function, or call it manually with fetch . Both compile down to the same request.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Defining server functions",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Create a file in src/actions/ and export named async functions. Each function receives a Request object and any arguments you pass.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export async function greet(name: string) { return `Hello, ${name}! The server time is ${new Date().toISOString()}.`;}export async function sendEmail({ to, subject, body }: { to: string; subject: string; body: string;}) { // send email logic return { sent: true, to };}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Or register a map in one shot with export const actions — handy for grouping several functions under one file. This also works in src/api/ files and page files, so a greet.ts with no page component still registers its actions.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export const actions = { greet: async (name: string) => `Hello, ${name}!`, ping: async () => ({ pong: true }),};",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Calling actions directly",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Import the function into a client component and call it like any other async function. When you run x build , the bundler swaps the import for a generated fetch client before it reaches the browser, so the real implementation, db calls and all, never gets bundled.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Only files under actionsDir get this treatment. Import a regular server-only helper into client code and it bundles as-is; if it leaks a secret, the build-time env isolation check catches it instead.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Calling manually with fetch",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "This is what the direct-import style compiles down to, and it works the same way in dev and in production: a POST request to /__x/actions/ / . The arguments are sent as JSON in the request body.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Reach for this style directly when you&#x27;re calling an action from outside an island, or anywhere you&#x27;d rather see the request explicitly.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Server functions from loaders",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "You can also import and call server functions directly in loaders. No HTTP needed, since they share the same process.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps, LoaderArgs } from \"@thexjs/core\";import { getDashboardData } from \"../actions/dashboard\";export async function loader({ request }: LoaderArgs) { const data = await getDashboardData(); return { data };}export default function Dashboard({ loaderData }: RouteProps) { return >...>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Use cases",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Server functions are ideal for form handling, sending emails, database mutations, and any server-side logic that doesn&#x27;t need a dedicated REST API. They reduce boilerplate and keep your client code simple.",
+          "anchor": ""
+        }
+      ]
+    }
+  ]
+}

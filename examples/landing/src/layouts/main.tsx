@@ -2,6 +2,7 @@ import { Island } from "@thexjs/core";
 import { GitBranch, Menu, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import DocsSearch from "../components/docs-search";
 import { Logo } from "../components/logo";
 
 const NAV = [
@@ -105,7 +106,7 @@ function MobileMenu() {
   );
 }
 
-export const islands = { MobileMenu };
+export const islands = { MobileMenu, DocsSearch };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -140,24 +141,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <button
-            type="button"
-            className="group hidden h-9 w-full min-w-0 max-w-[22rem] items-center gap-2.5 border border-line bg-canvas px-3 text-left text-[13.5px] text-fg-faint hover:border-rule md:flex lg:max-w-[24rem]"
-            aria-label="Open docs search"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className="h-4 w-4 shrink-0"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" strokeLinecap="round" />
-            </svg>
-            <span className="flex-1">Search docs, APIs, guides…</span>
-            <kbd className="readout border border-line px-1.5 text-[10.5px] text-fg-faint">/</kbd>
-          </button>
+          <Island name="DocsSearch" client="idle">
+            <DocsSearch />
+          </Island>
 
           <div className="ml-auto flex shrink-0 items-center gap-3">
             <a
