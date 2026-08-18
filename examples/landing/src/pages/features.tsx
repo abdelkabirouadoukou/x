@@ -125,7 +125,7 @@ const allFeatures: {
   {
     icon: Boxes,
     title: "Modular toolkit",
-    desc: "Small, focused packages — core, cli, auth, env, adapter-vercel — that compose together. Add only what you need, drop in a migration today.",
+    desc: "Small, focused packages — core, cli, auth, env, hooks, adapter-vercel — that compose together. Add only what you need, drop in a migration today.",
     href: "/docs/packages/core",
   },
   {

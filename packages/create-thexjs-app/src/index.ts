@@ -38,6 +38,7 @@ const ADDONS_ROOT = join(TEMPLATES_ROOT, "addons");
 // Fallback version used if the registry lookup fails (e.g. offline).
 // Bump this when you publish a new @thexjs/core / @thexjs/cli version.
 const FALLBACK_CORE_VERSION = "1.2.2";
+const FALLBACK_HOOKS_VERSION = "0.1.0";
 
 interface CliOptions {
   projectName?: string;
@@ -87,6 +88,9 @@ function parseArgs(argv: string[]): CliOptions {
         break;
       case "--content":
         nonInteractive.push("content");
+        break;
+      case "--hooks":
+        nonInteractive.push("hooks");
         break;
       default:
         if (arg && !arg.startsWith("--")) positional.push(arg);
@@ -168,6 +172,7 @@ function buildPackageJson(
   features: FeatureId[],
   coreVersion: string,
   cliVersion: string,
+  hooksVersion?: string,
 ): string {
   const dependencies: Record<string, string> = {
     ...BASE_DEPENDENCIES,
@@ -177,6 +182,10 @@ function buildPackageJson(
     ...BASE_DEV_DEPENDENCIES,
     "@thexjs/cli": `^${cliVersion}`,
   };
+
+  if (features.includes("hooks") && hooksVersion) {
+    dependencies["@thexjs/hooks"] = `^${hooksVersion}`;
+  }
 
   for (const feature of features) {
     const meta = FEATURES.find((f) => f.id === feature);
@@ -297,10 +306,13 @@ async function main(): Promise<void> {
   spin.message("Resolving latest @thexjs versions");
   const coreVersion = (await fetchLatestVersion("@thexjs/core")) ?? FALLBACK_CORE_VERSION;
   const cliVersion = (await fetchLatestVersion("@thexjs/cli")) ?? FALLBACK_CORE_VERSION;
+  const hooksVersion = features.includes("hooks")
+    ? ((await fetchLatestVersion("@thexjs/hooks")) ?? FALLBACK_HOOKS_VERSION)
+    : undefined;
 
   writeFileSync(
     join(targetDir, "package.json"),
-    buildPackageJson(slug, features, coreVersion, cliVersion),
+    buildPackageJson(slug, features, coreVersion, cliVersion, hooksVersion),
   );
   writeFileSync(join(targetDir, "x.config.ts"), buildXConfig(features));
 

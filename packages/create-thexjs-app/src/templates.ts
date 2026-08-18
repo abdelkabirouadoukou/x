@@ -8,7 +8,7 @@ export interface FeatureAddon {
   devDependencies: Record<string, string>;
 }
 
-export type FeatureId = "tailwind" | "shadcn" | "auth" | "content";
+export type FeatureId = "tailwind" | "shadcn" | "auth" | "content" | "hooks";
 
 export const FEATURES: FeatureAddon[] = [
   {
@@ -52,6 +52,14 @@ export const FEATURES: FeatureAddon[] = [
     id: "content",
     label: "Content collections",
     hint: "Markdown/MDX with frontmatter, auto-routed from content/",
+    default: false,
+    dependencies: {},
+    devDependencies: {},
+  },
+  {
+    id: "hooks",
+    label: "Hooks (@thexjs/hooks)",
+    hint: "SSR-safe React hooks: debounce, media query, localStorage, forms, server actions",
     default: false,
     dependencies: {},
     devDependencies: {},

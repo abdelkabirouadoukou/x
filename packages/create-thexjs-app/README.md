@@ -27,7 +27,7 @@ bun create thexjs-app@latest
 You'll be guided through interactive prompts:
 
 - **Project name** — e.g. `my-app`
-- **Features** — choose from Tailwind CSS, shadcn/ui, Auth, and Content collections
+- **Features** — choose from Tailwind CSS, shadcn/ui, Auth, Content collections, and Hooks
 - **Install & git** — confirm dependency install and `git init`
 
 ```bash
@@ -49,6 +49,7 @@ selected at prompt time (or via CLI flags).
 | **shadcn/ui**     | Accessible React components in `src/components/ui` (requires Tailwind)                                |
 | **Auth**          | SQLite-backed demo sessions, `/login` and a protected `/dashboard` with middleware                    |
 | **Content**       | Markdown/MDX with frontmatter in `content/`, auto-routed and indexed on `/blog`                       |
+| **Hooks**         | `@thexjs/hooks` dependency — SSR-safe React hooks (debounce, media query, localStorage, forms, server actions) |
 
 Enabling **shadcn/ui** automatically enables **Tailwind CSS**.
 
@@ -70,6 +71,7 @@ bun create thexjs-app@latest my-app --tailwind --auth --content --shadcn
 | `--shadcn`        | Include shadcn/ui (implies `--tailwind`)      |
 | `--auth`          | Include demo auth                             |
 | `--content`       | Include content collections                   |
+| `--hooks`         | Include the `@thexjs/hooks` package           |
 | `--no-install`    | Skip `bun install`                            |
 | `--no-git`        | Skip `git init`                               |
 | `--dev`           | Start the dev server after install            |
