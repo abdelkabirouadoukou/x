@@ -7,19 +7,19 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Guides</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+      <p className="label">Guides</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
         Client Navigation &amp; Images
       </h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Every plain <span className="text-foreground">&lt;a&gt;</span> tag on an x site already
         navigates client-side, with no router setup required. This page covers that behavior, the{" "}
         <span className="text-foreground">&lt;Link&gt;</span> convenience component, the built-in
         remote image proxy, and the two error surfaces (dev overlay, 404 page).
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Client-side navigation, by default</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Client-side navigation, by default</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every rendered page inlines a small navigation script (
         <span className="text-foreground">CLIENT_NAV_SCRIPT</span>). It intercepts clicks on
         same-origin <span className="text-foreground">&lt;a href&gt;</span> elements, fetches the
@@ -48,8 +48,8 @@ export default function DocPage(_props: RouteProps) {
         anchors.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">The &lt;Link&gt; component</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">The &lt;Link&gt; component</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         <span className="text-foreground">&lt;Link&gt;</span> is a typed wrapper around the same
         behavior above. Use it when you want the opt-out props to be type-checked instead of
         stringly-typed data attributes:
@@ -65,8 +65,8 @@ export default function DocPage(_props: RouteProps) {
 <Link href="/heavy-page" prefetch={false}>No prefetch</Link>`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Remote image proxy</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Remote image proxy</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         <span className="text-foreground">createImageProxyHandler</span> mounts a{" "}
         <span className="text-foreground">GET /_x/image</span> route that fetches an allow-listed
         remote image server-side and streams it back from your own origin. The browser never makes a
@@ -98,8 +98,8 @@ const imageProxy = createImageProxyHandler({
         <span className="text-foreground">Cache-Control</span> header.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Dev error overlay</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Dev error overlay</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         When a loader, page, or API route throws during{" "}
         <span className="text-foreground">x dev</span>,{" "}
         <span className="text-foreground">renderErrorOverlay</span> renders a full-screen overlay
@@ -107,8 +107,8 @@ const imageProxy = createImageProxyHandler({
         production builds never ship the overlay, they return a plain error response.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">404 handling</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">404 handling</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Drop a <span className="text-foreground">src/pages/_404.tsx</span> to customize the
         site-wide not-found page. If you don't provide one, x falls back to{" "}
         <span className="text-foreground">DefaultNotFound</span>, a minimal built-in page, so every

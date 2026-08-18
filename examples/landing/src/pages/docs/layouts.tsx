@@ -7,15 +7,15 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Layouts</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Layouts</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Layouts</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Layouts</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Layouts wrap your pages with shared UI. x supports nested layouts via a dedicated layouts
         directory and the <span className="text-foreground">_layout.tsx</span> convention.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Layouts directory</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Layouts directory</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Configure a layouts directory in <span className="text-foreground">x.config.ts</span>. Every
         file in it acts as a root-level layout and wraps all your routes.
       </p>
@@ -29,8 +29,8 @@ export default defineConfig({
 });`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Root layout</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Root layout</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Any layout in the dedicated layouts directory wraps every route page. Create{" "}
         <span className="text-foreground">src/layouts/main.tsx</span> to add a header, footer, or
         global styling. A <span className="text-foreground">_layout.tsx</span> at the root of{" "}
@@ -56,8 +56,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Nested layouts with _layout.tsx</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Nested layouts with _layout.tsx</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Place a <span className="text-foreground">_layout.tsx</span> file inside a pages folder to
         create a nested layout. All pages in that folder (and subfolders) inherit it.
       </p>
@@ -73,8 +73,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     [slug].tsx`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Nested blog layout example</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Nested blog layout example</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         A nested layout can add a sidebar, breadcrumbs, or section-specific navigation.
       </p>
       <CodeBlock
@@ -97,8 +97,8 @@ export default function BlogLayout({ children }: { children: ReactNode }) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Layout chain</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Layout chain</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Layouts nest hierarchically. A page under{" "}
         <span className="text-foreground">pages/blog/[slug].tsx</span> would be wrapped by{" "}
         <span className="text-foreground">blog/_layout.tsx</span> and then the root layout. The

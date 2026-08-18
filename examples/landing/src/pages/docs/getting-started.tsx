@@ -7,16 +7,16 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-        Getting Started
-      </p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Get started with x</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        Create a new x project, learn the project structure, and build your first page.
+      <p className="label">Getting Started</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        Get started with X
+      </h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
+        Create a new X project, learn the project structure, and build your first page.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Create a project</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Create a project</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The fastest way to start is with the project scaffolder. See{" "}
         <a href="/docs/installation" className="text-primary underline underline-offset-2">
           Installation
@@ -36,9 +36,9 @@ bun run dev`}
         <span className="text-foreground">http://localhost:3000</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Manual setup</h2>
-      <p className="mt-3 text-muted-foreground">
-        If you prefer to set up manually, create a directory and add x:
+      <h2 className="text-xl">Manual setup</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        If you prefer to set up manually, create a directory and add X:
       </p>
       <CodeBlock
         label="terminal"
@@ -56,8 +56,10 @@ export default defineConfig({
 EOF`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Project structure</h2>
-      <p className="mt-3 text-muted-foreground">A typical x project looks like this:</p>
+      <h2 className="text-xl">Project structure</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        A typical X project looks like this:
+      </p>
       <CodeBlock
         label="file tree"
         lang="tree"
@@ -81,8 +83,8 @@ EOF`}
       hello-world.md`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Your first page</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Your first page</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Create <span className="text-foreground">src/pages/index.tsx</span> with a simple component:
       </p>
       <CodeBlock
@@ -97,8 +99,10 @@ EOF`}
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Running the dev server</h2>
-      <p className="mt-3 text-muted-foreground">Start the development server with hot reload:</p>
+      <h2 className="text-xl">Running the dev server</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Start the development server with hot reload:
+      </p>
       <CodeBlock
         label="terminal"
         lang="bash"

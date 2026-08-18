@@ -7,23 +7,25 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Islands</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Islands architecture</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Islands</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        Islands architecture
+      </h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         The server renders your full page as HTML, then only the pieces you mark as islands hydrate
         in the browser. Everything else ships zero JavaScript.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Why islands</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Why islands</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         A page full of interactive widgets doesn't need to ship one giant bundle. Each island is a
         small, self-contained hydration entry: it imports only what it needs, hydrates in place, and
         nothing on the page outside an island is ever re-rendered on the client. That keeps first
         paint fast and the JS budget predictable.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Creating an island</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Creating an island</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Wrap a component in <span className="text-foreground">&lt;Island&gt;</span> and register it
         on the same page or layout with{" "}
         <span className="text-foreground">export const islands</span>. Only registered islands get a
@@ -62,8 +64,8 @@ export default function BlogPost({ post }) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Hydration triggers</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Hydration triggers</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The <span className="text-foreground">client</span> prop picks when the island hydrates:
       </p>
       <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
@@ -81,8 +83,8 @@ export default function BlogPost({ post }) {
         </li>
       </ul>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">How hydration works</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">How hydration works</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         At build time x bundles each island separately, server-renders the page to static HTML with
         the island's markup inline, and drops in a small loader script. In the browser the loader
         fetches the island's chunk on demand and hydrates only that subtree. Islands can be nested

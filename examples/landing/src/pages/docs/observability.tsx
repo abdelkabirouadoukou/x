@@ -7,9 +7,9 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Observability</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Observability</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Observability</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Observability</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         x includes production-ready observability out of the box: structured JSON logging, container
         health/readiness probes, request metrics (Prometheus or OpenTelemetry), and pluggable APM
         error tracing. All of it is optional and configurable via the{" "}
@@ -17,7 +17,7 @@ export default function DocPage(_props: RouteProps) {
         <span className="text-foreground">x.config.ts</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Configuration overview</h2>
+      <h2 className="text-xl">Configuration overview</h2>
       <CodeBlock
         label="x.config.ts"
         code={`import { defineConfig, createSentryReporter } from "@thexjs/core";
@@ -39,8 +39,8 @@ export default defineConfig({
 });`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Structured JSON logging</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Structured JSON logging</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every request is logged as one JSON line with{" "}
         <span className="text-foreground">timestamp</span>,{" "}
         <span className="text-foreground">requestId</span>,{" "}
@@ -81,8 +81,8 @@ export async function loader() {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Health &amp; readiness probes</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Health &amp; readiness probes</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Two endpoints are served ahead of all routing for container orchestrators:
       </p>
       <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
@@ -122,8 +122,8 @@ export async function loader() {
         endpoints into a custom server instead.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Request metrics</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Request metrics</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         x can record production metrics for every request — counts, latency histograms, and error
         and rate-limit-rejection counters. Two built-in reporters cover the two standard
         destinations:
@@ -179,8 +179,8 @@ observability: {
         own exporter that posts to a statsd/Prometheus push gateway.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">APM error tracing</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">APM error tracing</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         When an uncaught exception occurs during SSR, a server action, or an API handler, x reports
         it to the configured error reporter. Two reporters are built in:
       </p>
@@ -229,8 +229,8 @@ observability: {
         logged so it can't take down the request.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Low-level APIs</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Low-level APIs</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The pieces behind the config are exported directly, so you can swap the wiring for custom
         logic:
       </p>
@@ -261,8 +261,8 @@ try {
         shutdown).
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">What's captured</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">What's captured</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every error report includes the <span className="text-foreground">phase</span> it occurred
         in:
       </p>

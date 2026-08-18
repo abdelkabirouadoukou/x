@@ -3,105 +3,136 @@ import {
   BarChart3,
   BookOpen,
   Box,
+  Boxes,
+  Braces,
   Code2,
   FileJson,
-  Gamepad2,
+  GitBranch,
   Globe,
   ImageIcon,
   Layers,
   MousePointerClick,
   RefreshCw,
   Server,
-  Shield,
+  ShieldCheck,
   Sparkles,
+  Waves,
   Zap,
 } from "lucide-react";
 
-const allFeatures = [
+const allFeatures: {
+  icon: typeof Zap;
+  title: string;
+  desc: string;
+  href: string;
+}[] = [
   {
     icon: Zap,
     title: "One process, everything included",
     desc: "Static sites, SSR, API routes, and server functions all run in a single Bun process. No microservices, no orchestration, no separate API server.",
+    href: "/docs/introduction",
   },
   {
     icon: FileJson,
     title: "File-based routing",
     desc: "Your file tree is your route tree. Drop a page in src/pages/ and it's immediately available. Dynamic segments, nested routes, and catch-all 404s come for free.",
+    href: "/docs/routing",
   },
   {
     icon: Layers,
     title: "Static + dynamic hybrid",
     desc: "Pick the right rendering mode per route. Use mode='static' for prerendered marketing pages, and server mode for personalized dashboards, all in the same project.",
+    href: "/docs/pages",
   },
   {
     icon: Globe,
     title: "API routes built in",
     desc: "Build REST endpoints alongside your frontend. Shared types, same process, zero config. Middleware support for auth, validation, and logging.",
+    href: "/docs/api-routes",
   },
   {
     icon: Server,
     title: "Server functions",
     desc: "Call server-side functions from the browser without writing REST endpoints. Import them into a client component and call them directly, or by hand with fetch.",
+    href: "/docs/server-functions",
   },
   {
-    icon: Shield,
+    icon: Braces,
     title: "Type safe end to end",
     desc: "TypeScript across the stack. Dynamic route params are inferred from file paths, server functions are fully typed, and client bundles stay type-checked against the same code.",
+    href: "/docs/introduction",
   },
   {
-    icon: Shield,
+    icon: ShieldCheck,
     title: "Production security",
     desc: "Build-time env isolation prevents secret leaks into client bundles. CSRF protection on server actions. Security headers (CSP, HSTS, X-Frame-Options) on every response. In-memory rate limiting, all on by default.",
+    href: "/docs/security",
   },
   {
     icon: BarChart3,
     title: "Observability",
     desc: "Structured JSON logging, /healthz and /readyz probes for containers, and pluggable APM error tracing (Sentry + OpenTelemetry). Production-ready out of the box.",
+    href: "/docs/observability",
   },
   {
     icon: BookOpen,
     title: "Content collections",
-    desc: "Write markdown files with frontmatter and x turns them into pages. Built-in rendering with code highlighting, slug generation, and frontmatter parsing.",
+    desc: "Write markdown files with frontmatter and X turns them into pages. Built-in rendering with code highlighting, slug generation, and frontmatter parsing.",
+    href: "/docs/content-collections",
   },
   {
     icon: Sparkles,
     title: "Live reload",
     desc: "See changes instantly. The dev server watches pages, layouts, API routes, and actions. No manual restarts, no build step during development.",
+    href: "/docs/getting-started",
   },
   {
     icon: Box,
     title: "Optimized production builds",
     desc: "One command produces static HTML, a server bundle, and a build manifest. Deploy anywhere Bun runs: Fly.io, Railway, Docker, or a VPS.",
+    href: "/docs/build-deploy",
   },
   {
     icon: Code2,
     title: "Islands architecture",
     desc: "Interactive client components hydrate in place. The rest of the page is static HTML. Minimal JavaScript, maximum performance.",
+    href: "/docs/islands",
   },
   {
     icon: MousePointerClick,
     title: "Client-side navigation, by default",
     desc: "Every <a> tag already gets SPA-style transitions and hover prefetch, with no router setup. Opt out per-link with data-no-nav, or use the typed <Link> component.",
+    href: "/docs/client-navigation",
   },
   {
     icon: ImageIcon,
     title: "Remote image proxy",
     desc: "Stream allow-listed remote images through your own origin at /_x/image. Keeps img-src 'self' in your CSP even with external image sources, with no client-side cross-origin requests.",
+    href: "/docs/client-navigation",
   },
   {
     icon: RefreshCw,
     title: "Database integration",
     desc: "Built-in SQLite and PostgreSQL support with migrations. Query databases directly from loaders and server functions with prepared statements.",
+    href: "/docs/data-layer",
   },
   {
-    icon: Gamepad2,
-    title: "Learn by playing",
-    desc: "The x Arcade turns routing, env isolation, and rendering modes into three tiny games. It's a different way in than reading docs top to bottom.",
+    icon: Waves,
+    title: "Streaming SSR",
+    desc: "renderStreamingPage streams HTML to the client as it renders, so the first byte arrives before the full page is ready. Fast TTFB for slow data dependencies.",
+    href: "/docs/pages",
   },
   {
-    icon: ArrowRight,
+    icon: Boxes,
+    title: "Modular toolkit",
+    desc: "Small, focused packages — core, cli, auth, env, adapter-vercel — that compose together. Add only what you need, drop in a migration today.",
+    href: "/docs/packages/core",
+  },
+  {
+    icon: GitBranch,
     title: "Open source",
     desc: "MIT licensed. Contributions welcome. Built for Bun with modern JavaScript in mind. No lock-in, no proprietary formats.",
+    href: "https://github.com/abdelkabirouadoukou/x",
   },
 ];
 
@@ -109,63 +140,75 @@ export const mode = "static";
 
 export default function FeaturesPage() {
   return (
-    <div className="mx-auto max-w-6xl px-6 py-20">
-      <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-4xl font-normal uppercase leading-tight tracking-tight sm:text-5xl">
-          <span className="chrome-text">Everything you need</span>
-          <br />
-          <span className="text-muted-foreground">to build for the web</span>
+    <div className="mx-auto w-full max-w-container px-gutter py-20">
+      <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+        <p className="label">Features</p>
+        <h1 className="display mt-4 text-[clamp(2.5rem,6vw,4rem)] leading-[0.92]">
+          Everything you need to build for the web
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          x combines static generation, server rendering, APIs, and server functions in a single Bun
+        <p className="mt-5 max-w-[52ch] text-[15.5px] leading-relaxed text-fg-muted">
+          X combines static generation, server rendering, APIs, and server functions in a single Bun
           process, with zero configuration.
         </p>
       </div>
 
-      <div className="glass mt-16 rounded-3xl p-2 sm:p-3">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-16 border-t border-line">
+        <div className="grid gap-px border-l border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
           {allFeatures.map((f, i) => (
-            <div
+            <a
               key={f.title}
-              className="group rounded-2xl border border-transparent p-7 transition-colors hover:border-chrome-lo hover:bg-white/[0.04]"
+              href={f.href}
+              aria-label={`${f.title} — learn more`}
+              className="group relative bg-canvas p-7 transition-colors hover:bg-subtle"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[10px] tracking-[0.22em] text-primary">
-                  SYS / {String(i + 1).padStart(2, "0")}
-                </span>
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-chrome-lo bg-white/[0.05] text-primary">
+                <span className="label">{String(i + 1).padStart(2, "0")}</span>
+                <div className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-code-bg text-accent transition-colors group-hover:border-accent/40">
                   <f.icon className="h-4 w-4" />
                 </div>
               </div>
-              <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-            </div>
+              <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-fg">{f.title}</h3>
+              <p className="mt-2 text-[13.5px] leading-relaxed text-fg-muted">{f.desc}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-fg">
+                Details
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </a>
           ))}
         </div>
       </div>
 
       <div className="mt-16">
-        <div className="glass rounded-3xl px-8 py-12 text-center sm:px-14 sm:py-20">
+        <div className="cut relative flex w-full flex-col items-center overflow-hidden border border-line-strong bg-fg px-8 py-14 text-center text-canvas sm:px-14 [--cut:14px]">
           <div className="mx-auto mb-6 flex justify-center">
-            <span className="beacon-ring flex h-12 w-12 items-center justify-center rounded-full border border-chrome-lo">
-              <span className="relative flex h-2 w-2 rounded-full bg-go shadow-[0_0_18px_5px_rgba(255,255,255,0.35)]" />
+            <span className="beacon-ring flex h-12 w-12 items-center justify-center rounded-full border border-white/15">
+              <span className="relative flex h-2 w-2 rounded-full bg-accent" />
             </span>
           </div>
-          <h2 className="text-3xl font-normal uppercase leading-tight tracking-tight sm:text-4xl">
-            <span className="chrome-text">Ready to build with x?</span>
+          <h2 className="display text-[clamp(2rem,4.5vw,3rem)] leading-[0.95]">
+            Ready to build with X?
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-4 text-[15px] text-canvas/70">
             One command, one process, everything you need.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <a href="/docs/getting-started" className="aqua-btn h-12 px-6 text-sm font-semibold">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <a
+              href="/docs/getting-started"
+              className="cut btn-accent h-12 px-6 text-sm [--cut:8px]"
+            >
               Get started <ArrowRight className="h-4 w-4" />
             </a>
-            <a href="/docs" className="glass-btn h-12 px-6 text-sm font-medium">
+            <a
+              href="/docs"
+              className="cut h-12 border border-canvas/25 px-6 text-sm font-medium text-canvas transition-colors hover:bg-canvas/10 [--cut:8px]"
+            >
               Read the docs
             </a>
-            <a href="/play" className="glass-btn h-12 px-6 text-sm font-medium">
-              <Gamepad2 className="h-4 w-4" /> Try the arcade
+            <a
+              href="/sandbox"
+              className="cut h-12 border border-canvas/25 px-6 text-sm font-medium text-canvas transition-colors hover:bg-canvas/10 [--cut:8px]"
+            >
+              <Server className="h-4 w-4" /> Try the online sandbox
             </a>
           </div>
         </div>

@@ -7,16 +7,16 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Security</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Security</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Security</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Security</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         x ships with production-grade security guardrails enabled by default: build-time env
         isolation, CSRF protection on server actions, security headers on every response, and a
         per-IP rate limiter. All of it is configurable or disableable per environment.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Configuration overview</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Configuration overview</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Security options live under the <span className="text-foreground">security</span> key in{" "}
         <span className="text-foreground">x.config.ts</span>:
       </p>
@@ -54,8 +54,8 @@ export default defineConfig({
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Build-time env isolation</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Build-time env isolation</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Only variables prefixed with <span className="text-foreground">THEXJS_PUBLIC_</span> may
         ever reach browser code. During <span className="text-foreground">x build</span>, the
         bundler scans every client-shipped bundle for references to{" "}
@@ -84,8 +84,8 @@ export default defineConfig({
         tooling or CI checks.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">CSRF protection</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">CSRF protection</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         All requests to <span className="text-foreground">/__x/actions/*</span> (server functions)
         are verified. Two independent checks are available:
       </p>
@@ -163,8 +163,8 @@ await fetch("/__x/actions/greet/greet", {
         extra wiring needed.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Security headers</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Security headers</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every response gets a set of security headers by default. These are applied by{" "}
         <span className="text-foreground">applySecurityHeaders</span> in the request pipeline and
         can be customized or disabled:
@@ -198,8 +198,8 @@ await fetch("/__x/actions/greet/greet", {
         <span className="text-foreground">buildSecurityHeaders(options)</span> directly.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Rate limiting</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Rate limiting</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         A lightweight fixed-window rate limiter is applied ahead of all routing. Buckets are keyed
         by the client's real IP — resolved from the underlying socket (Bun{" "}
         <span className="text-foreground">server.requestIP</span>), falling back to{" "}
@@ -242,8 +242,8 @@ export default defineConfig({
         budget).
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Disabling security</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Disabling security</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         For local development or testing, you can disable everything:
       </p>
       <CodeBlock

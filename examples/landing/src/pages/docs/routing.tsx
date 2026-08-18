@@ -7,15 +7,17 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Routing</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">File-based routing</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Routing</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        File-based routing
+      </h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         x uses the file system as your route table. Drop a file in{" "}
         <span className="text-foreground">src/pages/</span>, get a route.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">How it works</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">How it works</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every <span className="text-foreground">.tsx</span> file in your pages directory becomes a
         route. The file path determines the URL pattern.
       </p>
@@ -33,8 +35,8 @@ pages/dashboard/
 pages/_404.tsx          -> catch-all 404`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Static routes</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Static routes</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Simple files map to exact URL paths.{" "}
         <span className="text-foreground">pages/about.tsx</span> becomes{" "}
         <span className="text-foreground">/about</span>.
@@ -46,8 +48,8 @@ pages/_404.tsx          -> catch-all 404`}
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Dynamic segments</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Dynamic segments</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Wrap a filename in square brackets to create a dynamic segment. The value is available via
         the <span className="text-foreground">params</span> object in loaders.
       </p>
@@ -76,8 +78,8 @@ export default function BlogPost({ loaderData }: RouteProps) {
         <span className="text-foreground">/product/:category/:id</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Catch-all routes</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Catch-all routes</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Prefix a dynamic segment with <span className="text-foreground">...</span> to match any
         number of remaining path segments. The full remaining path arrives as a single{" "}
         <span className="text-foreground">params</span> value.
@@ -103,8 +105,8 @@ export default function DocsPage({ loaderData }: RouteProps) {
         segments, so they don't capture the parent route itself.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Nested routes with folders</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Nested routes with folders</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Organize routes in folders for nested URL structures. Each folder can have its own{" "}
         <span className="text-foreground">index.tsx</span>.
       </p>
@@ -120,8 +122,8 @@ export default function DocsPage({ loaderData }: RouteProps) {
     history.tsx       -> /dashboard/billing/history`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Catch-all 404 page</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Catch-all 404 page</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Create <span className="text-foreground">pages/_404.tsx</span> to show a custom not-found
         page for unmatched routes.
       </p>
@@ -131,7 +133,7 @@ export default function DocsPage({ loaderData }: RouteProps) {
   return (
     <div className="text-center py-20">
       <h1 className="text-6xl font-bold text-muted-foreground">404</h1>
-      <p className="mt-4 text-lg text-muted-foreground">Page not found</p>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">Page not found</p>
       <a href="/docs" className="mt-6 inline-block text-primary hover:underline">
         Go home
       </a>

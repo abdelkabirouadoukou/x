@@ -7,16 +7,16 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Data Layer</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Data layer</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Data Layer</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Data layer</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         x provides built-in SQLite and PostgreSQL integrations via{" "}
         <span className="text-foreground">@thexjs/core/data</span>. Connect to a database, run
         file-based migrations, and query data directly from loaders and server functions.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">SQLite</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">SQLite</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Use <span className="text-foreground">connectSQLite</span> to connect to a local SQLite
         database file. It wraps <span className="text-foreground">bun:sqlite</span> and turns on{" "}
         <span className="text-foreground">WAL</span> mode and{" "}
@@ -37,8 +37,8 @@ export { db };
 export type DB = typeof db;`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Querying SQLite</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Querying SQLite</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The returned object is the standard <span className="text-foreground">bun:sqlite</span>{" "}
         <span className="text-foreground">Database</span>, so{" "}
         <span className="text-foreground">db.query(...).all()</span> and{" "}
@@ -76,8 +76,8 @@ export default function Users({ loaderData }: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">PostgreSQL</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">PostgreSQL</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         For production deployments, use <span className="text-foreground">connectPostgres</span>{" "}
         with a <span className="text-foreground">url</span> (or the{" "}
         <span className="text-foreground">DATABASE_URL</span> env var). It wraps{" "}
@@ -107,8 +107,8 @@ export { db };`}
         Postgres client and pass it around instead.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Migrations</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Migrations</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Both <span className="text-foreground">runSQLiteMigrations</span> and{" "}
         <span className="text-foreground">runPostgresMigrations</span> take a directory of{" "}
         <span className="text-foreground">.sql</span> files, applied in filename order. Applied
@@ -137,8 +137,8 @@ export { db };`}
         filenames, so you can log or test which migrations ran.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Backup &amp; disaster recovery</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Backup &amp; disaster recovery</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Back up the same data the app actually writes. That is the database plus — if you use{" "}
         <a href="/docs/packages/auth" className="text-primary underline underline-offset-2">
           @thexjs/auth
@@ -147,7 +147,7 @@ export { db };`}
         the <span className="text-foreground">_x_migrations</span> table records history, so restore
         the database and let the migration runner verify it's in the state your code expects.
       </p>
-      <p className="mt-3 text-muted-foreground">
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Two numbers to write down for any plan: <span className="text-foreground">RPO</span> (how
         much data you can lose — dictates backup frequency) and{" "}
         <span className="text-foreground">RTO</span> (how fast you must be back — dictates restore
@@ -156,7 +156,7 @@ export { db };`}
       </p>
 
       <h3 className="mt-8 text-lg font-bold tracking-tight">SQLite (WAL mode)</h3>
-      <p className="mt-3 text-muted-foreground">
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         <span className="text-foreground">connectSQLite</span> enables WAL mode, which is exactly
         what you want for backups: it allows a safe, consistent file snapshot while the app keeps
         writing.{" "}
@@ -177,7 +177,7 @@ await db.backup("backups/app-$(date -u +%FT%TZ).db");
 
 db.close();`}
       />
-      <p className="mt-3 text-muted-foreground">
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Prefer <span className="text-foreground">db.backup()</span> — it is the only option that is
         safe with zero coordination. Alternatively, from a separate shell you can use the SQLite
         <span className="text-foreground"> .backup</span> command:
@@ -195,7 +195,7 @@ cp data/app.db data/app.db-wal data/app.db-shm backups/
 # NOT safe while running: a bare cp of just app.db
 # cp data/app.db backups/   # <- corrupt snapshot risk`}
       />
-      <p className="mt-3 text-muted-foreground">
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Restore is the reverse: stop the app, copy the snapshot back (removing any stale
         <span className="text-foreground"> -wal</span>/<span className="text-foreground">-shm</span>{" "}
         files first), then start the app. Because migrations are tracked in{" "}
@@ -206,7 +206,7 @@ cp data/app.db data/app.db-wal data/app.db-shm backups/
       </p>
 
       <h3 className="mt-8 text-lg font-bold tracking-tight">PostgreSQL</h3>
-      <p className="mt-3 text-muted-foreground">
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Use the platform's built-in backups (RDS automated snapshots, Neon/Cloudflare D1-style
         point-in-time recovery, Supabase backups) as the primary mechanism, plus logical{" "}
         <span className="text-foreground">pg_dump</span> for portable, schema-safe snapshots and
@@ -222,7 +222,7 @@ pg_dump "$DATABASE_URL" -Fc -f backup.dump
 createdb "$DATABASE_URL"   # if restoring into an empty DB
 pg_restore "$DATABASE_URL" -d "$DATABASE_URL" --clean --if-exists backup.dump`}
       />
-      <p className="mt-3 text-muted-foreground">
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         If you run one-off scripts from inside the app (a cron worker or a daily task), prefer the
         app's own <span className="text-foreground">connectPostgres</span> connection so the
         connection-pool, TLS, and retry settings you configured are the ones doing the work.
@@ -259,8 +259,8 @@ pg_restore "$DATABASE_URL" -d "$DATABASE_URL" --clean --if-exists backup.dump`}
         </li>
       </ul>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Sessions, not hand-rolled</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Sessions, not hand-rolled</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         If you need sessions on top of this,{" "}
         <a href="/docs/packages/auth" className="text-primary underline underline-offset-2">
           @thexjs/auth

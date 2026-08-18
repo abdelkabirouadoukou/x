@@ -7,17 +7,15 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-        Incremental Static Regeneration
-      </p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">ISR</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Incremental Static Regeneration</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">ISR</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Static pages that stay fresh: prerender once, serve from cache, and revalidate on a timer.
         ISR gives you the speed of a static export with data that eventually updates.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Prerender with revalidation</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Prerender with revalidation</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         A page that exports <span className="text-foreground">mode = "static"</span> plus{" "}
         <span className="text-foreground">revalidate</span> is prerendered at build time and then
         re-rendered on demand once the cache expires.
@@ -52,8 +50,8 @@ export default function Stats({ loaderData }: RouteProps) {
         served from cache.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Cache headers</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Cache headers</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Responses from a revalidated page carry an{" "}
         <span className="text-foreground">X-Revalidated</span> header so you can tell how the page
         was served:
@@ -65,8 +63,8 @@ X-Revalidated: miss   # rendered fresh, cache was stale or empty
 X-Revalidated: none   # page has no revalidate window`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Invalidating on demand</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Invalidating on demand</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         You don't have to wait for the timer. A{" "}
         <span className="text-foreground">POST /__x/revalidate</span> request with a JSON body{" "}
         <span className="text-foreground">{'{ "path": "/stats" }'}</span> clears that page's cache

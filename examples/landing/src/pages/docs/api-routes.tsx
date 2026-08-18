@@ -7,15 +7,15 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">API Routes</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">API routes</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">API Routes</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">API routes</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Build REST endpoints alongside your frontend pages. API routes live in{" "}
         <span className="text-foreground">src/api/</span> and share the same process as your pages.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">File-based API routing</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">File-based API routing</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Like pages, API routes use the file system. A file at{" "}
         <span className="text-foreground">src/api/hello.ts</span> becomes{" "}
         <span className="text-foreground">/api/hello</span>. Handlers are plain functions: export
@@ -35,8 +35,8 @@ export default function DocPage(_props: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Request &amp; response</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Request &amp; response</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Each exported HTTP method receives the raw request and returns a standard{" "}
         <span className="text-foreground">Response</span>. Dynamic segments work the same as pages:{" "}
         <span className="text-foreground">api/users/[id].ts</span> →{" "}
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">POST endpoint example</h2>
+      <h2 className="text-xl">POST endpoint example</h2>
       <CodeBlock
         label="src/api/contact.ts"
         code={`export async function POST(req: Request) {
@@ -82,8 +82,8 @@ export async function POST(req: Request) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">API route tree</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">API route tree</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         API routes support the same file-tree conventions as pages: nested folders, dynamic
         segments, and index files.
       </p>
@@ -100,8 +100,8 @@ export async function POST(req: Request) {
     register.ts    -> POST /api/auth/register`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tip">Process sharing</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="mt-12 text-xl font-bold tracking-tight">Process sharing</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         API routes run in the same Bun process as your pages and server functions. This means you
         can share database connections, in-memory caches, and configuration without any network
         overhead.

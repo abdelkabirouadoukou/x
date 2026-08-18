@@ -7,21 +7,23 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Pages</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Pages &amp; loaders</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Pages</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        Pages &amp; loaders
+      </h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         x supports two page modes, static prerendering and server-side rendering, both powered by
         loaders.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Page modes</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Page modes</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         By default, pages are server-rendered (SSR). Export{" "}
         <span className="text-foreground">mode = "static"</span> to prerender at build time.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Static pages</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Static pages</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Static pages are rendered at build time and exported as HTML. Use this for marketing pages,
         blog posts, or any content that doesn't need per-request rendering.
       </p>
@@ -43,8 +45,8 @@ export default function About({}: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Server pages with loaders</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Server pages with loaders</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Server pages (the default) run a <span className="text-foreground">loader</span> function on
         every request. The loader can fetch data, query a database, or call an external API.
       </p>
@@ -76,8 +78,8 @@ export default function Products({ loaderData }: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Loader with dynamic params</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Loader with dynamic params</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Combined with dynamic routing, loaders receive{" "}
         <span className="text-foreground">params</span> parsed from the URL path.
       </p>
@@ -105,8 +107,8 @@ export default function ProductDetail({ loaderData }: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">RouteProps type</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">RouteProps type</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Page components receive <span className="text-foreground">RouteProps</span> with{" "}
         <span className="text-foreground">params</span> (a{" "}
         <span className="text-foreground">Record&lt;string, string&gt;</span> of dynamic segments)

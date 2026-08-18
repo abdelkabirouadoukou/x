@@ -7,9 +7,9 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">@thexjs/cli</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Packages</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">@thexjs/cli</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         The <span className="text-foreground">x</span> command-line tool: dev server, production
         build, and production start, built on Bun.
       </p>
@@ -22,7 +22,7 @@ export default function DocPage(_props: RouteProps) {
         <span className="text-foreground">Bun.argv</span>).
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Commands</h2>
+      <h2 className="text-xl">Commands</h2>
       <CodeBlock
         label="commands"
         code={`x dev              # start the dev server with hot reload
@@ -48,7 +48,7 @@ Options:
         <span className="text-foreground">dist</span>).
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">package.json scripts</h2>
+      <h2 className="text-xl">package.json scripts</h2>
       <CodeBlock
         label="package.json"
         code={`{
@@ -60,8 +60,8 @@ Options:
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Configuration</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Configuration</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The CLI reads <span className="text-foreground">x.config.ts</span> (or{" "}
         <span className="text-foreground">.js</span> / <span className="text-foreground">.mjs</span>
         ) and passes its <span className="text-foreground">defineConfig(...)</span> export to{" "}
@@ -85,7 +85,7 @@ export default defineConfig({
         Port defaults to <span className="text-foreground">3000</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">What each command does</h2>
+      <h2 className="text-xl">What each command does</h2>
 
       <h3 className="mt-8 text-lg font-semibold">x dev</h3>
       <p className="mt-2 text-muted-foreground">
@@ -123,8 +123,8 @@ export default defineConfig({
         Exits with an error if the build output is missing.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Deployment</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Deployment</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         If every page uses <span className="text-foreground">mode = "static"</span> and you have no
         API routes, deploy <span className="text-foreground">.x/client/</span> to any static host.
         Server-mode pages need a host that keeps a Bun process running (Fly.io, Railway, Docker,

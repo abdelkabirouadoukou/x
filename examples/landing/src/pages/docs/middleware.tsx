@@ -7,15 +7,15 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Middleware</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Middleware</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Middleware</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Middleware</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Route-level middleware lets you intercept page requests before they reach the page handler.
         Use it for authentication, redirects, logging, and validation.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">The _middleware.ts convention</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">The _middleware.ts convention</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Place a <span className="text-foreground">_middleware.ts</span> file in any route directory.
         It runs for all routes in that directory and its subdirectories.
       </p>
@@ -34,8 +34,8 @@ export default function DocPage(_props: RouteProps) {
     index.tsx`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Middleware context</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Middleware context</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         A middleware function receives a context object with{" "}
         <span className="text-foreground">params</span> (dynamic route params) and{" "}
         <span className="text-foreground">request</span> (the original Request), plus a{" "}
@@ -52,8 +52,8 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Auth middleware example</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Auth middleware example</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         A common use case is checking for an auth cookie and redirecting unauthenticated users.
       </p>
       <CodeBlock
@@ -82,8 +82,8 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">MiddlewareNext</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">MiddlewareNext</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Call <span className="text-foreground">next()</span> (no arguments) to pass control to the
         next middleware or the route handler. Any mutations to{" "}
         <span className="text-foreground">ctx.params</span> you make before the call flow through to
@@ -95,8 +95,8 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
         middleware chain.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Redirect patterns</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Redirect patterns</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Return a <span className="text-foreground">Response</span> with a 302 status and a{" "}
         <span className="text-foreground">Location</span> header to redirect. You can also return
         JSON responses for API middleware validation errors.

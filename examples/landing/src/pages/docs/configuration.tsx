@@ -7,16 +7,16 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Configuration</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Configuration</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Configuration</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Configuration</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Configure x via <span className="text-foreground">x.config.ts</span> at your project root.
         Use <span className="text-foreground">defineConfig</span> from{" "}
         <span className="text-foreground">@thexjs/core</span> for type-safe configuration.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">defineConfig</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">defineConfig</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         All configuration options are optional. x provides sensible defaults so you can start with
         zero configuration and add settings as needed.
       </p>
@@ -67,7 +67,7 @@ export default defineConfig({
 });`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">All options reference</h2>
+      <h2 className="text-xl">All options reference</h2>
 
       <CodeBlock
         label="options table"
@@ -91,49 +91,49 @@ observability.health object undefined         /healthz + /readyz endpoints
 images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">pagesDir</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">pagesDir</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The directory containing your page route files. Defaults to{" "}
         <span className="text-foreground">src/pages</span>. Each{" "}
         <span className="text-foreground">.tsx</span> file becomes a route based on its file path.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">layoutsDir</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">layoutsDir</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The directory for root layout components. Layouts wrap pages and can be nested using the{" "}
         <span className="text-foreground">_layout.tsx</span> convention inside page directories.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">apiDir</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">apiDir</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The directory for API route files. Files here respond to HTTP methods (
         <span className="text-foreground">GET</span>, <span className="text-foreground">POST</span>,
         etc.) and are served under <span className="text-foreground">/api/...</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">actionsDir</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">actionsDir</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The directory for server functions. Exported async functions can be called from the browser
         via <span className="text-foreground">fetch('/__x/actions/...')</span>. If you don't set
         this, x auto-detects a <span className="text-foreground">src/actions</span> directory.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">contentDir</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">contentDir</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The directory for markdown content collections. Files with frontmatter are scanned, and each
         becomes a route at its own path. Load content via{" "}
         <span className="text-foreground">scanContent</span> and{" "}
         <span className="text-foreground">renderMarkdown</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">port</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">port</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The port number for the dev server. Defaults to{" "}
         <span className="text-foreground">3000</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">security</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">security</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Nested options for the security guardrails: <span className="text-foreground">csrf</span>{" "}
         (origin verification + optional double-submit token),{" "}
         <span className="text-foreground">headers</span> (CSP, HSTS, frame options, nosniff), and{" "}
@@ -146,8 +146,8 @@ images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
         for the full reference.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">observability</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">observability</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         <span className="text-foreground">logging</span> toggles structured JSON request logs,
         <span className="text-foreground"> health</span> enables the{" "}
         <span className="text-foreground">/healthz</span> and{" "}
@@ -160,17 +160,17 @@ images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
         .
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">images</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">images</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         <span className="text-foreground">remoteHosts</span> allow-lists hosts for the{" "}
         <span className="text-foreground">/_x/image?url=...</span> proxy, so a strict{" "}
         <span className="text-foreground">img-src 'self'</span> CSP can still load remote images
         through your own origin.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">routesDir (legacy)</h2>
-      <p className="mt-3 text-muted-foreground">
-        A legacy option for projects migrating from earlier versions of x. Maps to the same
+      <h2 className="text-xl">routesDir (legacy)</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        A legacy option for projects migrating from earlier versions of X. Maps to the same
         file-based routing convention. Prefer <span className="text-foreground">pagesDir</span> for
         new projects.
       </p>
