@@ -140,6 +140,35 @@ export default function ProductDetail({
 }`}
       />
 
+      <h2 className="text-xl">Streaming SSR — renderStreamingPage</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Server pages render fully before responding. When a page depends on slow data,{" "}
+        <span className="text-foreground">renderStreamingPage(node, options)</span> flips that: it
+        streams the HTML to the client as React renders it, so the first byte arrives before the
+        whole page is ready. Islands, island props, navigation, and live-reload tags are all wired
+        into the streamed shell the same way a full render is.
+      </p>
+      <CodeBlock
+        label="streaming"
+        code={`import { renderStreamingPage } from "@thexjs/core";
+import { createElement } from "react";
+
+const stream = await renderStreamingPage(createElement(Page, {}), {
+  title: "Dashboard",
+  islandScripts: ["/_x/islands/dashboard.js"],
+  islandProps: { userId: "123" },
+});
+
+return new Response(stream, {
+  headers: { "Content-Type": "text/html", "Transfer-Encoding": "chunked" },
+});`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        Streaming is the right tool for slow data-dependent shells: the user sees the layout
+        immediately while the slow parts resolve. For everything else, plain server or static
+        rendering gives a faster end-to-end experience with less complexity.
+      </p>
+
       <div className="mt-16 border-t border-border pt-8">
         <a
           href="/docs"

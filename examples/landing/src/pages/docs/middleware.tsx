@@ -95,6 +95,42 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
         middleware chain.
       </p>
 
+      <h2 className="text-xl">composeMiddleware</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        The <span className="text-foreground">_middleware.ts</span> convention builds a single
+        handler under the hood, but you can also wire middleware yourself with{" "}
+        <span className="text-foreground">composeMiddleware(fns, handler)</span>. It folds an array
+        of middleware functions into one onion-style chain that reaches{" "}
+        <span className="text-foreground">handler</span> only after every{" "}
+        <span className="text-foreground">next()</span> has been called.
+      </p>
+      <CodeBlock
+        label="src/middleware.ts"
+        code={`import { composeMiddleware } from "@thexjs/core";
+import type { MiddlewareContext } from "@thexjs/core";
+
+function enforceAuth(ctx: MiddlewareContext, next: () => Promise<Response>) {
+  const session = ctx.request.headers.get("cookie");
+  if (!session) return new Response(null, { status: 302, headers: { Location: "/login" } });
+  return next();
+}
+
+function attachUser(ctx: MiddlewareContext, next: () => Promise<Response>) {
+  ctx.params.role = "viewer";
+  return next();
+}
+
+const wrapped = composeMiddleware(
+  [enforceAuth, attachUser],
+  (ctx) => new Response(\`role: \${"$"}{ctx.params.role}\`),
+);`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        Calling <span className="text-foreground">next()</span> more than once in the same
+        middleware throws ("next() called multiple times"), which catches double-dispatch bugs at
+        runtime.
+      </p>
+
       <h2 className="text-xl">Redirect patterns</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Return a <span className="text-foreground">Response</span> with a 302 status and a{" "}

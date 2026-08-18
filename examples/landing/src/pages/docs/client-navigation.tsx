@@ -98,6 +98,53 @@ const imageProxy = createImageProxyHandler({
         <span className="text-foreground">Cache-Control</span> header.
       </p>
 
+      <h2 className="text-xl">The &lt;Image&gt; component &amp; srcSet</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        While the proxy streams a single remote URL,{" "}
+        <span className="text-foreground">&lt;Image&gt;</span> handles responsive images end to end.
+        Remote sources are routed through <span className="text-foreground">/_x/image</span>{" "}
+        automatically and get a <span className="text-foreground">srcSet</span> generated for them;
+        local sources pass through untouched. Either way you avoid layout shift and keep{" "}
+        <span className="text-foreground">img-src 'self'</span>.
+      </p>
+      <CodeBlock
+        label="Image (remote source)"
+        code={`import { Image } from "@thexjs/core";
+
+<Image
+  src="https://cdn.example.com/hero.jpg"
+  width={1200}
+  height={630}
+  sizes="(min-width: 768px) 50vw, 100vw"
+  alt="Product hero"
+/>`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        For a remote <span className="text-foreground">src</span> whose host is in{" "}
+        <span className="text-foreground">images.remoteHosts</span>, the generated{" "}
+        <span className="text-foreground">srcSet</span> re-serves the image through the proxy at
+        each breakpoint in <span className="text-foreground">SRCSET_WIDTHS</span> — a host that
+        isn't allow-listed 403s at request time, and warns in dev:
+      </p>
+      <CodeBlock
+        label="SRCSET_WIDTHS"
+        code={`export const SRCSET_WIDTHS = [320, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];
+
+// remote & allow-listed -> "…/_x/image?url=…&w=320 320w, …&w=640 640w, …&w=750 750w, …"
+// local src            -> plain <img src>, no srcSet (no resize pipeline)`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        Build that string manually with{" "}
+        <span className="text-foreground">buildSrcSet(src, opts)</span> when you need custom
+        behavior. Beyond responsive sizing, <span className="text-foreground">priority</span> sets{" "}
+        <span className="text-foreground">fetchPriority="high"</span> on LCP images (everything else
+        lazy-loads), <span className="text-foreground">fill</span> absolutely positions the image in
+        its parent (nice for hero/card layouts, exclusive with width/height), and{" "}
+        <span className="text-foreground">placeholder="blur"</span> with{" "}
+        <span className="text-foreground">blurDataURL</span> shows a tiny base64 blur that fades out
+        on load — CSS-only, no JavaScript island required.
+      </p>
+
       <h2 className="text-xl">Dev error overlay</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         When a loader, page, or API route throws during{" "}
