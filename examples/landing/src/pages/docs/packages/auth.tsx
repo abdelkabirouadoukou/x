@@ -7,10 +7,10 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">@thexjs/auth</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        Plug-and-play authentication for x apps. Add credentials (username/password) and OAuth2 —
+      <p className="label">Packages</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">@thexjs/auth</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
+        Plug-and-play authentication for X apps. Add credentials (username/password) and OAuth2 —
         including a preconfigured GitHub provider — with one{" "}
         <span className="text-foreground">defineAuth()</span> call, a sessions table in SQLite or
         Postgres via the framework's data layer, and a single catch-all API route.
@@ -18,8 +18,8 @@ export default function DocPage(_props: RouteProps) {
 
       <CodeBlock label="terminal" lang="bash" code="bun add @thexjs/auth" />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Quick start</h2>
-      <p className="mt-3 text-muted-foreground">Define your providers and session store once:</p>
+      <h2 className="text-xl">Quick start</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">Define your providers and session store once:</p>
       <CodeBlock
         label="lib/auth.ts"
         code={`import { defineAuth, createSQLiteSessionStore, hashPassword, verifyPassword } from "@thexjs/auth";
@@ -78,8 +78,8 @@ export async function GET(req: Request) {
 await hashPassword("correct horse battery staple");`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Endpoints</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Endpoints</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         <span className="text-foreground">handleRequest</span> routes the path below{" "}
         <span className="text-foreground">api/auth</span>:
       </p>
@@ -104,7 +104,7 @@ await hashPassword("correct horse battery staple");`}
         <span className="text-foreground">/api/auth/signin/github</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Reading the session</h2>
+      <h2 className="text-xl">Reading the session</h2>
       <CodeBlock
         label="middleware or loader"
         code={`const session = await auth.getSession(request);
@@ -120,7 +120,7 @@ session.user; // { id, name?, email? } snapshot from sign-in`}
         programmatic flows.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Security</h2>
+      <h2 className="text-xl">Security</h2>
       <ul className="mt-3 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
           <span className="text-foreground">Passwords</span> — Argon2id via{" "}
@@ -167,8 +167,8 @@ session.user; // { id, name?, email? } snapshot from sign-in`}
         survive restarts.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Session stores</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Session stores</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Both stores use a single <span className="text-foreground">x_sessions</span> table and
         implement the <span className="text-foreground">SessionStore</span> interface ({" "}
         <span className="text-foreground">create</span>,{" "}

@@ -7,19 +7,19 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+      <p className="label">
         Server Functions
       </p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Server functions</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Server functions</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Call server-side functions from the browser without writing REST endpoints. Server functions
         live in <span className="text-foreground">src/actions/</span>. Import one into a client
         component and call it like a normal function, or call it manually with{" "}
         <span className="text-foreground">fetch</span>. Both compile down to the same request.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Defining server functions</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Defining server functions</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Create a file in <span className="text-foreground">src/actions/</span> and export named
         async functions. Each function receives a <span className="text-foreground">Request</span>{" "}
         object and any arguments you pass.
@@ -56,8 +56,8 @@ export async function sendEmail({ to, subject, body }: {
 };`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Calling actions directly</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Calling actions directly</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Import the function into a client component and call it like any other async function. When
         you run <span className="text-foreground">x build</span>, the bundler swaps the import for a
         generated fetch client before it reaches the browser, so the real implementation, db calls
@@ -104,8 +104,8 @@ export default function SubscribeForm() {
         secret, the build-time env isolation check catches it instead.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Calling manually with fetch</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Calling manually with fetch</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         This is what the direct-import style compiles down to, and it works the same way in dev and
         in production: a POST request to{" "}
         <span className="text-foreground">/__x/actions/&lt;filename&gt;/&lt;functionName&gt;</span>.
@@ -155,8 +155,8 @@ export default function GreetForm() {
         anywhere you'd rather see the request explicitly.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Server functions from loaders</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Server functions from loaders</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         You can also import and call server functions directly in loaders. No HTTP needed, since
         they share the same process.
       </p>
@@ -175,8 +175,8 @@ export default function Dashboard({ loaderData }: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Use cases</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Use cases</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Server functions are ideal for form handling, sending emails, database mutations, and any
         server-side logic that doesn't need a dedicated REST API. They reduce boilerplate and keep
         your client code simple.

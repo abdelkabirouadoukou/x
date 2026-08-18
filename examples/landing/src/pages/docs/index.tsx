@@ -42,7 +42,7 @@ const startSections = [
   {
     icon: ArrowRight,
     title: "Migration Guide",
-    desc: "Move an existing Next.js or TanStack app to x.",
+    desc: "Move an existing Next.js or TanStack app to X.",
     href: "/docs/migration",
   },
 ];
@@ -180,17 +180,15 @@ function SectionGrid({ sections }: { sections: typeof startSections }) {
         <a
           key={s.title}
           href={s.href}
-          className="group rounded-2xl border border-chrome-lo bg-white/[0.04] p-6 backdrop-blur transition-all hover:border-primary/40 hover:bg-white/[0.07]"
+          className="group rounded-md border border-line bg-surface p-6 transition-colors hover:border-accent"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+          <div className="flex h-10 w-10 items-center justify-center rounded-md border border-line bg-code-bg text-accent">
             <s.icon className="h-5 w-5" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold transition-colors group-hover:text-primary">
-            {s.title}
-          </h3>
-          <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
-          <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-            Read more <ArrowRight className="h-3 w-3" />
+          <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-fg">{s.title}</h3>
+          <p className="mt-1 text-[13.5px] leading-relaxed text-fg-muted">{s.desc}</p>
+          <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-fg opacity-100">
+            Get started <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>
         </a>
       ))}
@@ -204,29 +202,27 @@ export default function DocsHubPage() {
   return (
     <div className="py-12">
       <div className="mb-12">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-          Documentation
-        </p>
-        <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          Everything you need to build with x
+        <p className="label">Documentation</p>
+        <h1 className="display mt-4 text-[clamp(2rem,4vw,3rem)] leading-[0.95]">
+          Everything you need to build with X
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
+        <p className="mt-4 max-w-[52ch] text-[15.5px] leading-relaxed text-fg-muted">
           A fullstack framework for Bun. Static sites, server-rendered pages, API routes, and server
           functions, all in a single process.
         </p>
       </div>
 
-      <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+      <h2 className="doc-label mb-4">
         Start here
       </h2>
       <SectionGrid sections={startSections} />
 
-      <h2 className="mb-4 mt-12 text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+      <h2 className="doc-label mb-4 mt-12">
         Packages
       </h2>
       <SectionGrid sections={packageSections} />
 
-      <h2 className="mb-4 mt-12 text-sm font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+      <h2 className="doc-label mb-4 mt-12">
         Guides
       </h2>
       <SectionGrid sections={guideSections} />

@@ -6,20 +6,20 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+      <p className="label">
         Migration Guide
       </p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-        Migrate an existing app to x
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        Migrate an existing app to X
       </h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Move a Next.js or TanStack app to x piece by piece. x shares the file-based, React-islands
         model you already know, so most of your components, loaders, and API routes port over with
         minimal churn.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Conceptual mapping</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Conceptual mapping</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         x is built around the same ideas you already use, under slightly different names:
       </p>
       <div className="mt-6 overflow-x-auto rounded-lg border border-border">
@@ -81,9 +81,9 @@ export default function DocPage(_props: RouteProps) {
         </table>
       </div>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">1. Scaffold the shell</h2>
-      <p className="mt-3 text-muted-foreground">
-        Create a fresh x project and copy your package files, styles, and public assets into it:
+      <h2 className="text-xl">1. Scaffold the shell</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Create a fresh X project and copy your package files, styles, and public assets into it:
       </p>
       <CodeBlock
         label="terminal"
@@ -94,8 +94,8 @@ cp -r old-project/public .
 cp old-project/x.config.ts . 2>/dev/null || true`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">2. Port your data layer</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">2. Port your data layer</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Move schemas into versioned SQL migration files and run them at boot. x ships migration
         runners for both SQLite and Postgres that track applied files in a{" "}
         <span className="text-foreground">_x_migrations</span> table:
@@ -120,8 +120,8 @@ runSQLiteMigrations(db, join(import.meta.dir, "..", "data", "migrations"));
 export default db;`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">3. Port pages + loaders</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">3. Port pages + loaders</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         A server-rendered page with a loader is almost identical to the Next.js version. Change the
         export name and drop the framework-specific glue:
       </p>
@@ -158,8 +158,8 @@ export default function Post({ loaderData }: RouteProps) {
 export const revalidate = 3600;`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">4. Server functions</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">4. Server functions</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Fold per-route server actions into a shared module under{" "}
         <span className="text-foreground">src/actions</span>. Call them from loaders, API routes,
         forms, or islands -- the client bundle only ships a <code>fetch()</code> wrapper, never the
@@ -195,8 +195,8 @@ function Form() {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">5. API routes</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">5. API routes</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Replace <code>route.ts</code> handlers with named export functions in{" "}
         <span className="text-foreground">src/api</span>. Each receives the{" "}
         <span className="text-foreground">Request</span> and returns a{" "}
@@ -216,8 +216,8 @@ export async function POST(request: Request) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">6. Build, doctor, deploy</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">6. Build, doctor, deploy</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Run the diagnostics command to catch env-isolation violations, missing dirs, or dependency
         mismatches before you build, then ship like you did before:
       </p>
@@ -229,7 +229,7 @@ x build           # -> .x/client + .x/server (Bun server)
 x build --adapter vercel   # -> .vercel/output Build Output API v3`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">What doesn't change</h2>
+      <h2 className="text-xl">What doesn't change</h2>
       <ul className="mt-3 list-disc space-y-2 pl-5 text-muted-foreground">
         <li>
           React stays React -- x renders with <span className="text-foreground">react-dom</span>{" "}

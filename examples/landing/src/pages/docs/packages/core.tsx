@@ -7,9 +7,9 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">@thexjs/core</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Packages</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">@thexjs/core</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         The rendering and routing engine behind x: file-based routing, SSR/SSG, islands, server
         functions, content collections, and a lightweight data layer.
       </p>
@@ -25,7 +25,7 @@ export default function DocPage(_props: RouteProps) {
         <span className="text-foreground">x start</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Quick start</h2>
+      <h2 className="text-xl">Quick start</h2>
       <CodeBlock
         label="x.config.ts"
         code={`import { defineConfig } from "@thexjs/core";
@@ -47,7 +47,7 @@ export default function HomePage({}: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">File-based routing</h2>
+      <h2 className="text-xl">File-based routing</h2>
       <CodeBlock
         label="route mapping"
         code={`File                          Route
@@ -66,8 +66,8 @@ src/pages/_404.tsx              Custom not-found page`}
         <span className="text-foreground">.</span> are never treated as routes.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Route modes</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Route modes</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every page defaults to server-rendered. Opt into build-time prerendering:
       </p>
       <CodeBlock
@@ -86,7 +86,7 @@ src/pages/_404.tsx              Custom not-found page`}
         </li>
       </ul>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Loaders</h2>
+      <h2 className="text-xl">Loaders</h2>
       <CodeBlock
         label="loader example"
         code={`import type { RouteProps } from "@thexjs/core";
@@ -101,8 +101,8 @@ export default function UserPage({ loaderData }: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Islands</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Islands</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Wrap interactive pieces in <span className="text-foreground">&lt;Island&gt;</span> and
         register the component on the page or layout with{" "}
         <span className="text-foreground">export const islands</span>. Only registered islands get a
@@ -134,8 +134,8 @@ export default function Page() {
         <span className="text-foreground">"load"</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Typed routes</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Typed routes</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         In dev, <span className="text-foreground">createApp</span> writes{" "}
         <span className="text-foreground">src/x-routes.ts</span> with a{" "}
         <span className="text-foreground">RouteMap</span> type and a typed{" "}
@@ -149,8 +149,8 @@ export default function Page() {
 const url = href("/blog/[slug]", { slug: "hello-world" }); // "/blog/hello-world"`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Incremental static regeneration</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Incremental static regeneration</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Static pages can revalidate on a timer with{" "}
         <span className="text-foreground">export const revalidate = N</span>, and you can bust the
         cache via <span className="text-foreground">POST /__x/revalidate</span>. See{" "}
@@ -160,8 +160,8 @@ const url = href("/blog/[slug]", { slug: "hello-world" }); // "/blog/hello-world
         .
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Client navigation &amp; images</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Client navigation &amp; images</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Plain <span className="text-foreground">&lt;a&gt;</span> tags already get SPA-style
         navigation and hover prefetch on every page, with no router setup needed.{" "}
         <span className="text-foreground">&lt;Link&gt;</span> is a typed convenience wrapper over
@@ -182,7 +182,7 @@ const url = href("/blog/[slug]", { slug: "hello-world" }); // "/blog/hello-world
 const imageProxy = createImageProxyHandler({ remoteHosts: ["cdn.example.com"] });`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Content collections</h2>
+      <h2 className="text-xl">Content collections</h2>
       <CodeBlock
         label="markdown"
         code={`import { scanContent, renderMarkdown } from "@thexjs/core";
@@ -191,7 +191,7 @@ const posts = scanContent("./src/content/blog");
 const html = renderMarkdown(posts[0].body);`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Data layer</h2>
+      <h2 className="text-xl">Data layer</h2>
       <CodeBlock
         label="sqlite"
         code={`import { connectSQLite, runSQLiteMigrations } from "@thexjs/core/data";
@@ -207,7 +207,7 @@ const sql = connectPostgres({ url: process.env.DATABASE_URL! });
 await runPostgresMigrations(sql, "./data/migrations");`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Key exports</h2>
+      <h2 className="text-xl">Key exports</h2>
       <CodeBlock
         label="exports"
         code={`defineConfig, createApp, build          App setup & build

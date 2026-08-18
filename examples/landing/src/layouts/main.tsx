@@ -1,143 +1,252 @@
 import { Island } from "@thexjs/core";
+import { GitBranch, Menu, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { CommandPalette, CommandPaletteTrigger } from "../components/command-palette";
-import CursorGlow from "../components/cursor-glow";
-import { EasterEgg } from "../components/easter-egg";
+import { useState } from "react";
 import { Logo } from "../components/logo";
-import { StardanceBadge } from "../components/stardance-badge";
-import StarfieldCanvas from "../components/starfield";
 
-export const islands = {
-  CommandPalette,
-  CommandPaletteTrigger,
-  CursorGlow,
-  EasterEgg,
-  StarfieldCanvas,
-};
+const NAV = [
+  { href: "/docs", label: "Docs" },
+  { href: "/features", label: "Features" },
+  { href: "/sandbox", label: "Sandbox" },
+];
+
+const FOOTER_COLS: { title: string; links: { href: string; label: string }[] }[] = [
+  {
+    title: "Product",
+    links: [
+      { href: "/docs/introduction", label: "Introduction" },
+      { href: "/features", label: "Features" },
+      { href: "/docs/installation", label: "Installation" },
+      { href: "/sandbox", label: "Online sandbox" },
+    ],
+  },
+  {
+    title: "Toolkit",
+    links: [
+      { href: "/docs/packages/core", label: "@thexjs/core" },
+      { href: "/docs/packages/cli", label: "@thexjs/cli" },
+      { href: "/docs/packages/auth", label: "@thexjs/auth" },
+      { href: "/docs/packages/adapter-vercel", label: "@thexjs/adapter-vercel" },
+    ],
+  },
+  {
+    title: "Community",
+    links: [
+      { href: "https://github.com/abdelkabirouadoukou/x", label: "GitHub" },
+      { href: "https://github.com/abdelkabirouadoukou/x/issues", label: "Issues" },
+      { href: "https://github.com/abdelkabirouadoukou/x/releases", label: "Releases" },
+      { href: "https://github.com/abdelkabirouadoukou/x/blob/main/LICENSE", label: "License" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { href: "https://github.com/abdelkabirouadoukou", label: "GitHub" },
+      { href: "https://github.com/abdelkabirouadoukou/x", label: "Source" },
+    ],
+  },
+];
+
+function MobileMenu() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="md:hidden">
+      <button
+        type="button"
+        aria-label={open ? "Close menu" : "Open menu"}
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="inline-flex h-10 w-10 items-center justify-center border border-rule text-fg"
+      >
+        {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-canvas">
+          <div className="flex h-header items-center justify-between px-[var(--gutter)]">
+            <a href="/" className="flex items-center gap-2.5" aria-label="x home">
+              <Logo className="h-9 w-auto" />
+              <span className="display text-[1.05rem] font-extrabold leading-none tracking-[-0.04em] text-fg">
+                thexjs
+              </span>
+            </a>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setOpen(false)}
+              className="inline-flex h-10 w-10 items-center justify-center border border-rule text-fg"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-[var(--gutter)] pb-10 pt-4">
+            {NAV.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between border-b border-line py-4 text-[1.75rem] font-semibold text-fg"
+              >
+                {l.label} <span className="text-fg-faint">→</span>
+              </a>
+            ))}
+            <a
+              href="/docs/installation"
+              onClick={() => setOpen(false)}
+              className="cut mt-6 h-[52px] w-full bg-accent px-6 text-[16px] font-semibold text-white [--cut:11px]"
+            >
+              Install
+            </a>
+          </nav>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export const islands = { MobileMenu };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
-      <div className="cosmos" aria-hidden="true" />
-      <Island name="StarfieldCanvas" client="idle">
-        <StarfieldCanvas />
-      </Island>
-      <div className="scanlines" aria-hidden="true" />
-      <span
-        className="sr-only"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: static direction contract, no user input; must survive into emitted markup for audit
-        dangerouslySetInnerHTML={{
-          __html: `<!--
-            THESIS: x is a razor-sharp monochrome studio, not a landing page — a precision observatory lit by pure white light on vantablack; it refuses the SaaS-hero-plus-card-grid default.
-            OWN-WORLD: strict monochrome palette — #000000 canvas, #FFFFFF accent/headlines, #A1A1AA muted text, rgba(255,255,255,0.12) hairlines. Chrome-glass panels, GSAP intro, live typing terminal, custom white cursor, no orbs.
-            STORY: a crisp boot dissolves into the hero; the visitor learns "files in, routes out" from a live route-beacon instrument, and ships.
-            FIRST VIEWPORT: GSAP preloader (counter 0-100%, starfield collapsing into the glowing x, hyper-jump zoom) resolving into badge, headline with neon x, subheading, Get Started + bun create x-app CTAs, auto-typing glass terminal.
-            FORM: ultra-minimal monochrome observatory; strict palette pinned to the user's white-on-black brief.
-            FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md.
-          -->`,
-        }}
-      />
-      <header
-        data-hero-reveal
-        className="fixed top-0 z-[99] w-full border-b border-border/70 bg-background/70 backdrop-blur-xl"
+    <div className="flex min-h-screen flex-col bg-canvas">
+      <a
+        href="/docs/installation"
+        className="group/banner block bg-fg text-canvas transition-colors hover:bg-fg/90"
       >
-        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6">
-          <div className="flex items-center gap-3">
-            <a
-              href="/"
-              className="group flex items-center gap-2.5 transition-opacity hover:opacity-85"
-              aria-label="x home"
-            >
-              <Logo className="h-8 w-8" />
-            </a>
-            <span className="mx-2 hidden h-5 w-px bg-border/70 md:block" aria-hidden="true" />
-            <a
-              href="https://stardance.hackclub.com/projects/41081"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden items-center gap-2 rounded-full border border-chrome-lo bg-white/[0.04] py-1 pl-1 pr-3 text-[11px] font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/40 hover:text-foreground md:inline-flex"
-            >
-              <StardanceBadge variant="chip" />
-              Stardance / Hack Club Entry
-            </a>
-          </div>
+        <div className="mx-auto flex min-h-[34px] w-full max-w-container items-center justify-center gap-2 px-gutter py-1.5 text-[13px] font-medium">
+          <span className="rounded-sm bg-accent px-1.5 py-[1px] text-[10px] font-bold uppercase leading-none text-white">
+            new
+          </span>
+          <span>X 1.3 — islands to disk, server-mode islands, image proxy</span>
+          <span className="transition-transform group-hover/banner:translate-x-0.5">→</span>
+        </div>
+      </a>
 
-          <nav className="flex items-center gap-5 text-sm font-medium text-muted-foreground sm:gap-7">
-            <a href="/docs" className="transition-colors hover:text-foreground">
-              Docs
-            </a>
-            <a href="/features" className="transition-colors hover:text-foreground">
-              Features
-            </a>
-            <a href="/play" className="transition-colors hover:text-foreground">
-              Play
-            </a>
+      <header className="sticky top-0 z-40 w-full border-b border-line bg-canvas">
+        <div className="mx-auto flex h-header w-full max-w-container items-center gap-6 px-gutter">
+          <a href="/" className="group/logo flex items-center gap-2.5" aria-label="x home">
+            <Logo className="h-8 w-auto transition-transform duration-300 group-hover/logo:-rotate-[10deg]" />
+            <span className="display text-[1.1rem] font-extrabold leading-none tracking-[-0.04em] text-fg">
+              thexjs
+            </span>
+          </a>
+
+          <nav aria-label="Primary" className="ml-2 hidden shrink-0 items-center gap-0.5 md:flex">
+            {NAV.map((l) => (
+              <a key={l.href} href={l.href} className="nav-link">
+                {l.label}
+              </a>
+            ))}
+          </nav>
+
+          <button
+            type="button"
+            className="group hidden h-9 w-full min-w-0 max-w-[22rem] items-center gap-2.5 border border-line bg-canvas px-3 text-left text-[13.5px] text-fg-faint hover:border-rule md:flex lg:max-w-[24rem]"
+            aria-label="Open docs search"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="h-4 w-4 shrink-0"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+            </svg>
+            <span className="flex-1">Search docs, APIs, guides…</span>
+            <kbd className="readout border border-line px-1.5 text-[10.5px] text-fg-faint">/</kbd>
+          </button>
+
+          <div className="ml-auto flex shrink-0 items-center gap-3">
             <a
               href="https://github.com/abdelkabirouadoukou/x"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 transition-colors hover:text-foreground sm:flex"
+              aria-label="GitHub repository"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-subtle hover:text-fg"
             >
-              GitHub
+              <GitBranch className="h-[18px] w-[18px]" />
             </a>
-          </nav>
-
-          <div className="flex items-center justify-end gap-2.5">
-            <Island name="CommandPaletteTrigger" client="idle">
-              <CommandPaletteTrigger />
-            </Island>
-            <a href="/docs/installation" className="white-btn h-9 px-4 text-xs font-semibold">
+            <a
+              href="/docs/installation"
+              className="group/btn cut hidden h-9 items-center px-3.5 text-[13.5px] font-semibold text-canvas [--cut:7px] bg-fg hover:bg-accent hover:text-white md:inline-flex"
+            >
               Install
-            </a>{" "}
+            </a>
+            <Island name="MobileMenu" client="idle">
+              <MobileMenu />
+            </Island>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 pt-16">{children}</main>
+      <main className="flex-1">{children}</main>
 
-      <footer className="relative z-10 border-t border-border/70">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-display font-normal uppercase tracking-[0.18em] text-foreground">
-              x
-            </span>{" "}
-            is a fullstack framework for Bun
-          </p>
-
-          <div className="flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
-            <a href="/docs" className="transition-colors hover:text-foreground">
-              Documentation
+      <footer className="mt-auto border-t border-line bg-subtle/60">
+        <div className="mx-auto grid w-full max-w-container gap-12 px-gutter py-16 md:grid-cols-[1.4fr_repeat(4,1fr)]">
+          <div className="flex flex-col gap-5">
+            <a href="/" className="flex items-center gap-2.5" aria-label="x home">
+              <Logo className="h-9 w-auto" />
+              <span className="display text-[1.05rem] font-extrabold leading-none tracking-[-0.04em] text-fg">
+                thexjs
+              </span>
             </a>
-            <a
-              href="https://github.com/abdelkabirouadoukou/x"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-foreground"
+            <p className="max-w-[28ch] text-[14.5px] leading-relaxed text-fg-muted">
+              A fullstack React framework for{" "}
+              <a
+                href="https://bun.sh"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-accent"
+              >
+                Bun
+              </a>
+              . One process: static, SSR, APIs, and server functions.
+            </p>
+            <div className="flex items-center gap-1.5">
+              <a
+                href="https://github.com/abdelkabirouadoukou/x"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-surface hover:text-fg"
+              >
+                <GitBranch className="h-[17px] w-[17px]" />
+              </a>
+            </div>
+          </div>
+          {FOOTER_COLS.map((col) => (
+            <nav
+              key={col.title}
+              aria-label={col.title}
+              className="flex flex-col gap-2.5 text-[14.5px]"
             >
-              GitHub
-            </a>
-            <a
-              href="https://stardance.hackclub.com/projects/41081"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-3 text-xs font-medium transition-colors hover:border-primary/40 hover:text-primary"
-            >
-              <StardanceBadge variant="chip" />
-              Built solo for Hack Club Stardance
-            </a>
+              <p className="mono mb-1 text-[11px] font-medium uppercase tracking-[0.14em] text-fg-faint">
+                {col.title}
+              </p>
+              {col.links.map((l) => (
+                <a
+                  key={l.label}
+                  href={l.href}
+                  className="w-fit text-fg-muted transition-colors hover:text-fg"
+                >
+                  {l.label}
+                </a>
+              ))}
+            </nav>
+          ))}
+        </div>
+        <div className="border-t border-line">
+          <div className="mx-auto flex w-full max-w-container flex-col items-start justify-between gap-4 px-gutter py-6 text-[13px] text-fg-faint sm:flex-row sm:items-center">
+            <span>
+              Built for <span className="text-accent">Bun</span> · MIT licensed
+            </span>
+            <span>© 2026 The X contributors</span>
           </div>
         </div>
       </footer>
-
-      <Island name="CommandPalette" client="idle">
-        <CommandPalette />
-      </Island>
-      <Island name="EasterEgg" client="idle">
-        <EasterEgg />
-      </Island>
-      <Island name="CursorGlow" client="idle">
-        <CursorGlow />
-      </Island>
     </div>
   );
 }

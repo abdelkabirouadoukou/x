@@ -7,16 +7,16 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">@thexjs/env</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        Type-safe environment variable validation for x apps. Define a schema once, get parsed and
+      <p className="label">Packages</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">@thexjs/env</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
+        Type-safe environment variable validation for X apps. Define a schema once, get parsed and
         typed values back, and fail fast with a clear error if something is missing or malformed.
       </p>
 
       <CodeBlock label="terminal" lang="bash" code="bun add @thexjs/env" />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Quick start</h2>
+      <h2 className="text-xl">Quick start</h2>
       <CodeBlock
         label="env.ts"
         code={`import { createEnv, str, num, bool, oneOf, url } from "@thexjs/env";
@@ -50,7 +50,7 @@ env.NODE_ENV;     // "development" | "production" | "test"`}
   server.PORT: Expected a number, got undefined`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Validators</h2>
+      <h2 className="text-xl">Validators</h2>
       <CodeBlock
         label="built-in validators"
         code={`Validator              Accepts                          Notes
@@ -62,8 +62,8 @@ oneOf([...values])     one of the given string literals   narrows return type
 url()                  string parseable by new URL(...)`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Custom validators</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Custom validators</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Each validator is{" "}
         <span className="text-foreground">{"{ parse(input: string | undefined): T }"}</span>. Write
         your own for anything not covered:
@@ -82,8 +82,8 @@ function json<T>(): EnvValidator<T> {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">client / clientPrefix</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">client / clientPrefix</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The <span className="text-foreground">client</span> schema is for variables safe to expose
         to the browser. <span className="text-foreground">clientPrefix</span> enforces that every
         client key starts with that prefix. A key that does not match fails validation, so you
@@ -102,7 +102,7 @@ function json<T>(): EnvValidator<T> {
         for details.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Notes</h2>
+      <h2 className="text-xl">Notes</h2>
       <ul className="mt-3 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
           Every field is currently required, with no built-in{" "}

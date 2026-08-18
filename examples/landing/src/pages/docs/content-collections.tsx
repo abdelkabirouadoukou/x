@@ -7,17 +7,17 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+      <p className="label">
         Content Collections
       </p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Content collections</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Content collections</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Write content in Markdown with frontmatter, and x automatically turns it into pages. Perfect
         for blogs, documentation, and any content-driven site.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Configuration</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Configuration</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Point the content directory in <span className="text-foreground">x.config.ts</span> to a
         folder with your markdown files.
       </p>
@@ -30,8 +30,8 @@ export default defineConfig({
 });`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Markdown with frontmatter</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Markdown with frontmatter</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Each markdown file starts with frontmatter (YAML between{" "}
         <span className="text-foreground">---</span> delimiters) followed by markdown content.
       </p>
@@ -45,9 +45,9 @@ tags: [getting-started, tutorial]
 author: Jane Doe
 ---
 
-## Welcome to x!
+## Welcome to X!
 
-This is your first post using x's content collection system.
+This is your first post using X's content collection system.
 
 You can write **markdown** with all the usual syntax:
 
@@ -61,8 +61,8 @@ console.log(greeting);
 \`\`\``}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Reading content in a loader</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Reading content in a loader</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Use <span className="text-foreground">scanContent</span> to discover files and{" "}
         <span className="text-foreground">renderMarkdown</span> to convert markdown to HTML in your
         loaders.
@@ -99,8 +99,8 @@ export default function BlogPost({ loaderData }: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">scanContent API</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">scanContent API</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         <span className="text-foreground">scanContent(directory)</span> scans a subdirectory of your
         content folder and returns an array of content entries. Each entry includes{" "}
         <span className="text-foreground">slug</span>, <span className="text-foreground">body</span>{" "}
@@ -117,8 +117,8 @@ export default function BlogPost({ loaderData }: RouteProps) {
 }`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">renderMarkdown API</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">renderMarkdown API</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         <span className="text-foreground">renderMarkdown(markdownString)</span> converts markdown to
         an HTML string. It is a lightweight, dependency-free renderer: headings, paragraphs, lists,
         links, inline code, code blocks, bold/italic, and blockquotes are supported, and all output
@@ -128,8 +128,8 @@ export default function BlogPost({ loaderData }: RouteProps) {
         <span className="text-foreground">dangerouslySetInnerHTML</span>.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Auto-routes</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Auto-routes</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every <span className="text-foreground">.md</span>/
         <span className="text-foreground">.mdx</span> file under{" "}
         <span className="text-foreground">contentDir</span> becomes a route at its own path during

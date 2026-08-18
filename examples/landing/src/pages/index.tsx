@@ -1,238 +1,182 @@
 import { Island } from "@thexjs/core";
-import { ArrowRight, BookOpen, FileJson, Globe, Layers, Shield, Sparkles, Zap } from "lucide-react";
-import BootIntro from "../components/boot-intro";
-import { TerminalBlock } from "../components/code-block";
-import RouteResolver from "../components/route-resolver";
-import RouteTrail from "../components/route-trail";
-import ShipIt from "../components/ship-it";
-import TypingTerminal from "../components/typing-terminal";
+import { ArrowRight } from "lucide-react";
+import ApiTabs from "../components/api-tabs";
+import Benchmarks from "../components/benchmarks";
+import CompareTable from "../components/compare-table";
+import FeatureGrid from "../components/feature-grid";
+import HeroDemo from "../components/hero-demo";
+import InstallCommand from "../components/install-command";
+import SandboxSlot from "../components/sandbox-slot";
+import Stats from "../components/stats";
+import Tour from "../components/tour";
+import TryItNow from "../components/try-it-now";
 
-export const islands = { BootIntro, RouteResolver, RouteTrail, ShipIt, TypingTerminal };
-
-const systems = [
-  {
-    id: "ROUTING",
-    icon: FileJson,
-    title: "File-based routing",
-    desc: "Drop a file in src/pages, get a route. Nested folders, dynamic segments, and API routes are automatic.",
-  },
-  {
-    id: "RENDER",
-    icon: Layers,
-    title: "Static + dynamic",
-    desc: "Prerender marketing pages, SSR dashboards. Both on the same route, same process.",
-  },
-  {
-    id: "API",
-    icon: Globe,
-    title: "API routes",
-    desc: "REST endpoints beside your pages. Shared types, same process, no separate server.",
-  },
-  {
-    id: "TYPES",
-    icon: Shield,
-    title: "Type safe",
-    desc: "Loaders, params, and server functions stay typed end to end, from framework to component.",
-  },
-  {
-    id: "ISLANDS",
-    icon: Sparkles,
-    title: "Islands",
-    desc: "Interactive components hydrate in place. Only what you mark as an island loads client JS.",
-  },
-  {
-    id: "POWER",
-    icon: Zap,
-    title: "One process",
-    desc: "Static sites, SSR, API, and server functions run in one process. No microservices, no orchestration.",
-  },
-];
+export const islands = {
+  InstallCommand,
+  HeroDemo,
+  Benchmarks,
+  Tour,
+  ApiTabs,
+  CompareTable,
+  TryItNow,
+};
 
 export const mode = "static";
 
 export default function HomePage() {
   return (
-    <div className="pb-32">
-      <Island name="BootIntro" client="load">
-        <BootIntro />
-      </Island>
-
-      <section className="relative overflow-hidden px-6 pb-28 pt-20 sm:pt-28">
-        <Island name="RouteTrail" client="idle">
-          <RouteTrail />
-        </Island>
-
-        <div className="relative z-10 mx-auto max-w-3xl text-center">
-          <span data-hero-reveal className="pill-badge text-xs font-medium text-muted-foreground">
-            Powered natively by the Bun runtime. Zero-config full-stack React.
-          </span>
-
-          <h1
-            data-hero-reveal
-            className="mt-8 text-[clamp(2.7rem,7.5vw,5.2rem)] font-bold leading-[1.02] tracking-tight text-foreground"
-          >
-            Build high-speed web apps with <span className="neon-text">x</span>
-          </h1>
-
-          <p
-            data-hero-reveal
-            className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
-          >
-            x is a React framework where your folder structure is the router, your API lives beside
-            your pages, and everything runs in one Bun process, from static to server-rendered.
-          </p>
-
-          <div data-hero-reveal className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="/docs/installation" className="white-btn h-12 px-7 text-sm font-semibold">
-              Get Started
-              <ArrowRight className="h-4 w-4" />
-            </a>
-            <a href="/docs/introduction" className="neon-btn h-12 px-6 font-mono text-sm">
-              <BookOpen className="h-4 w-4" /> bun create x-app
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-4">
-        <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
+    <div className="pb-24">
+      {/* --------------------------------------------------------------- Hero */}
+      <section className="mx-auto w-full max-w-container px-gutter pb-14 pt-8 sm:pt-12">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-center">
           <div>
-            <h2 className="text-3xl font-normal uppercase leading-tight sm:text-4xl">
-              <span className="chrome-text">Your file tree</span>
-              <br />
-              <span className="text-muted-foreground">is the route tree</span>
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Type a file path and watch it resolve to a live route against the real server. That's
-              the whole framework, in one console.
-            </p>
-          </div>
-          <div>
-            <Island name="RouteResolver" client="visible">
-              <RouteResolver />
-            </Island>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pt-10">
-        <div className="glass rounded-3xl p-2 sm:p-3">
-          <div className="flex items-center justify-between gap-4 px-4 pb-2 pt-3">
-            <h2 className="text-2xl font-normal uppercase tracking-tight sm:text-3xl">
-              <span className="chrome-text">All systems go</span>
-            </h2>
-            <span className="console-label">
-              <span className="go-dot" /> online
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-subtle px-3 py-1 text-[12px] font-medium text-fg-muted">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              New — x 1.3 islands to disk, image proxy
             </span>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {systems.map((s, i) => (
-              <article
-                key={s.id}
-                className="group rounded-2xl border border-transparent p-5 transition-colors hover:border-chrome-lo hover:bg-white/[0.04]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-[10px] tracking-[0.22em] text-primary">
-                    {s.id} / {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="h-1.5 w-1.5 rounded-full bg-go/70 shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-colors group-hover:bg-go" />
-                </div>
-                <h3 className="mt-3 flex items-center gap-2 text-base font-semibold">
-                  <s.icon className="h-4 w-4 text-primary" />
-                  {s.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      <section className="mx-auto mt-24 max-w-6xl px-6">
-        <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
-          <div>
-            <h2 className="text-3xl font-normal uppercase leading-tight sm:text-4xl">
-              <span className="chrome-text">One command</span>
-              <br />
-              <span className="text-muted-foreground">to a running server</span>
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Scaffold, install, and run. No separate API service to wire up, no bundler config to
-              tune before the first page renders.
+            <h1 className="display mt-5 text-[clamp(2.4rem,5.5vw,3.9rem)]">
+              High‑speed web apps with <span className="whitespace-nowrap">X</span>
+            </h1>
+
+            <p className="mt-5 max-w-[46ch] text-[1.09rem] leading-relaxed text-fg-muted">
+              x is a fullstack React framework for Bun. Your folder structure is the router, your
+              API lives beside your pages, and everything — static, SSR, server functions — runs in{" "}
+              <span className="text-fg">one process</span>.
             </p>
-            <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="go-dot" />
-              <span className="font-mono uppercase tracking-[0.18em]">countdown complete</span>
+
+            <div className="mt-8">
+              <Island name="InstallCommand" client="idle">
+                <InstallCommand />
+              </Island>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <a href="/docs" className="al-link group text-[15px]">
+                Get started
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </a>
+              <a
+                href="/sandbox"
+                className="inline-flex items-center gap-1 text-[14.5px] text-fg-muted underline decoration-line underline-offset-4 transition-colors hover:text-fg"
+              >
+                Try it in the browser
+                <ArrowRight className="h-3.5 w-3.5 transition-transform hover:translate-x-0.5" />
+              </a>
             </div>
           </div>
-          <TerminalBlock
-            label="~/my-app — zsh"
-            code={`$ bun create thexjs-app@latest my-app
 
-  Available templates:
-
-    default  Blank slate, a single home page. (recommended)
-    basic    Pages, API, auth, dashboard.
-    blog     Markdown content collections.
-    saas     Dashboard, pricing, data layer.
-
-  Choose a template (default): █
-
-$ cd my-app && bun run dev
-  [x] dev server running at http://localhost:3000`}
-          />
-        </div>
-      </section>
-
-      <section className="mx-auto mt-24 max-w-6xl px-6">
-        <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
-          <div className="order-2 lg:order-1">
-            <Island name="ShipIt" client="visible">
-              <ShipIt />
+          <div className="lg:pl-4">
+            <Island name="HeroDemo" client="visible">
+              <HeroDemo />
             </Island>
           </div>
-          <div className="order-1 lg:order-2">
-            <h2 className="text-3xl font-normal uppercase leading-tight sm:text-4xl">
-              <span className="chrome-text">Reflexes</span>
-              <br />
-              <span className="text-muted-foreground">vs. a cold start</span>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- Grid */}
+      <section className="mx-auto w-full max-w-container px-gutter pt-20 sm:pt-24">
+        <div className="max-w-2xl">
+          <p className="label">The toolkit</p>
+          <h2 className="display mt-4 text-[clamp(2rem,4.5vw,3rem)]">Four tools. One process.</h2>
+          <p className="mt-4 text-[15.5px] leading-relaxed text-fg-muted">
+            Everything X ships is designed to compose: routing, rendering, data, and auth all speak
+            the same file-tree language.
+          </p>
+        </div>
+        <div className="mt-12">
+          <FeatureGrid />
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------ Tour */}
+      <section className="mx-auto w-full max-w-container px-gutter py-24">
+        <div className="max-w-2xl">
+          <p className="label">A minute with X</p>
+          <h2 className="display mt-4 text-[clamp(2rem,4.5vw,3rem)]">
+            From zero to a running app in 60 seconds.
+          </h2>
+          <p className="mt-4 max-w-[42ch] text-[15.5px] leading-relaxed text-fg-muted">
+            Follow the tour through the five moments that matter — scaffold, routes, APIs, data,
+            deploy — in one living terminal.
+          </p>
+        </div>
+        <div className="mt-12">
+          <Island name="Tour" client="visible">
+            <Tour />
+          </Island>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------- Stats */}
+      <section className="mx-auto w-full max-w-container px-gutter pb-16">
+        <Stats />
+      </section>
+
+      {/* --------------------------------------------------------- Release */}
+      <section className="mx-auto w-full max-w-container px-gutter py-12">
+        <div className="md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-16">
+          <div>
+            <p className="label">Speed</p>
+            <h2 className="display mt-4 text-[clamp(2rem,4.5vw,3rem)]">
+              It's fast. The numbers are the point.
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              Most stacks make you wait for the build. Start one, then ship the instant it's ready.
-              See how close you can get to zero.
+            <p className="mt-4 max-w-[38ch] text-[15.5px] leading-relaxed text-fg-muted">
+              Every step below has been measured against the same page source on the same machine.
+              Change the tab, watch the bars.
             </p>
+          </div>
+          <div className="mt-10 md:mt-0">
+            <Island name="Benchmarks" client="visible">
+              <Benchmarks />
+            </Island>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto mt-24 max-w-4xl px-6">
-        <div className="glass rounded-3xl px-8 py-14 text-center sm:px-14 sm:py-16">
-          <div className="mx-auto mb-6 flex justify-center">
-            <span className="beacon-ring flex h-14 w-14 items-center justify-center rounded-full border border-chrome-lo">
-              <span className="relative flex h-2.5 w-2.5 rounded-full bg-go shadow-[0_0_18px_5px_rgba(255,255,255,0.35)]" />
-            </span>
+      {/* ------------------------------------------------------------ API */}
+      <section className="border-t border-line">
+        <div className="mx-auto w-full max-w-container px-gutter py-24">
+          <div className="max-w-2xl">
+            <p className="label">Batteries included</p>
+            <h2 className="display mt-4 text-[clamp(2rem,4.5vw,3rem)]">
+              Everything you need is already there.
+            </h2>
+            <p className="mt-4 text-[15.5px] leading-relaxed text-fg-muted">
+              Routes, data, auth, content, config — each one is a small, typed API that reads like
+              the file it lives in.
+            </p>
           </div>
-          <h2 className="text-3xl font-normal uppercase tracking-tight sm:text-4xl">
-            <span className="chrome-text">Ready to build?</span>
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-            Read the docs, scaffold a project, and ship from a single home page or a full-stack
-            starter.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="/docs" className="aqua-btn h-11 px-6 text-sm font-semibold">
-              <BookOpen className="h-4 w-4" /> Read the docs
-            </a>
-            <a
-              href="https://github.com/abdelkabirouadoukou/x"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass-btn h-11 px-6 text-sm font-medium"
-            >
-              GitHub
-            </a>
-          </div>
+          <Island name="ApiTabs" client="visible">
+            <ApiTabs />
+          </Island>
         </div>
+      </section>
+
+      {/* ----------------------------------------------------- Comparison */}
+      <section className="mx-auto w-full max-w-container px-gutter py-24">
+        <div className="flex items-end justify-between gap-6">
+          <div className="max-w-2xl">
+            <p className="label">Compare</p>
+            <h2 className="display mt-4 text-[clamp(2rem,4.5vw,3rem)]">How X stacks up.</h2>
+          </div>
+          <p className="hidden text-[13.5px] text-fg-faint md:block">
+            Statuses reflect the documented capabilities of each framework.
+          </p>
+        </div>
+        <Island name="CompareTable" client="visible">
+          <CompareTable />
+        </Island>
+      </section>
+
+      {/* ---------------------------------------------------------- Sandbox */}
+      <section className="mx-auto w-full max-w-container px-gutter">
+        <SandboxSlot />
+      </section>
+
+      {/* ------------------------------------------------------------- CTA */}
+      <section className="py-24">
+        <TryItNow />
       </section>
     </div>
   );

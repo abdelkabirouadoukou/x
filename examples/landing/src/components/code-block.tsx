@@ -1,3 +1,4 @@
+import { Check, Copy } from "lucide-react";
 import type { ReactNode } from "react";
 import { highlight } from "../lib/syntax";
 
@@ -5,46 +6,38 @@ interface CodeBlockProps {
   label: string;
   code: string;
   lang?: string;
-  /** Terminal-style output with prompt prefixes and scanline texture. */
+  /** terminal slab (dark) vs light code panel */
   variant?: "code" | "terminal";
-  /** Glassmorphism window — translucent, blurred, floating in the sky. */
   glass?: boolean;
 }
 
-function TerminalBody({ code, lang }: { code: string; lang: string }) {
+function TerminalBody({ code }: { code: string }) {
   const lines = code.split("\n");
 
   return (
-    <div className="relative font-mono text-[13px] leading-[1.65]">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.15) 2px, rgba(255,255,255,0.15) 4px)",
-        }}
-      />
+    <div className="relative font-mono text-[13px] leading-[1.7] text-[#f2f2f0]">
       <pre className="relative overflow-x-auto p-5">
         {lines.map((line, i) => {
           const isPrompt = line.startsWith("$") || line.startsWith(">");
           const isOutput = line.startsWith("  ") && !line.startsWith("   ");
-          const isDim = line.trim() === "" || line.includes("(recommended)");
+          const isDim = line.trim() === "";
 
-          if (lang === "bash" && isPrompt) {
+          if (isPrompt) {
             const [, ...rest] = line.split(/(?<=\$|>)\s?/);
             const cmd = rest.join("") || line.slice(1).trim();
             return (
               <div key={`${i}-${line.slice(0, 8)}`} className="flex gap-3">
-                <span className="shrink-0 select-none text-[var(--terminal-prompt)]">
+                <span className="shrink-0 select-none text-[#70d6a3]">
                   {line.startsWith("$") ? "$" : ">"}
                 </span>
-                <code className="text-[var(--terminal-text)]">{cmd}</code>
+                <code className="text-[#f2f2f0]">{cmd}</code>
               </div>
             );
           }
 
           if (isOutput) {
             return (
-              <div key={`${i}-${line.slice(0, 8)}`} className="pl-5 text-[var(--terminal-muted)]">
+              <div key={`${i}-${line.slice(0, 8)}`} className="pl-5 text-[#9a9aa0]">
                 {line.trimStart()}
               </div>
             );
@@ -53,14 +46,34 @@ function TerminalBody({ code, lang }: { code: string; lang: string }) {
           return (
             <div
               key={`${i}-${line.slice(0, 8)}`}
-              className={isDim ? "text-[var(--terminal-muted)]/80" : "text-[var(--terminal-text)]"}
+              className={isDim ? "text-[#9a9aa0]/70" : "text-[#f2f2f0]"}
             >
-              {lang === "bash" ? line : highlight(line, lang)}
+              {line}
             </div>
           );
         })}
       </pre>
     </div>
+  );
+}
+
+function CopyButton({ code }: { code: string }) {
+  const id = `copy-${code.slice(0, 24).replace(/\W/g, "-")}`;
+  return (
+    <button
+      data-copy
+      data-copy-target={`#${id}`}
+      type="button"
+      aria-label="Copy code"
+      className="group/copy inline-flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-fg/[0.06] hover:text-fg"
+    >
+      <span data-copy-icon className="hidden h-4 w-4 group-hover/copy:block">
+        <Copy className="h-4 w-4" />
+      </span>
+      <span className="hidden h-4 w-4 text-success" data-copy-ok>
+        <Check className="h-4 w-4" />
+      </span>
+    </button>
   );
 }
 
@@ -73,58 +86,41 @@ export function CodeBlock({
 }: CodeBlockProps) {
   const isTerminal = variant === "terminal" || lang === "bash" || lang === "tree";
 
-  return (
-    <div
-      className={`code-block overflow-hidden rounded-2xl ${glass ? "code-block-glass" : "mt-6"}`}
-      style={
-        glass
-          ? undefined
-          : {
-              border: "1px solid var(--terminal-border)",
-              backgroundColor: "var(--terminal-bg)",
-              boxShadow: "var(--terminal-glow)",
-            }
-      }
-    >
+  if (isTerminal) {
+    return (
       <div
-        className="flex items-center justify-between gap-3 border-b px-4 py-2.5"
-        style={
-          glass
-            ? { borderColor: "rgba(255,255,255,0.1)" }
-            : {
-                borderColor: "var(--terminal-border)",
-                backgroundColor: "var(--terminal-bar)",
-              }
-        }
+        className={glass ? "terminal-slab" : "terminal-slab mt-6"}
+        style={glass ? { marginTop: 0 } : undefined}
       >
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#71717a]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#52525b]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#3f3f46]" />
+        <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
+          <span className="traffic" />
+          <span className="traffic" />
+          <span className="traffic" />
+          <span className="ml-3 font-mono text-[11.5px] text-white/40">{label}</span>
         </div>
-        <span
-          className="truncate font-mono text-[11px] tracking-wide"
-          style={{ color: "var(--terminal-label)" }}
-        >
-          {label}
-        </span>
-        <span className="hidden w-12 sm:block" />
+        <TerminalBody code={code} />
       </div>
+    );
+  }
 
-      {isTerminal ? (
-        <TerminalBody code={code} lang={lang} />
-      ) : (
-        <pre className="overflow-x-auto p-5 text-sm leading-relaxed">
-          <code className="font-mono" style={{ color: "var(--terminal-text)" }}>
-            {highlight(code, lang)}
-          </code>
-        </pre>
-      )}
+  const id = `c-${code.slice(0, 24).replace(/\W/g, "-")}`;
+
+  return (
+    <div className={`CodeBlock ${glass ? "" : "border border-line"}`}>
+      <div className="CodeBlockTab">
+        <span>{label}</span>
+        <span className="ml-auto">
+          <CopyButton code={code} />
+        </span>
+      </div>
+      <pre className="shiki" id={id}>
+        <code>{highlight(code, lang)}</code>
+      </pre>
     </div>
   );
 }
 
-/** Shorthand for bash/CLI snippets. */
+/** Shorthand for bash/CLI snippets (dark terminal slab). */
 export function TerminalBlock({
   label,
   code,

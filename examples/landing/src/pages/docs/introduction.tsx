@@ -7,9 +7,9 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Introduction</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">What is x?</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Introduction</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">What is x?</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         x is a full-stack React framework built on{" "}
         <a href="https://bun.sh" className="text-primary underline underline-offset-2">
           Bun
@@ -18,8 +18,8 @@ export default function DocPage(_props: RouteProps) {
         content layer all live in one process, with zero orchestration.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Why x exists</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Why x exists</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Most stacks split concerns across multiple tools: a bundler, a server, a static host, a
         separate API layer. x keeps everything in one Bun process. Drop a file in{" "}
         <span className="text-foreground">src/pages</span>, get a route. Mark a page{" "}
@@ -28,8 +28,8 @@ export default function DocPage(_props: RouteProps) {
         pages, with the same types and the same runtime.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">The packages</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">The packages</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         x ships as a set of focused npm packages. You typically install{" "}
         <span className="text-foreground">@thexjs/cli</span> and{" "}
         <span className="text-foreground">@thexjs/core</span> through the project scaffolder; add{" "}
@@ -66,8 +66,8 @@ export default function DocPage(_props: RouteProps) {
         ))}
       </div>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">A minimal page</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">A minimal page</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every x app starts with file-based routes. Here is the simplest possible page:
       </p>
       <CodeBlock
@@ -85,8 +85,8 @@ export default function HomePage({}: RouteProps) {
         <span className="text-foreground">http://localhost:3000</span>. That is the entire loop.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Static vs server</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Static vs server</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Pages default to server-rendered (SSR). Opt into build-time prerendering per page:
       </p>
       <CodeBlock label="route mode" code={`export const mode: "static" | "server" = "static";`} />

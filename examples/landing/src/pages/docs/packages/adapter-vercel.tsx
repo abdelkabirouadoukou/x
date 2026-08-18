@@ -7,9 +7,9 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Packages</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">@thexjs/adapter-vercel</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Packages</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">@thexjs/adapter-vercel</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Vercel{" "}
         <a
           href="https://vercel.com/docs/build-output-api/v3"
@@ -19,7 +19,7 @@ export default function DocPage(_props: RouteProps) {
         >
           Build Output API v3
         </a>{" "}
-        adapter for x apps. Produces a <span className="text-foreground">.vercel/output/</span> tree
+        adapter for X apps. Produces a <span className="text-foreground">.vercel/output/</span> tree
         directly, with <span className="text-foreground">no vercel.json required</span>.
       </p>
 
@@ -31,8 +31,8 @@ x build --adapter vercel
 vercel deploy --prebuilt`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">What it produces</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">What it produces</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The adapter writes a complete Build Output API v3 tree:
       </p>
       <CodeBlock
@@ -52,7 +52,7 @@ vercel deploy --prebuilt`}
         does filesystem routing.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">How it works</h2>
+      <h2 className="text-xl">How it works</h2>
       <ol className="mt-4 list-decimal space-y-4 text-muted-foreground">
         <li>
           Runs <span className="text-foreground">@thexjs/core</span>'s normal{" "}
@@ -76,14 +76,14 @@ vercel deploy --prebuilt`}
         </li>
         <li>
           Bridges Vercel's Node-style <span className="text-foreground">(req, res)</span> function
-          invocation to x's Web-standard <span className="text-foreground">Request</span>/{" "}
+          invocation to X's Web-standard <span className="text-foreground">Request</span>/{" "}
           <span className="text-foreground">Response</span> handler, streaming the response body
           through (so <span className="text-foreground">renderToReadableStream</span>
           -based SSR streams end-to-end, not just non-streaming pages).
         </li>
       </ol>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Options</h2>
+      <h2 className="text-xl">Options</h2>
       <CodeBlock
         label="VercelAdapterOptions"
         code={`interface VercelAdapterOptions {
@@ -123,8 +123,8 @@ vercel deploy --prebuilt`}
         protection, security headers, rate limiting, and structured logging as your Bun server.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Usage with x.config.ts</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Usage with x.config.ts</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Running <span className="text-foreground">x build --adapter vercel</span> loads your{" "}
         <span className="text-foreground">x.config.ts</span>, so no extra configuration is needed.
         Just install the adapter and run:
@@ -137,7 +137,7 @@ x build --adapter vercel
 vercel deploy --prebuilt`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Known limitations</h2>
+      <h2 className="text-xl">Known limitations</h2>
       <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
           ISR-style <span className="text-foreground">revalidate</span> caching (in-memory in the

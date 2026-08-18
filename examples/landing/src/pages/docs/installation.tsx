@@ -7,15 +7,15 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Installation</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Install x</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
+      <p className="label">Installation</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Install x</h1>
+      <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         x requires the Bun runtime. Scaffold a new project with the create command, or add the
         packages manually to an existing app.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Prerequisites</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Prerequisites</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Install{" "}
         <a href="https://bun.sh" className="text-primary underline underline-offset-2">
           Bun
@@ -25,8 +25,8 @@ export default function DocPage(_props: RouteProps) {
       </p>
       <TerminalBlock label="terminal — bun" code="bun --version" />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Create a new project</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Create a new project</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The fastest path is the project scaffolder. It copies a template, generates{" "}
         <span className="text-foreground">package.json</span>, resolves the latest{" "}
         <span className="text-foreground">@thexjs/core</span> and{" "}
@@ -67,8 +67,8 @@ Choose a template (default/basic/blog/saas/landing) (default):`}
         code="bun create thexjs-app@latest my-app --template default"
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Add to an existing project</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Add to an existing project</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Install the core packages and wire up scripts in{" "}
         <span className="text-foreground">package.json</span>:
       </p>
@@ -101,8 +101,8 @@ export default defineConfig({
 });`}
       />
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Optional: environment validation</h2>
-      <p className="mt-3 text-muted-foreground">
+      <h2 className="text-xl">Optional: environment validation</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Add <span className="text-foreground">@thexjs/env</span> when you want typed, validated
         environment variables:
       </p>
@@ -115,7 +115,7 @@ export default defineConfig({
         for the full API.
       </p>
 
-      <h2 className="mt-12 text-xl font-bold tracking-tight">Verify the install</h2>
+      <h2 className="text-xl">Verify the install</h2>
       <CodeBlock
         label="terminal"
         lang="bash"
