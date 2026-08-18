@@ -18,7 +18,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome check --write .",
     "build": "bun run build:packages && bun run --cwd examples/basic build",
-    "build:packages": "bun run --cwd packages/core build && bun run --cwd packages/env build && bun run --cwd packages/adapter-vercel build && bun run --cwd packages/cli build && bun run --cwd packages/auth build",
+    "build:packages": "bun run --cwd packages/core build && bun run --cwd packages/env build && bun run --cwd packages/adapter-vercel build && bun run --cwd packages/cli build && bun run --cwd packages/auth build && bun run --cwd packages/hooks build",
     "dev": "bun run build:packages && bun --cwd examples/basic run dev",
     "vercel-build": "bun run build:packages && bun run --cwd examples/basic vercel-build && rm -rf .vercel/output && cp -R examples/basic/.vercel/output .vercel/output && rm -rf examples/basic/.vercel",
     "postinstall": "bun run build:packages && cd packages/cli && bun link --force && echo '[x] \"x\" CLI linked globally. Make sure ~/.bun/bin is in your PATH.' || echo '[x] Could not link globally. Use \"bun run dev\" in the example instead.'"

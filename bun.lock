@@ -124,9 +124,9 @@
     },
     "packages/adapter-vercel": {
       "name": "@thexjs/adapter-vercel",
-      "version": "1.0.6",
+      "version": "1.0.9",
       "dependencies": {
-        "@thexjs/core": "^1.3.0",
+        "@thexjs/core": "^1.3.2",
         "react": "^19.0.0",
       },
       "devDependencies": {
@@ -136,7 +136,7 @@
     },
     "packages/auth": {
       "name": "@thexjs/auth",
-      "version": "3.0.5",
+      "version": "3.0.6",
       "devDependencies": {
         "@thexjs/core": "^1.3.0",
         "tsup": "^8.3.0",
@@ -168,7 +168,7 @@
     },
     "packages/core": {
       "name": "@thexjs/core",
-      "version": "1.3.0",
+      "version": "1.3.2",
       "devDependencies": {
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
@@ -201,6 +201,21 @@
       },
       "peerDependencies": {
         "typescript": "^5.7.0",
+      },
+    },
+    "packages/hooks": {
+      "name": "@thexjs/hooks",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@happy-dom/global-registrator": "^20.11.2",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "tsup": "^8.3.0",
+      },
+      "peerDependencies": {
+        "react": "^18.0.0 || ^19.0.0",
       },
     },
   },
@@ -549,6 +564,8 @@
     "@thexjs/env": ["@thexjs/env@workspace:packages/env"],
 
     "@thexjs/example-basic": ["@thexjs/example-basic@workspace:examples/basic"],
+
+    "@thexjs/hooks": ["@thexjs/hooks@workspace:packages/hooks"],
 
     "@ts-morph/common": ["@ts-morph/common@0.27.0", "", { "dependencies": { "fast-glob": "^3.3.3", "minimatch": "^10.0.1", "path-browserify": "^1.0.1" } }, "sha512-Wf29UqxWDpc+i61k3oIOzcUfQt79PIT9y/MWfAGlrkjg6lBC1hwDECLXPVJAhWjiGbfBCxZd65F/LIZF3+jeJQ=="],
 

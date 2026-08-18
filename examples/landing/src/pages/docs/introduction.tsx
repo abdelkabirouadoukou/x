@@ -34,8 +34,8 @@ export default function DocPage(_props: RouteProps) {
         <span className="text-foreground">@thexjs/cli</span> and{" "}
         <span className="text-foreground">@thexjs/core</span> through the project scaffolder; add{" "}
         <span className="text-foreground">@thexjs/env</span> when you need validated environment
-        variables, and <span className="text-foreground">@thexjs/adapter-vercel</span> to deploy to
-        Vercel.
+        variables, <span className="text-foreground">@thexjs/hooks</span> for SSR-safe React hooks,
+        and <span className="text-foreground">@thexjs/adapter-vercel</span> to deploy to Vercel.
       </p>
       <div className="mt-6 space-y-3">
         {[
@@ -53,6 +53,11 @@ export default function DocPage(_props: RouteProps) {
             name: "@thexjs/env",
             href: "/docs/packages/env",
             desc: "Type-safe environment variable validation with fail-fast errors.",
+          },
+          {
+            name: "@thexjs/hooks",
+            href: "/docs/packages/hooks",
+            desc: "SSR-safe React hooks: debounce, media query, localStorage, server actions, forms.",
           },
         ].map((pkg) => (
           <a

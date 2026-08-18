@@ -25,6 +25,7 @@ const sidebarSections: {
       { href: "/docs/packages/cli", label: "@thexjs/cli" },
       { href: "/docs/packages/env", label: "@thexjs/env" },
       { href: "/docs/packages/adapter-vercel", label: "@thexjs/adapter-vercel" },
+      { href: "/docs/packages/hooks", label: "@thexjs/hooks" },
     ],
   },
   {

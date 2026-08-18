@@ -78,6 +78,12 @@ const packageSections = [
     desc: "Zero-config Vercel Build Output API v3 adapter for serverless deployment.",
     href: "/docs/packages/adapter-vercel",
   },
+  {
+    icon: MousePointerClick,
+    title: "@thexjs/hooks",
+    desc: "SSR-safe React hooks: debounce, media query, localStorage, server actions, forms.",
+    href: "/docs/packages/hooks",
+  },
 ];
 
 const guideSections = [
