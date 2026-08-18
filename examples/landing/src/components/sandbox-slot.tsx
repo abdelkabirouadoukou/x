@@ -30,8 +30,8 @@ export default function SandboxSlot() {
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5 sm:px-8">
         <p className="max-w-[54ch] text-[14.5px] leading-relaxed text-fg-muted">
-          The online sandbox lands here — a starter window where you can run a real X project without
-          installing anything.
+          The online sandbox lands here — a starter window where you can run a real X project
+          without installing anything.
         </p>
         <a href="/docs/getting-started" className="al-link text-[14px]">
           Scaffold locally <span className="al-arrow">→</span>

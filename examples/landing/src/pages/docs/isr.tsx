@@ -7,9 +7,7 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="label">
-        Incremental Static Regeneration
-      </p>
+      <p className="label">Incremental Static Regeneration</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">ISR</h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Static pages that stay fresh: prerender once, serve from cache, and revalidate on a timer.

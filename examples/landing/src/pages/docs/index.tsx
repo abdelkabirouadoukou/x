@@ -188,7 +188,8 @@ function SectionGrid({ sections }: { sections: typeof startSections }) {
           <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-fg">{s.title}</h3>
           <p className="mt-1 text-[13.5px] leading-relaxed text-fg-muted">{s.desc}</p>
           <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-fg opacity-100">
-            Get started <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            Get started{" "}
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>
         </a>
       ))}
@@ -212,19 +213,13 @@ export default function DocsHubPage() {
         </p>
       </div>
 
-      <h2 className="doc-label mb-4">
-        Start here
-      </h2>
+      <h2 className="doc-label mb-4">Start here</h2>
       <SectionGrid sections={startSections} />
 
-      <h2 className="doc-label mb-4 mt-12">
-        Packages
-      </h2>
+      <h2 className="doc-label mb-4 mt-12">Packages</h2>
       <SectionGrid sections={packageSections} />
 
-      <h2 className="doc-label mb-4 mt-12">
-        Guides
-      </h2>
+      <h2 className="doc-label mb-4 mt-12">Guides</h2>
       <SectionGrid sections={guideSections} />
     </div>
   );

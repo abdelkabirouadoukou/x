@@ -7,10 +7,10 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="label">
-        Server Functions
-      </p>
-      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Server functions</h1>
+      <p className="label">Server Functions</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        Server functions
+      </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Call server-side functions from the browser without writing REST endpoints. Server functions
         live in <span className="text-foreground">src/actions/</span>. Import one into a client

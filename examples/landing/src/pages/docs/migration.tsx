@@ -6,9 +6,7 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="label">
-        Migration Guide
-      </p>
+      <p className="label">Migration Guide</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
         Migrate an existing app to X
       </h1>

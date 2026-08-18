@@ -8,7 +8,9 @@ export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="label">Islands</p>
-      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Islands architecture</h1>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        Islands architecture
+      </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         The server renders your full page as HTML, then only the pieces you mark as islands hydrate
         in the browser. Everything else ships zero JavaScript.

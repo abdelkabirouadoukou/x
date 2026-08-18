@@ -122,7 +122,10 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
       </div>
 
       <aside className="hidden 2xl:block 2xl:w-56 2xl:shrink-0">
-        <nav id="on-this-page" className="sticky top-[calc(var(--header-h)+24px)] border-l border-line pl-5 text-[13px]" />
+        <nav
+          id="on-this-page"
+          className="sticky top-[calc(var(--header-h)+24px)] border-l border-line pl-5 text-[13px]"
+        />
       </aside>
 
       <script

@@ -19,7 +19,9 @@ export default function DocPage(_props: RouteProps) {
       <CodeBlock label="terminal" lang="bash" code="bun add @thexjs/auth" />
 
       <h2 className="text-xl">Quick start</h2>
-      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">Define your providers and session store once:</p>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Define your providers and session store once:
+      </p>
       <CodeBlock
         label="lib/auth.ts"
         code={`import { defineAuth, createSQLiteSessionStore, hashPassword, verifyPassword } from "@thexjs/auth";

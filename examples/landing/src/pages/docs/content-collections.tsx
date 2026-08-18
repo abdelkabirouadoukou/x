@@ -7,10 +7,10 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="label">
-        Content Collections
-      </p>
-      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Content collections</h1>
+      <p className="label">Content Collections</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        Content collections
+      </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Write content in Markdown with frontmatter, and x automatically turns it into pages. Perfect
         for blogs, documentation, and any content-driven site.

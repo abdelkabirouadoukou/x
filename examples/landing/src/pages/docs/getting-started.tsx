@@ -7,10 +7,10 @@ export const mode = "static";
 export default function DocPage(_props: RouteProps) {
   return (
     <div>
-      <p className="label">
-        Getting Started
-      </p>
-      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Get started with X</h1>
+      <p className="label">Getting Started</p>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">
+        Get started with X
+      </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Create a new X project, learn the project structure, and build your first page.
       </p>
@@ -57,7 +57,9 @@ EOF`}
       />
 
       <h2 className="text-xl">Project structure</h2>
-      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">A typical X project looks like this:</p>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        A typical X project looks like this:
+      </p>
       <CodeBlock
         label="file tree"
         lang="tree"
@@ -98,7 +100,9 @@ EOF`}
       />
 
       <h2 className="text-xl">Running the dev server</h2>
-      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">Start the development server with hot reload:</p>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Start the development server with hot reload:
+      </p>
       <CodeBlock
         label="terminal"
         lang="bash"
