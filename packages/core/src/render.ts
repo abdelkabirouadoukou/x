@@ -19,6 +19,13 @@ export interface RenderOptions {
    * reporter/metrics instead of shipping a partial page silently.
    */
   onRenderError?: (error: unknown) => void;
+  /**
+   * Single-render island resolution. When set, the page renders exactly once
+   * and this callback is awaited to resolve the island script list from the
+   * islands that pass actually produced (the caller holds the registry). Used
+   * to eliminate the two-pass discovery render.
+   */
+  resolveIslandScripts?: () => Promise<string[]>;
 }
 
 export interface LoaderArgs {
@@ -77,40 +84,42 @@ function htmlShell(
 }
 
 export function renderPage(node: ReactNode, options: RenderOptions = {}): string {
-  const { islandScripts, islandProps } = options;
-  const title = options.title ?? "x app";
-
   const body = renderToString(node);
-  const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
-  const propsScript = islandProps
-    ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
-    : "";
-  const islandScriptsHtml = islandScripts
-    ?.map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
-    .join("\n    ");
-
-  return htmlShell(
-    title,
-    buildHeadExtras(options.stylesheet),
-    propsScript,
-    islandScriptsHtml,
-    body,
-    buildNavScriptTag(options.clientNav),
-    buildLiveReloadTag(options.liveReload),
-  );
+  return buildShellHtml(body, options, options.islandScripts ?? []);
 }
 
 export function renderStaticPage(node: ReactNode, options: RenderOptions = {}): string {
-  const { islandScripts, islandProps } = options;
-  const title = options.title ?? "x app";
-
   const body = renderToStaticMarkup(node);
+  return buildShellHtml(body, options, options.islandScripts ?? []);
+}
+
+/**
+ * Single-render page render: renders the tree exactly once, then resolves the
+ * island script set from the islands that pass actually produced (via
+ * `options.resolveIslandScripts`). Replaces the old two-pass discovery render
+ * so non-deterministic components can't diverge between the discovery pass and
+ * the real one.
+ */
+export async function renderPageOnce(
+  node: ReactNode,
+  options: RenderOptions = {},
+): Promise<string> {
+  const body = renderToString(node);
+  const scripts = options.resolveIslandScripts
+    ? await options.resolveIslandScripts()
+    : (options.islandScripts ?? []);
+  return buildShellHtml(body, options, scripts);
+}
+
+function buildShellHtml(body: string, options: RenderOptions, islandScripts: string[]): string {
+  const { islandProps } = options;
+  const title = options.title ?? "x app";
   const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
   const propsScript = islandProps
     ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
   const islandScriptsHtml = islandScripts
-    ?.map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
+    .map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
     .join("\n    ");
 
   return htmlShell(
@@ -127,8 +136,12 @@ export function renderStaticPage(node: ReactNode, options: RenderOptions = {}): 
 export interface RenderStreamingOptions {
   /** Bytes already encoded ahead of the source stream's first chunk. */
   header: Uint8Array;
-  /** Bytes to enqueue once the source stream reports done. */
-  footer: Uint8Array;
+  /**
+   * Bytes to enqueue once the source stream reports done — or a function that
+   * produces them lazily (e.g. the island script list is only known after the
+   * render completed). Called at most once.
+   */
+  footer: Uint8Array | (() => Promise<Uint8Array>);
   /**
    * Called once when the source stream fails mid-flight. Consumers use this
    * to report the failure (error reporter, metrics) instead of silently
@@ -172,9 +185,10 @@ export function pumpStreamingResponse(
       const { done, value } = await reader.read();
       if (done) {
         if (!ended) {
+          const footerBytes = typeof footer === "function" ? await footer() : footer;
           ended = true;
           try {
-            controller.enqueue(footer);
+            controller.enqueue(footerBytes);
           } catch {
             // Sink already errored/closed; nothing left to flush.
           }
@@ -226,13 +240,9 @@ export async function renderStreamingPage(
   const propsScript = islandProps
     ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
     : "";
-  const islandScriptsHtml = islandScripts
-    ?.map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
-    .join("\n    ");
   const navScriptTag = buildNavScriptTag(options.clientNav);
   const liveReloadTag = buildLiveReloadTag(options.liveReload);
   const headExtras = buildHeadExtras(options.stylesheet);
-  const rootFooter = `${propsScript ? `    ${propsScript}\n` : ""}${islandScriptsHtml ? `    ${islandScriptsHtml}\n` : ""}`;
   const footer = `</div>${navScriptTag}\n${liveReloadTag}  </body>\n</html>`;
 
   const reactStream = await renderToReadableStream(node, {
@@ -245,7 +255,17 @@ export async function renderStreamingPage(
 
   return pumpStreamingResponse(reactStream, {
     header: encoder.encode(header),
-    footer: encoder.encode(`${rootFooter}\n  ${footer}`),
+    // Lazy footer: the island script list may only be knowable after the
+    // render completed (single-render mode), so resolve it right before the
+    // closing tags are emitted rather than up front.
+    footer: async () => {
+      const scripts = islandScripts ?? (await options.resolveIslandScripts?.()) ?? [];
+      const islandScriptsHtml = scripts
+        .map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
+        .join("\n    ");
+      const rootFooter = `${propsScript ? `    ${propsScript}\n` : ""}${islandScriptsHtml ? `    ${islandScriptsHtml}\n` : ""}`;
+      return encoder.encode(`${rootFooter}\n  ${footer}`);
+    },
     ...(options.onRenderError ? { onRenderError: options.onRenderError } : {}),
   });
 }
