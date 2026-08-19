@@ -4,7 +4,9 @@ export type {
   HandleRequestOptions,
   ResolvedAuthConfig,
 } from "./auth";
-export { defineAuth, OAUTH_STATE_COOKIE, SESSION_COOKIE } from "./auth";
+export { defineAuth, OAUTH_PKCE_COOKIE, OAUTH_STATE_COOKIE, SESSION_COOKIE } from "./auth";
+export type { BruteForceOptions } from "./brute-force";
+export { createBruteForceGuard } from "./brute-force";
 export { hashPassword, verifyPassword } from "./password";
 export type {
   CredentialsProvider,

@@ -99,11 +99,19 @@ export interface OAuthTokens {
   refresh_token?: string;
 }
 
-/** Builds the authorization URL for a sign-in redirect. */
+/**
+ * Builds the authorization URL for a sign-in redirect.
+ *
+ * Pass `codeChallenge` (the S256 challenge derived from a verifier you also
+ * kept) to enable PKCE: the provider binds the returned code to that
+ * challenge, and the token exchange must present the matching verifier. This
+ * protects the code even if it is intercepted after the redirect.
+ */
 export function buildAuthorizationUrl(
   provider: OAuth2ProviderConfig,
   baseUrl: string,
   state: string,
+  codeChallenge?: string,
 ): string {
   const url = new URL(provider.authorizationUrl);
   const params = provider.authorizationParams ?? { scope: "openid profile email" };
@@ -111,15 +119,25 @@ export function buildAuthorizationUrl(
   url.searchParams.set("redirect_uri", `${baseUrl}/api/auth/callback/${provider.id}`);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", state);
+  if (codeChallenge) {
+    url.searchParams.set("code_challenge", codeChallenge);
+    url.searchParams.set("code_challenge_method", "S256");
+  }
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   return url.toString();
 }
 
-/** Exchanges an authorization code for access tokens. */
+/**
+ * Exchanges an authorization code for access tokens.
+ *
+ * Pass `codeVerifier` when the authorization request used PKCE: the provider
+ * requires the verifier that matches the original `code_challenge`.
+ */
 export async function exchangeCode(
   provider: OAuth2ProviderConfig,
   baseUrl: string,
   code: string,
+  codeVerifier?: string,
 ): Promise<OAuthTokens> {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
@@ -129,6 +147,7 @@ export async function exchangeCode(
     client_secret: provider.clientSecret,
     ...provider.tokenParams,
   });
+  if (codeVerifier) body.set("code_verifier", codeVerifier);
   const res = await fetch(provider.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
