@@ -322,10 +322,11 @@ describe("OAuth2 (GitHub) provider", () => {
     const signIn = await auth.handleRequest(new Request(`${BASE_URL}/api/auth/signin/github`));
     const state = new URL(signIn.headers.get("location") as string).searchParams.get("state");
     const stateCookie = extractCookie(signIn, "x_oauth_state") as string;
+    const pkceCookie = extractCookie(signIn, "x_oauth_pkce") as string;
 
     const callback = await auth.handleRequest(
       new Request(`${BASE_URL}/api/auth/callback/github?code=code-1&state=${state}`, {
-        headers: { cookie: `x_oauth_state=${stateCookie}` },
+        headers: { cookie: `x_oauth_state=${stateCookie}; x_oauth_pkce=${pkceCookie}` },
       }),
     );
     expect(callback.status).toBe(302);

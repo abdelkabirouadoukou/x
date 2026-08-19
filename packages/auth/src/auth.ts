@@ -1,6 +1,7 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { MiddlewareFn } from "@thexjs/core";
 import { checkCsrf } from "@thexjs/core";
+import { type BruteForceOptions, createBruteForceGuard } from "./brute-force";
 import { readCookie } from "./cookies";
 import {
   buildAuthorizationUrl,
@@ -25,6 +26,7 @@ import type { AuthUser, Session } from "./types";
 
 export const SESSION_COOKIE = "x_session";
 export const OAUTH_STATE_COOKIE = "x_oauth_state";
+export const OAUTH_PKCE_COOKIE = "x_oauth_pkce";
 
 const OAUTH_STATE_MAX_AGE = 300; // seconds
 
@@ -37,10 +39,25 @@ export interface AuthConfig {
   store: SessionStore;
   /**
    * A secret used to HMAC session tokens at rest and OAuth state challenges.
-   * In production this must be a stable value; if omitted, a random dev
-   * secret is generated and a warning is printed.
+   * In production this must be a stable value; if omitted in production,
+   * `defineAuth` throws rather than silently running with a per-process
+   * ephemeral secret that invalidates every session on restart.
    */
   secret?: string;
+  /**
+   * Force the `Secure` flag on session/state cookies regardless of
+   * `NODE_ENV`. Handy when developing against an HTTPS tunnel or behind a
+   * TLS-terminating proxy. Default: `true` only in `NODE_ENV === "production"`.
+   */
+  forceSecureCookie?: boolean;
+  /**
+   * Per-account brute-force protection for the credentials provider. Buckets
+   * are keyed by `(client IP, submitted identifier)`, so guessing one account
+   * from many IPs is still throttled, while other accounts from the same IP
+   * are unaffected. In-memory (single-process). Default: 5 failed attempts,
+   * 15-minute base window with exponential backoff.
+   */
+  loginBruteForce?: BruteForceOptions;
   /** Session lifetime in seconds. Default: 7 days. */
   sessionMaxAge?: number;
   /** Where to redirect the browser after a successful sign-in. Default: `/`. */
@@ -92,6 +109,13 @@ export interface Auth {
   /** Clears the session cookie from `res` and revokes the session, if any. */
   clearSessionCookie(res: Response, req?: Request): Promise<Response>;
   /**
+   * Revokes every active session belonging to `userId`. Use this for
+   * "log out everywhere", password changes, or compromised-account response:
+   * the change takes effect on the next request of each affected session
+   * because sessions are looked up per-request and no longer exist in the store.
+   */
+  revokeAllForUser(userId: string): Promise<void>;
+  /**
    * Route guard middleware: requires a signed-in session for the route.
    * Returns a core `MiddlewareFn` for `export const middleware` / `export const auth`.
    */
@@ -116,14 +140,14 @@ export interface Auth {
 
 /** Resolves `config` against defaults and returns the auth helper. */
 export function defineAuth(config: AuthConfig): Auth {
-  let secret = config.secret;
-  if (!secret) {
-    secret = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    console.warn(
-      "[@thexjs/auth] No `secret` configured — generated an ephemeral one. " +
-        "Set a stable `secret` in production so sessions survive restarts.",
+  if (!config.secret && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "[@thexjs/auth] A stable `secret` must be configured in production. " +
+        "Without one, sessions are HMAC'd with a random per-process secret and " +
+        "every restart invalidates all sessions.",
     );
   }
+  const secret = config.secret ?? randomBytes(32).toString("hex");
   const resolved: ResolvedAuthConfig = {
     providers: config.providers,
     store: config.store,
@@ -157,11 +181,24 @@ export function defineAuth(config: AuthConfig): Auth {
     return expected.length === actual.length && timingSafeEqual(expected, actual);
   };
 
-  const createSessionToken = (): string => {
-    return crypto.randomUUID().replace(/-/g, "") + Math.random().toString(36).slice(2);
+  // CSPRNG for session/state tokens: `randomUUID` is entropy-enough, but the
+  // original `Math.random()` suffix was predictable. 32 bytes of CSPRNG hex
+  // gives 256 bits of guessing resistance for the bearer session cookie.
+  const createSessionToken = (): string => randomBytes(32).toString("hex");
+
+  // PKCE: S256 challenge/verifier pair for the authorization-code flow.
+  // The verifier never leaves the browser (stored only in the state cookie),
+  // so an intercepted authorization code is useless without it.
+  const createPkcePair = (): { verifier: string; challenge: string } => {
+    const verifier = randomBytes(32).toString("base64url");
+    const challenge = createHash("sha256").update(verifier).digest("base64url");
+    return { verifier, challenge };
   };
 
-  const isSecure = (): boolean => process.env.NODE_ENV === "production";
+  const isSecure = (): boolean =>
+    config.forceSecureCookie === true || process.env.NODE_ENV === "production";
+
+  const bruteForce = createBruteForceGuard(config.loginBruteForce);
 
   const cookieAttrs = (maxAge: number): string =>
     `HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${isSecure() ? "; Secure" : ""}`;
@@ -228,13 +265,15 @@ export function defineAuth(config: AuthConfig): Auth {
   ): Promise<Response> => {
     const stateToken = createSessionToken();
     const state = await hash(stateToken);
+    const pkce = createPkcePair();
     const res = new Response(null, {
       status: 302,
-      headers: { Location: buildAuthorizationUrl(provider, baseUrl, state) },
+      headers: { Location: buildAuthorizationUrl(provider, baseUrl, state, pkce.challenge) },
     });
+    withSetCookie(res, `${OAUTH_STATE_COOKIE}=${stateToken}; ${cookieAttrs(OAUTH_STATE_MAX_AGE)}`);
     return withSetCookie(
       res,
-      `${OAUTH_STATE_COOKIE}=${stateToken}; ${cookieAttrs(OAUTH_STATE_MAX_AGE)}`,
+      `${OAUTH_PKCE_COOKIE}=${pkce.verifier}; ${cookieAttrs(OAUTH_STATE_MAX_AGE)}`,
     );
   };
 
@@ -253,7 +292,13 @@ export function defineAuth(config: AuthConfig): Auth {
       return new Response("Invalid state", { status: 400 });
     }
 
-    const tokens = await exchangeCode(provider, baseUrl, code);
+    // PKCE: the verifier lives in its own cookie from the sign-in step. If it
+    // is missing (no sign-in happened, or the cookie was dropped), fail closed
+    // rather than exchanging the code without the proof-of-possession.
+    const pkceVerifier = readCookie(req, OAUTH_PKCE_COOKIE);
+    if (!pkceVerifier) return new Response("Missing PKCE verifier", { status: 400 });
+
+    const tokens = await exchangeCode(provider, baseUrl, code, pkceVerifier);
     const userInfo = await fetchUserInfo(provider, tokens.access_token);
     const user = provider.profile(userInfo);
     if (!user?.id) return new Response("Provider returned no user", { status: 401 });
@@ -271,8 +316,27 @@ export function defineAuth(config: AuthConfig): Auth {
     const params: Record<string, string> = {};
     for (const [key, value] of form.entries()) params[key] = String(value);
 
+    // Key the lockout on whatever the form calls the account identifier, so
+    // username/password forms and email/password forms both lock the account
+    // rather than the IP. Bucket is `(client IP, identifier)`.
+    const identifier = params.username ?? params.email ?? params.user ?? params.identifier ?? "";
+    const guardKey = bruteForce.keyFor(req, identifier);
+    const status = bruteForce.status(guardKey);
+    if (!status.ok) {
+      return new Response("Too many sign-in attempts, try again later", {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.max(1, Math.ceil((status.resetAt - Date.now()) / 1000))),
+        },
+      });
+    }
+
     const user = await provider.authorize(params, { request: req });
-    if (!user?.id) return new Response("Invalid credentials", { status: 401 });
+    if (!user?.id) {
+      bruteForce.recordFailure(guardKey);
+      return new Response("Invalid credentials", { status: 401 });
+    }
+    bruteForce.reset(guardKey);
     return establishSession(user, provider.id);
   };
 
@@ -367,6 +431,7 @@ export function defineAuth(config: AuthConfig): Auth {
     getSession,
     setSessionCookie,
     clearSessionCookie,
+    revokeAllForUser: (userId) => resolved.store.revokeAllForUser(userId),
     requireAuth(options) {
       return toMiddleware(getSession, requireAuthGuard(), options);
     },

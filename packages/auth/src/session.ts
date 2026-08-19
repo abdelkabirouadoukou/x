@@ -17,6 +17,11 @@ export interface SessionStore {
   create(session: Session): Promise<void>;
   find(token: string): Promise<Session | null>;
   revoke(token: string): Promise<void>;
+  /**
+   * Revokes every session belonging to `userId`. Used by "log out everywhere"
+   * and password-change flows; implementations delete all rows for the user.
+   */
+  revokeAllForUser(userId: string): Promise<void>;
 }
 
 export interface SQLiteSessionStoreOptions {
@@ -98,6 +103,9 @@ export function createSQLiteSessionStore(options: SQLiteSessionStoreOptions = {}
     async revoke(token) {
       db.run("DELETE FROM x_sessions WHERE token = ?1", [token]);
     },
+    async revokeAllForUser(userId) {
+      db.run("DELETE FROM x_sessions WHERE user_id = ?1", [userId]);
+    },
   };
 }
 
@@ -137,6 +145,10 @@ export function createPostgresSessionStore(client: PostgresClient): SessionStore
     async revoke(token) {
       await ensure();
       await client.unsafe("DELETE FROM x_sessions WHERE token = $1", [token]);
+    },
+    async revokeAllForUser(userId) {
+      await ensure();
+      await client.unsafe("DELETE FROM x_sessions WHERE user_id = $1", [userId]);
     },
   };
 }
