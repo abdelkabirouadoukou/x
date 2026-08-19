@@ -129,7 +129,18 @@ export function getServerFunctionHandler(
         const result = await fn(...args);
         return Response.json(result);
       } catch (err) {
-        reportException(err, { route: concretePath, phase: "action" });
+        // Never echo raw error text to clients in production: a driver error
+        // can embed schema details, connection strings, or secrets. Instead,
+        // report the exception with an opaque id and return that id so the
+        // client can reference the incident while learning nothing about it.
+        const errorId = crypto.randomUUID().replace(/-/g, "");
+        reportException(err, { route: concretePath, phase: "action", errorId });
+        if (process.env.NODE_ENV === "production") {
+          return new Response(`Internal error (id: ${errorId})`, {
+            status: 500,
+            headers: { "x-x-error-id": errorId },
+          });
+        }
         const message = err instanceof Error ? err.message : "Internal error";
         return new Response(message, { status: 500 });
       }
