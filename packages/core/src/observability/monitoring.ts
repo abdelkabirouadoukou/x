@@ -10,6 +10,8 @@ export interface ErrorContext {
   route?: string;
   requestId?: string;
   phase: "ssr" | "action" | "api" | "loader";
+  /** Free-form discriminator, e.g. `hydration-mismatch`, for filtering. */
+  tag?: string;
 }
 
 export interface ErrorReporter {
