@@ -66,6 +66,20 @@ export default function Page({ loaderData }: any) {
 }
 `,
   );
+  isrTouch(
+    "search.tsx",
+    `import { createElement } from "react";
+export const mode = "static";
+export const revalidate = 3600;
+export async function loader({ params, request }: any) {
+  const q = new URL(request.url).searchParams.get("q") ?? "";
+  return { q };
+}
+export default function Page({ loaderData }: any) {
+  return createElement("h1", null, "Search ISR: " + loaderData.q);
+}
+`,
+  );
 });
 
 afterAll(() => {
@@ -332,7 +346,7 @@ describe("ISR revalidation", () => {
       }),
     );
     expect(revalRes.status).toBe(200);
-    expect(await revalRes.text()).toBe("Revalidated: /isr-static");
+    expect(await revalRes.text()).toBe("Revalidated: /isr-static (1 cached variant(s))");
 
     const resMiss = await app.fetch(new Request("http://localhost/isr-static"));
     expect(resMiss.headers.get("X-Revalidated")).toBe("miss");
@@ -396,5 +410,68 @@ describe("ISR revalidation", () => {
     const html2 = await res2.text();
 
     expect(html1).toBe(html2);
+  });
+
+  test("query strings are part of the cache key — no cross-URL leakage", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    const a = await app.fetch(new Request("http://localhost/search?q=alpha"));
+    expect(a.headers.get("X-Revalidated")).toBe("miss");
+    expect(await a.text()).toContain("Search ISR: alpha");
+
+    // Same path, different query: must NOT serve the cached ?q=alpha HTML.
+    const b = await app.fetch(new Request("http://localhost/search?q=beta"));
+    expect(b.headers.get("X-Revalidated")).toBe("miss");
+    expect(await b.text()).toContain("Search ISR: beta");
+
+    // Each query variant is cached under its own key and re-served correctly.
+    const aHit = await app.fetch(new Request("http://localhost/search?q=alpha"));
+    expect(aHit.headers.get("X-Revalidated")).toBe("hit");
+    expect(await aHit.text()).toContain("Search ISR: alpha");
+
+    const bHit = await app.fetch(new Request("http://localhost/search?q=beta"));
+    expect(bHit.headers.get("X-Revalidated")).toBe("hit");
+    expect(await bHit.text()).toContain("Search ISR: beta");
+  });
+
+  test("revalidate by path purges every query variant of that path", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    await app.fetch(new Request("http://localhost/search?q=alpha"));
+    await app.fetch(new Request("http://localhost/search?q=beta"));
+
+    const revalRes = await app.fetch(
+      new Request("http://localhost/__x/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
+        body: JSON.stringify({ path: "/search" }),
+      }),
+    );
+    expect(revalRes.status).toBe(200);
+    expect(await revalRes.text()).toBe("Revalidated: /search (2 cached variant(s))");
+
+    const miss = await app.fetch(new Request("http://localhost/search?q=alpha"));
+    expect(miss.headers.get("X-Revalidated")).toBe("miss");
+  });
+
+  test("concurrent ISR misses render once (stampede dedup)", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () => app.fetch(new Request("http://localhost/isr-static"))),
+    );
+    for (const res of results) {
+      expect(res.status).toBe(200);
+      expect(await res.text()).toContain("ISR Static Page");
+    }
   });
 });
