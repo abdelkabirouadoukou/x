@@ -161,4 +161,33 @@ describe("global error boundary", () => {
     expect(res.status).toBe(400);
     expect(await res.text()).toContain("Invalid JSON body");
   });
+
+  test("a failing shared rate-limit store returns 500 and never takes down the server", async () => {
+    const a = await createApp({
+      pagesDir: PAGES_DIR,
+      apiDir: API_DIR,
+      development: false,
+      security: {
+        headers: false,
+        rateLimit: {
+          store: {
+            incr() {
+              return Promise.reject(new Error("redis unreachable"));
+            },
+          },
+        },
+      },
+      observability: { logging: false },
+    });
+
+    // The rate-limit check sits ahead of routing; a Redis outage must surface
+    // as a 500 for the page, not a process crash.
+    const res = await a.fetch(new Request("http://localhost/about"));
+    expect(res.status).toBe(500);
+
+    // The health check runs before the rate limiter, so the box still proves
+    // liveness — containment, not silence.
+    const health = await a.fetch(new Request("http://localhost/healthz"));
+    expect(health.status).toBe(200);
+  });
 });
