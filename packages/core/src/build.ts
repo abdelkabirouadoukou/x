@@ -386,6 +386,20 @@ function buildServerEntry(
     "}",
     'process.on("SIGTERM", () => shutdown("SIGTERM"));',
     'process.on("SIGINT", () => shutdown("SIGINT"));',
+    "",
+    "// Request-level errors are caught inside createApp's fetch boundary;",
+    "// anything that still escapes (a throw outside the request lifecycle,",
+    "// a rejected promise from a background sweep) is routed to the error",
+    "// reporter so the box reports instead of dying.",
+    'const { reportException } = await import("@thexjs/core");',
+    'process.on("uncaughtException", (err) => {',
+    '  reportException(err, { phase: "api" });',
+    '  console.error("[x] uncaught exception:", err);',
+    "});",
+    'process.on("unhandledRejection", (reason) => {',
+    '  reportException(reason, { phase: "api" });',
+    '  console.error("[x] unhandled rejection:", reason);',
+    "});",
   );
   return lines.join("\n");
 }

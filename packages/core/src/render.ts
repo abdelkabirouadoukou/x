@@ -154,20 +154,31 @@ export async function renderStreamingPage(
         try {
           const { done, value } = await reader.read();
           if (done) {
-            controller.enqueue(encoder.encode(`${rootFooter}\n  ${footer}`));
-            controller.close();
+            try {
+              controller.enqueue(encoder.encode(`${rootFooter}\n  ${footer}`));
+              controller.close();
+            } catch {
+              // Consumer already closed the stream (abort/timeout) — nothing
+              // left to flush, and the disconnect must not take the process
+              // down or spam uncaught exceptions.
+            }
             return;
           }
           controller.enqueue(value);
           await pump();
         } catch (err) {
           console.error("[x] stream read error:", err);
-          controller.enqueue(
-            encoder.encode(
-              `${rootFooter}<div style="color:red;padding:1em;margin:1rem">Render error: ${err instanceof Error ? err.message : "Unknown"}</div>\n  ${footer}`,
-            ),
-          );
-          controller.close();
+          try {
+            controller.enqueue(
+              encoder.encode(
+                `${rootFooter}<div style="color:red;padding:1em;margin:1rem">Render error: ${err instanceof Error ? err.message : "Unknown"}</div>\n  ${footer}`,
+              ),
+            );
+            controller.close();
+          } catch {
+            // Controller already closed — the disconnected consumer doesn't
+            // care about the error markup.
+          }
         }
       }
       await pump();

@@ -12,7 +12,12 @@ import DefaultNotFound from "./not-found";
 import { createHealthCheckHandler, type HealthCheckOptions } from "./observability/health";
 import { withRequestLogging } from "./observability/logger";
 import { type MetricsReporter, withRequestMetrics } from "./observability/metrics";
-import { type ErrorReporter, reportException, setErrorReporter } from "./observability/monitoring";
+import {
+  type ErrorContext,
+  type ErrorReporter,
+  reportException,
+  setErrorReporter,
+} from "./observability/monitoring";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderStreamingPage } from "./render";
 import {
@@ -133,6 +138,8 @@ export interface AppServeOptions {
   development: boolean;
   port: number;
   fetch: (req: Request) => Response | Promise<Response>;
+  /** Last-resort error boundary: called when the fetch handler throws. */
+  error?: (error: Error) => Response;
 }
 
 export interface RevalidateOptions {
@@ -790,6 +797,35 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
   await buildHandlers();
 
+  /**
+   * Top-of-fetch error boundary. Every exception that escapes a route-level
+   * boundary in `devFetchInner`/`prodFetchInner` lands here: it is reported to
+   * the configured error reporter and/or metrics, and the request gets a clean
+   * 500 instead of taking down the whole Bun process.
+   */
+  async function guardFetchErrors(
+    inner: typeof prodFetchInner,
+    req: Request,
+    server?: import("./security/rate-limit").RateLimitServer,
+  ): Promise<Response> {
+    try {
+      return await inner(req, server);
+    } catch (error) {
+      const path = new URL(req.url).pathname;
+      const phase: ErrorContext["phase"] = path.startsWith("/__x/actions/")
+        ? "action"
+        : path === "/__x/revalidate"
+          ? "api"
+          : "loader";
+      reportException(error, { phase, route: path });
+      const e = error instanceof Error ? error.message : String(error);
+      return new Response(
+        options.development ? `Internal Server Error: ${e}` : "Internal Server Error",
+        { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8" } },
+      );
+    }
+  }
+
   async function handleRevalidation(req: Request): Promise<Response | null> {
     if (new URL(req.url).pathname !== "/__x/revalidate") return null;
     if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
@@ -801,7 +837,12 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       return new Response(`Forbidden: ${csrfResult.reason}`, { status: 403 });
     }
 
-    const body = (await req.json()) as { path?: string };
+    let body: { path?: string };
+    try {
+      body = (await req.json()) as { path?: string };
+    } catch {
+      return new Response("Invalid JSON body", { status: 400 });
+    }
     if (body.path) {
       staticCache.delete(body.path);
       return new Response(`Revalidated: ${body.path}`);
@@ -983,7 +1024,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const devFetchHardened = async (
       req: Request,
       server?: import("./security/rate-limit").RateLimitServer,
-    ) => withResponseHardening(await devFetchInner(req, server));
+    ) => withResponseHardening(await guardFetchErrors(devFetchInner, req, server));
     const devFetchBase = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
     const devFetch = metricsReporter
       ? withRequestMetrics(metricsReporter, devFetchBase)
@@ -994,6 +1035,14 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       development: true,
       port: options.port ?? 3000,
       fetch: devFetch,
+      // Last-resort boundary: `guardFetchErrors` catches exceptions raised
+      // inside routing, but anything thrown by the request-stack wrappers
+      // (logging/metrics/hardening) or by Bun itself still reaches the
+      // process. Returning a 500 here keeps the server up.
+      error: (error: Error) => {
+        reportException(error, { phase: "api" });
+        return new Response("Internal Server Error", { status: 500 });
+      },
     };
   }
 
@@ -1055,7 +1104,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   const prodFetchHardened = async (
     req: Request,
     server?: import("./security/rate-limit").RateLimitServer,
-  ) => withResponseHardening(await prodFetchInner(req, server));
+  ) => withResponseHardening(await guardFetchErrors(prodFetchInner, req, server));
   const prodFetchBase = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
   const prodFetch = metricsReporter
     ? withRequestMetrics(metricsReporter, prodFetchBase)
@@ -1066,5 +1115,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     development: false,
     port: options.port ?? 3000,
     fetch: prodFetch,
+    error: (error: Error) => {
+      reportException(error, { phase: "api" });
+      return new Response("Internal Server Error", { status: 500 });
+    },
   };
 }
