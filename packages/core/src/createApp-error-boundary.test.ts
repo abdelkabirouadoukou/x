@@ -78,9 +78,12 @@ describe("global error boundary", () => {
     expect(text).toContain("Internal Server Error");
 
     expect(captured.length).toBe(1);
-    expect((captured[0]!.error as Error).message).toBe("loader exploded");
-    expect((captured[0]!.context as { phase: string }).phase).toBe("loader");
-    expect((captured[0]!.context as { route: string }).route).toBe("/boom");
+    expect(captured[0]).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ message: "loader exploded" }),
+        context: expect.objectContaining({ phase: "loader", route: "/boom" }),
+      }),
+    );
   });
 
   test("a throwing API handler returns 500", async () => {
@@ -98,8 +101,11 @@ describe("global error boundary", () => {
     expect(await res.text()).toMatch(/Internal server error/i);
 
     expect(captured.length).toBe(1);
-    expect((captured[0]?.context as { phase: string }).phase).toBe("api");
-    expect((captured[0]?.context as { route: string }).route).toBe("/api/boom");
+    expect(captured[0]).toEqual(
+      expect.objectContaining({
+        context: expect.objectContaining({ phase: "api", route: "/api/boom" }),
+      }),
+    );
   });
 
   test("server still serves healthy routes after an error", async () => {
