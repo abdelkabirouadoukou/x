@@ -1,5 +1,23 @@
 # @thexjs/core
 
+## 1.3.3
+
+### Patch Changes
+
+- 97d0f39: Add a global error boundary on the Bun serve path: createApp now exposes an `error` hook and guards the top of the fetch handler, so a thrown loader/API/handler error returns a clean 500 instead of taking down the process. Revalidation JSON body parsing is guarded (400 on malformed JSON), the streaming SSR pump tolerates a closed/aborted controller, and the generated production entry routes `uncaughtException`/`unhandledRejection` through the error reporter. Also closes a double-percent-encoding gap in the markdown link sanitizer: `isSafeLinkUrl` now decodes repeatedly (bounded) so double- and triple-encoded `javascript:` URLs are rejected like every other bypass.
+- 1a6524f: Make request/rebuild state truly request-scoped and prove it under load:
+  
+  - Island ids are generated from each request's own registry (`createIslandRegistry` now carries the id counter), so ids restart per request instead of growing forever on a shared module-level counter.
+  - `getServerFunctionHandler` iterates an immutable snapshot of the action registry, so a concurrent dev rebuild can no longer hand an in-flight request a half-populated `ACTION_ROUTES` array.
+  - New `concurrency.test.ts`: N parallel requests with distinct identities assert zero cross-request leakage of loader data, headers, and island ids.
+  - Documented the per-request state contract in the data-layer docs (no shared mutable module state; `AsyncLocalStorage` for cross-write request context).
+- 254f29b: Make the ISR cache key-safe, bounded, and stampede-proof:
+  
+  - Cache keys are now the full URL (pathname + query string), so `/search?q=alpha` and `/search?q=beta` on the same ISR route never serve each other's HTML.
+  - Cache is an `IsrCache` with a 500-entry LRU cap instead of an unbounded `Map`, evicting least-recently-used entries first.
+  - Concurrent misses for the same URL share one in-flight render (`getOrCompute`), so a stampede rebuilds the entry exactly once.
+  - Revalidate-by-path plumbs the new key scheme: it purges every query variant under a pathname, and a Response from a loader (e.g. redirect) is passed through without being cached.
+
 ## 1.3.2
 
 ### Patch Changes
