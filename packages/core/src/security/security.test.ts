@@ -63,6 +63,18 @@ describe("csrf: double-submit token", () => {
     expect(verifyCsrfToken(req).ok).toBe(false);
   });
 
+  test("rejects a mismatch even when the tokens share a long prefix", () => {
+    // Exercises the constant-time compare path: tokens that agree for many
+    // bytes but diverge near the end must still be rejected.
+    const token = generateCsrfToken();
+    const near = token.slice(0, -1) + (token.endsWith("a") ? "b" : "a");
+    const req = new Request("https://example.com/x", {
+      method: "POST",
+      headers: { cookie: `x_csrf_token=${token}`, "x-csrf-token": near },
+    });
+    expect(verifyCsrfToken(req).ok).toBe(false);
+  });
+
   test("accepts when cookie and header match", () => {
     const token = generateCsrfToken();
     const req = new Request("https://example.com/x", {

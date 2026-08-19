@@ -92,6 +92,22 @@ function readCookie(req: Request, name: string): string | null {
   return null;
 }
 
+/**
+ * Constant-time string comparison. Instead of `!==`, which bails on the first
+ * differing byte and leaks match position via timing, every byte of both
+ * inputs is XOR-accumulated and only the total tells them apart. Both tokens
+ * are fixed-width (64 hex chars), so a length check leaks nothing here.
+ */
+function tokensEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  if (aBytes.length !== bBytes.length) return false;
+  let diff = 0;
+  for (let i = 0; i < aBytes.length; i++) diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+  return diff === 0;
+}
+
 /** Double-submit check: the cookie value and the request header must match and be non-empty. */
 export function verifyCsrfToken(req: Request): CsrfResult {
   if (SAFE_METHODS.has(req.method)) return { ok: true };
@@ -100,7 +116,7 @@ export function verifyCsrfToken(req: Request): CsrfResult {
   if (!cookieToken || !headerToken) {
     return { ok: false, reason: `missing CSRF cookie or "${CSRF_HEADER_NAME}" header` };
   }
-  if (cookieToken !== headerToken) {
+  if (!tokensEqual(cookieToken, headerToken)) {
     return { ok: false, reason: "CSRF token mismatch" };
   }
   return { ok: true };
