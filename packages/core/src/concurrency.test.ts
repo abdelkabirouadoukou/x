@@ -115,7 +115,11 @@ describe("cross-request state isolation", () => {
           createElement(
             IslandProvider,
             { registry },
-            createElement(Island, { name: "one" }, createElement("button", null, "one")),
+            createElement(
+              Island,
+              { name: "one" },
+              createElement("button", { type: "button" }, "one"),
+            ),
           ),
         ),
         registry,
