@@ -124,13 +124,29 @@ function renderListBlock(block: string): string {
 const ALLOWED_LINK_SCHEMES = new Set(["http", "https", "mailto"]);
 const LINK_SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i;
 
-/** Percent-decodes a link URL for validation, tolerating malformed escapes. */
+/**
+ * Percent-decodes a link URL for validation, tolerating malformed escapes.
+ * Decoding runs repeatedly until the string stops changing (bounded): a
+ * URL encoded twice — `java%2573cript:alert(1)` → `java%73cript:alert(1)` —
+ * still yields its real scheme after the second pass, so the double- and
+ * triple-encoded `javascript:` bypasses are rejected like every other
+ * encoding trick this sanitizer already defends against.
+ */
 function decodeLinkUrl(url: string): string {
-  try {
-    return decodeURIComponent(url);
-  } catch {
-    return url;
+  let prev = url;
+  for (let i = 0; i < 5; i++) {
+    let next: string;
+    try {
+      next = decodeURIComponent(prev);
+    } catch {
+      // Malformed escape — give up decoding; the remaining literal `%`
+      // keeps any hidden scheme from parsing as a live scheme.
+      return prev;
+    }
+    if (next === prev) return next;
+    prev = next;
   }
+  return prev;
 }
 
 /**

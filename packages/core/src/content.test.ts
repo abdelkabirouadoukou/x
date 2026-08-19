@@ -197,6 +197,20 @@ describe("renderMarkdown link URL sanitization", () => {
     expect(html).toContain("run");
   });
 
+  test("rejects a double-encoded javascript: URL", () => {
+    const html = renderMarkdown("[run](java%2573cript:alert(1))");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+    expect(html).toContain("run");
+  });
+
+  test("rejects a triple-encoded javascript: URL", () => {
+    const html = renderMarkdown("[run](java%252573cript:alert(1))");
+    expect(html).not.toContain("<a");
+    expect(html).not.toContain("href");
+    expect(html).toContain("run");
+  });
+
   test("rejects a javascript: URL with a literal tab splitting the scheme", () => {
     const html = renderMarkdown("[run](java\tscript:alert%281%29)");
     expect(html).not.toContain("<a");
