@@ -71,6 +71,20 @@ export function registerServerFunctions(
   }
 }
 
+/**
+ * Snapshot of the action registry for one request. Returns a copy so a
+ * concurrent dev rebuild (which mutates `ACTION_ROUTES` in place) can never
+ * change the set of routes an in-flight request sees — no half-populated
+ * registry, no cross-request coupling.
+ */
+function snapshotActionRoutes(): ActionEntry[] {
+  return ACTION_ROUTES.map((entry) => ({
+    routePath: entry.routePath,
+    paramNames: entry.paramNames,
+    fns: new Map(entry.fns),
+  }));
+}
+
 export function getServerFunctionHandler(
   csrfOptions?: CsrfOptions,
 ): (req: Request) => Promise<Response | null> {
@@ -92,7 +106,7 @@ export function getServerFunctionHandler(
     if (!actionName) return null;
     const concretePath = `/${parts.join("/")}`;
 
-    for (const entry of ACTION_ROUTES) {
+    for (const entry of snapshotActionRoutes()) {
       const params = extractActionParams(entry.routePath, entry.paramNames, concretePath);
       if (params === null) continue;
 

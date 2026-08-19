@@ -7,23 +7,27 @@ export interface IslandEntry {
   id: string;
 }
 
-export function createIslandRegistry(): { entries: IslandEntry[] } {
-  return { entries: [] };
+export interface IslandRegistry {
+  entries: IslandEntry[];
+  /** Per-request id counter, so island ids never cross request boundaries. */
+  nextId: number;
 }
 
-const IslandContext = createContext<{ entries: IslandEntry[] } | null>(null);
+export function createIslandRegistry(): IslandRegistry {
+  return { entries: [], nextId: 0 };
+}
+
+const IslandContext = createContext<IslandRegistry | null>(null);
 
 export function IslandProvider({
   registry,
   children,
 }: {
-  registry: { entries: IslandEntry[] };
+  registry: IslandRegistry;
   children?: ReactNode;
 }) {
   return <IslandContext.Provider value={registry}>{children}</IslandContext.Provider>;
 }
-
-let islandCounter = 0;
 
 export function Island({
   name,
@@ -32,17 +36,20 @@ export function Island({
 }: {
   name: string;
   client?: IslandMode;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const registry = useContext(IslandContext);
-  const id = `x-island-${islandCounter++}`;
-
   if (registry) {
+    const id = `x-island-${registry.nextId++}`;
     registry.entries.push({ name, id });
+    return (
+      <div data-island={name} data-island-id={id} data-island-client={client}>
+        {children}
+      </div>
+    );
   }
-
   return (
-    <div data-island={name} data-island-id={id} data-island-client={client}>
+    <div data-island={name} data-island-id="x-island-0" data-island-client={client}>
       {children}
     </div>
   );
