@@ -337,6 +337,10 @@ signal you should pin versions (`^0.1.0` will still allow `0.1.x → 0.2.0`).
 - Docs: https://thexjs.vercel.app/docs
 - Repo: https://github.com/abdelkabirouadoukou/x
 - Security: [SECURITY.md](SECURITY.md)
+- Threat model: [THREAT_MODEL.md](THREAT_MODEL.md)
+- Data retention & deletion: [DATA_POLICIES.md](DATA_POLICIES.md)
+- Support & versioning: [SUPPORT.md](SUPPORT.md), [VERSIONING.md](VERSIONING.md)
+- Benchmarks & SLOs: [BENCHMARKS.md](BENCHMARKS.md)
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Install: `bun create thexjs-app@latest`
 

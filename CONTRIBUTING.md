@@ -140,6 +140,15 @@ scope) and add it as a repo secret named `NPM_TOKEN`.
 Packages are published with `"publishConfig": { "access": "public" }`; `bun
 install`'s postinstall builds them before publishing.
 
+### SBOM on every release
+
+The release workflow's `sbom` job generates a CycloneDX Software Bill of
+Materials covering `packages/*` and uploads it as an artifact of the same run
+(download under **Actions → run → Artifacts → sbom**). It runs after a
+successful `release` job, so an SBOM exists for every release cycle — security
+teams and buyers can plug it into their own scanners without asking. Nothing in
+`@thexjs/*` changes; this is a CI artifact only.
+
 ## Code of conduct
 
 Be respectful. This project follows the [Contributor Covenant][covenant]; see
