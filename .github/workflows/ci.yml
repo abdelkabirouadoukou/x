@@ -170,6 +170,10 @@ jobs:
           image-ref: thexjs:ci
           severity: HIGH,CRITICAL
           exit-code: "1"
+          # Block on CVEs that have an available fix but aren't applied; CVEs
+          # with no upstream fix yet (affected/fix_deferred) don't hold the
+          # pipeline forever. The Dockerfile patches base-image packages.
+          ignore-unfixed: "true"
 
   bench:
     name: Load test (SLO-gated)

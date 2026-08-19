@@ -31,6 +31,9 @@ RUN bun run typecheck
 RUN bun packages/cli/src/index.ts build --outDir ../../dist --cwd examples/basic
 FROM oven/bun:1 AS production
 WORKDIR /app
+# Patch the base image's OS packages so the production image ships with the
+# latest security fixes (the CVE gate scans the built image).
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 COPY --from=build --chown=bun:bun /app/dist ./dist
 ENV NODE_ENV=production
 USER bun
