@@ -98,7 +98,7 @@ async function detectOptions(): Promise<{ options: DetectedOptions; configPath: 
 async function cmdDev(): Promise<void> {
   const { options: opts } = await detectOptions();
   const corePath = Bun.resolveSync("@thexjs/core", projectDir);
-  const { createApp } = await import(corePath);
+  const { createApp, installProcessCrashHandlers } = await import(corePath);
   const { port: _port, ...dirs } = opts;
 
   // Auto-compile Tailwind if a source entry exists
@@ -128,6 +128,10 @@ async function cmdDev(): Promise<void> {
   }
 
   xInfo("dev server starting...");
+  // Report crashes outside the request lifecycle (module-eval throws, rejected
+  // background promises) through the error reporter instead of dying silently.
+  // The prod server gets the same handlers from the generated entry (build.ts).
+  installProcessCrashHandlers();
   const app = await createApp({ ...dirs, development: true });
   let port = opts.port;
   let server: ReturnType<typeof Bun.serve> | undefined;

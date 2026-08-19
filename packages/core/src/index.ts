@@ -27,6 +27,10 @@ export {
 } from "./middleware";
 export { default as DefaultNotFound } from "./not-found";
 export {
+  installProcessCrashHandlers,
+  type ProcessCrashHandlerOptions,
+} from "./observability/crash-handlers";
+export {
   createHealthCheckHandler,
   type HealthCheck,
   type HealthCheckOptions,
