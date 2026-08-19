@@ -137,4 +137,28 @@ describe("extractParams", () => {
     const result = extractParams("/about", [], "/about");
     expect(result).toEqual({});
   });
+
+  test("escapes regex metacharacters in static segments", () => {
+    // A literal `.` must match only the dot, not any character.
+    expect(extractParams("/v1.2", [], "/v1.2")).toEqual({});
+    expect(extractParams("/v1.2", [], "/v1x2")).toBeNull();
+  });
+
+  test.each(["+", "(", ")", "?", "|", "[", "]", "^", "$"])(
+    "escapes literal %s in a static segment",
+    (metachar) => {
+      const routePath = `/tools/1${metachar}2`;
+      expect(extractParams(routePath, [], routePath)).toEqual({});
+      expect(extractParams(routePath, [], `/tools/1x2`)).toBeNull();
+    },
+  );
+
+  test("still treats :param and * as dynamic tokens", () => {
+    expect(extractParams("/releases/v1.2/:id", ["id"], "/releases/v1.2/42")).toEqual({
+      id: "42",
+    });
+    expect(extractParams("/docs/1.0/*", ["slug"], "/docs/1.0/a/b")).toEqual({
+      slug: "a/b",
+    });
+  });
 });
