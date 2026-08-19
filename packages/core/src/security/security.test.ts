@@ -121,6 +121,22 @@ describe("security headers", () => {
     expect(hardened.headers.get("Content-Type")).toBe("text/plain");
     expect(hardened.headers.get("X-Frame-Options")).toBe("DENY");
   });
+
+  test("default CSP swaps 'unsafe-inline' for a per-response nonce when one is supplied", () => {
+    const scriptSrc = (h: Headers) =>
+      /script-src ([^;]+)/.exec(h.get("Content-Security-Policy") ?? "")?.[1];
+
+    expect(scriptSrc(buildSecurityHeaders({ cspNonce: "abc123" }))).toBe("'self' 'nonce-abc123'");
+    expect(scriptSrc(buildSecurityHeaders())).toBe("'self' 'unsafe-inline'");
+  });
+
+  test("a custom contentSecurityPolicy wins over any nonce", () => {
+    const headers = buildSecurityHeaders({
+      contentSecurityPolicy: "script-src 'self'",
+      cspNonce: "abc123",
+    });
+    expect(headers.get("Content-Security-Policy")).toBe("script-src 'self'");
+  });
 });
 
 describe("rate limiting", () => {

@@ -307,6 +307,32 @@ describe("ISR revalidation", () => {
     expect(res2.headers.get("X-Revalidated")).toBe("hit");
   });
 
+  test("ISR cache hits reuse the nonce baked into the cached HTML", async () => {
+    const app = await createApp({
+      routesDir: ISR_DIR,
+      development: true,
+    });
+
+    const miss = await app.fetch(new Request("http://localhost/isr-static"));
+    const missScriptSrc = /script-src ([^;]+)/.exec(
+      miss.headers.get("Content-Security-Policy") ?? "",
+    )?.[1];
+    expect(missScriptSrc).toContain("'nonce-");
+    expect(missScriptSrc).not.toContain("'unsafe-inline'");
+
+    const hit = await app.fetch(new Request("http://localhost/isr-static"));
+    expect(hit.headers.get("X-Revalidated")).toBe("hit");
+    const hitScriptSrc = /script-src ([^;]+)/.exec(
+      hit.headers.get("Content-Security-Policy") ?? "",
+    )?.[1];
+    expect(hitScriptSrc).toBe(missScriptSrc);
+
+    const hitHtml = await hit.text();
+    const nonce = /nonce="([^"]+)"/.exec(hitHtml)?.[1];
+    expect(nonce).toBeDefined();
+    expect(hitScriptSrc).toBe(`'self' 'nonce-${nonce}'`);
+  });
+
   test("dynamic revalidate routes are cached per-URL, not per-pattern", async () => {
     const app = await createApp({
       routesDir: ISR_DIR,

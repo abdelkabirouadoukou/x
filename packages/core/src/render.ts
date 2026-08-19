@@ -26,6 +26,13 @@ export interface RenderOptions {
    * to eliminate the two-pass discovery render.
    */
   resolveIslandScripts?: () => Promise<string[]>;
+  /**
+   * CSP nonce applied to every inline script the shell emits. Lets responses
+   * drop `'unsafe-inline'` from the default `script-src` (see
+   * `buildSecurityHeaders`) while keeping client navigation, live-reload and
+   * island hydration props working.
+   */
+  cspNonce?: string;
 }
 
 export interface LoaderArgs {
@@ -51,12 +58,18 @@ function buildHeadExtras(stylesheet: string | undefined): string {
   return stylesheet ? `\n    <link rel="stylesheet" href="${escapeHtml(stylesheet)}" />` : "";
 }
 
-function buildNavScriptTag(clientNav: boolean | undefined): string {
-  return clientNav === false ? "" : `\n    <script>${CLIENT_NAV_SCRIPT}</script>`;
+function nonceAttr(nonce: string | undefined): string {
+  return nonce ? ` nonce="${nonce}"` : "";
 }
 
-function buildLiveReloadTag(liveReload: boolean | undefined): string {
-  return liveReload ? `\n    <script>${LIVE_RELOAD_SCRIPT}</script>` : "";
+function buildNavScriptTag(clientNav: boolean | undefined, nonce: string | undefined): string {
+  return clientNav === false
+    ? ""
+    : `\n    <script${nonceAttr(nonce)}>${CLIENT_NAV_SCRIPT}</script>`;
+}
+
+function buildLiveReloadTag(liveReload: boolean | undefined, nonce: string | undefined): string {
+  return liveReload ? `\n    <script${nonceAttr(nonce)}>${LIVE_RELOAD_SCRIPT}</script>` : "";
 }
 
 function htmlShell(
@@ -114,9 +127,10 @@ export async function renderPageOnce(
 function buildShellHtml(body: string, options: RenderOptions, islandScripts: string[]): string {
   const { islandProps } = options;
   const title = options.title ?? "x app";
+  const nonce = options.cspNonce;
   const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
   const propsScript = islandProps
-    ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
+    ? `<script id="__X_ISLAND_PROPS" type="application/json"${nonceAttr(nonce)}>${propsJson}</script>`
     : "";
   const islandScriptsHtml = islandScripts
     .map((src) => `<script data-island-script src="${escapeHtml(src)}"></script>`)
@@ -128,8 +142,8 @@ function buildShellHtml(body: string, options: RenderOptions, islandScripts: str
     propsScript,
     islandScriptsHtml,
     body,
-    buildNavScriptTag(options.clientNav),
-    buildLiveReloadTag(options.liveReload),
+    buildNavScriptTag(options.clientNav, nonce),
+    buildLiveReloadTag(options.liveReload, nonce),
   );
 }
 
@@ -235,13 +249,14 @@ export async function renderStreamingPage(
 ): Promise<ReadableStream<Uint8Array>> {
   const { islandScripts, islandProps } = options;
   const title = escapeHtml(options.title ?? "x app");
+  const nonce = options.cspNonce;
 
   const propsJson = islandProps ? escapeJsonForScript(JSON.stringify(islandProps)) : "";
   const propsScript = islandProps
-    ? `<script id="__X_ISLAND_PROPS" type="application/json">${propsJson}</script>`
+    ? `<script id="__X_ISLAND_PROPS" type="application/json"${nonceAttr(nonce)}>${propsJson}</script>`
     : "";
-  const navScriptTag = buildNavScriptTag(options.clientNav);
-  const liveReloadTag = buildLiveReloadTag(options.liveReload);
+  const navScriptTag = buildNavScriptTag(options.clientNav, nonce);
+  const liveReloadTag = buildLiveReloadTag(options.liveReload, nonce);
   const headExtras = buildHeadExtras(options.stylesheet);
   const footer = `</div>${navScriptTag}\n${liveReloadTag}  </body>\n</html>`;
 
