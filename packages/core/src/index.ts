@@ -86,6 +86,11 @@ export {
   writeManifest,
 } from "./router";
 export {
+  DEFAULT_MAX_BODY_SIZE,
+  enforceRequestBodySize,
+  RequestBodyTooLargeError,
+} from "./security/body-size";
+export {
   type CsrfOptions,
   type CsrfResult,
   checkCsrf,

@@ -34,6 +34,11 @@ import {
   scanRoutes,
   writeManifest,
 } from "./router";
+import {
+  DEFAULT_MAX_BODY_SIZE,
+  enforceRequestBodySize,
+  RequestBodyTooLargeError,
+} from "./security/body-size";
 import { type CsrfOptions, checkCsrf } from "./security/csrf";
 import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
 import { IsrCache, isrCacheKey } from "./security/isr-cache";
@@ -100,6 +105,14 @@ export interface CreateAppOptions {
   };
   /** Remote-image proxy at /_x/image?url=... — see ImageProxyOptions. Unset/empty remoteHosts means the route 404s. */
   images?: ImageProxyOptions;
+  /**
+   * Maximum request body size in bytes, enforced ahead of route/action
+   * dispatch (including `/api/*` and `/__x/actions/*`). Requests whose
+   * `Content-Length` exceeds this are rejected with 413; chunked requests
+   * without a `Content-Length` are aborted mid-stream once the limit is
+   * crossed. Default: 1 MiB.
+   */
+  maxBodySize?: number;
   /**
    * Pre-resolved routes/actions for runtimes that can't scan the filesystem
    * or dynamically `import()` a `.tsx` file at request time (e.g. Vercel's
@@ -329,6 +342,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     options.security?.rateLimit === false
       ? null
       : createRateLimiter(options.security?.rateLimit ?? {});
+  const maxBodySize = options.maxBodySize ?? DEFAULT_MAX_BODY_SIZE;
   const securityHeadersOptions = options.security?.headers;
   const loggingEnabled = options.observability?.logging ?? true;
   const imageProxyHandler = createImageProxyHandler(options.images);
@@ -370,6 +384,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         }
         return new Response(`Method ${method} not allowed`, { status: 405 });
       } catch (err) {
+        if (err instanceof RequestBodyTooLargeError) {
+          return new Response("Payload too large", { status: 413 });
+        }
         reportException(err, { route: route.routePath, phase: "api" });
         metricsReporter?.incr("x_http_errors_total", 1, { phase: "api" });
         console.error("[x] API handler error:", err);
@@ -536,6 +553,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
         return baseHandler({ params, request: req });
       } catch (err) {
+        if (err instanceof RequestBodyTooLargeError) {
+          return new Response("Payload too large", { status: 413 });
+        }
         reportException(err, { route: route.routePath, phase: "ssr" });
         metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
         console.error("[x] route handler error:", err);
@@ -817,6 +837,26 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   await buildHandlers();
 
   /**
+   * Applies `maxBodySize` ahead of everything else in the request pipeline.
+   * `enforceRequestBodySize` either rejects the request immediately (413 when
+   * `Content-Length` is already over the budget) or hands back a request whose
+   * body stream aborts itself the moment it crosses the limit while being
+   * read. Because this wraps the innermost fetch, it covers `/api/*`,
+   * `/__x/actions/*`, revalidation, hydration-mismatch beacons, and any route
+   * middleware that reads the body — not just the framework's own parsers.
+   */
+  const withBodySizeLimit =
+    (inner: typeof prodFetchInner) =>
+    async (
+      req: Request,
+      server?: import("./security/rate-limit").RateLimitServer,
+    ): Promise<Response> => {
+      const guarded = enforceRequestBodySize(req, maxBodySize);
+      if (guarded instanceof Response) return guarded;
+      return inner(guarded, server);
+    };
+
+  /**
    * Top-of-fetch error boundary. Every exception that escapes a route-level
    * boundary in `devFetchInner`/`prodFetchInner` lands here: it is reported to
    * the configured error reporter and/or metrics, and the request gets a clean
@@ -859,7 +899,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     let body: { path?: string };
     try {
       body = (await req.json()) as { path?: string };
-    } catch {
+    } catch (err) {
+      if (err instanceof RequestBodyTooLargeError) {
+        return new Response("Payload too large", { status: 413 });
+      }
       return new Response("Invalid JSON body", { status: 400 });
     }
     if (body.path) {
@@ -894,7 +937,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const text = await req.text();
       if (text.length > 2048) return new Response("Payload too large", { status: 413 });
       body = JSON.parse(text) as { error?: string; island?: string; url?: string };
-    } catch {
+    } catch (err) {
+      if (err instanceof RequestBodyTooLargeError) {
+        return new Response("Payload too large", { status: 413 });
+      }
       return new Response("Invalid JSON body", { status: 400 });
     }
 
@@ -1085,7 +1131,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     const devFetchHardened = async (
       req: Request,
       server?: import("./security/rate-limit").RateLimitServer,
-    ) => withResponseHardening(await guardFetchErrors(devFetchInner, req, server));
+    ) =>
+      withResponseHardening(await guardFetchErrors(withBodySizeLimit(devFetchInner), req, server));
     const devFetchBase = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
     const devFetch = metricsReporter
       ? withRequestMetrics(metricsReporter, devFetchBase)
@@ -1168,7 +1215,8 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   const prodFetchHardened = async (
     req: Request,
     server?: import("./security/rate-limit").RateLimitServer,
-  ) => withResponseHardening(await guardFetchErrors(prodFetchInner, req, server));
+  ) =>
+    withResponseHardening(await guardFetchErrors(withBodySizeLimit(prodFetchInner), req, server));
   const prodFetchBase = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
   const prodFetch = metricsReporter
     ? withRequestMetrics(metricsReporter, prodFetchBase)
