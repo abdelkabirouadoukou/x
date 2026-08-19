@@ -1,5 +1,144 @@
 # @thexjs/core
 
+## 1.3.6
+
+### Patch Changes
+
+- d628d5e: Auth hardening (closes #75 and #112):
+  
+  - `defineAuth` now throws in production when no `secret` is configured,
+    instead of silently generating a per-process random secret that invalidates
+    every session on restart. Dev fallback uses `crypto.randomBytes`.
+  - Session and OAuth state tokens are 256-bit CSPRNG hex (`randomBytes(32)`),
+    replacing the `Math.random()`-derived suffix.
+  - Credentials sign-in is protected by a per-account brute-force guard keyed on
+    `(client IP, submitted identifier)` with exponential-backoff lockout
+    (`loginBruteForce` option; default 5 attempts / 15-minute base window).
+    Successful sign-in clears the bucket.
+  - `SessionStore` gains `revokeAllForUser(userId)` (implemented for the SQLite
+    and Postgres stores) and is exposed as `auth.revokeAllForUser` for "log out
+    everywhere" and password-change flows.
+  - OAuth2 authorization-code flow now uses PKCE (S256): the verifier is stored
+    in its own `x_oauth_pkce` cookie at sign-in, the challenge is sent on the
+    authorization URL, and the token exchange presents the matching verifier.
+    A callback missing the verifier fails closed.
+  - `forceSecureCookie` option forces the `Secure` flag on cookies outside
+    production (e.g. behind a TLS-terminating proxy or HTTPS dev tunnel).
+  - The core CSRF double-submit comparison is now constant-time (XOR over the
+    token bytes) instead of `!==`, closing a timing side-channel (#112).
+- 88902c4: feat: add audit logging for auth lifecycle and permission denials. `@thexjs/core` gains a pluggable `AuditSink` (`setAuditSink`, `createConsoleAuditSink`), the `audit` event emitter, and typed helpers (`auditLoginSuccess`, `auditLoginFailure`, `auditLogout`, `auditPasswordChanged`, `auditRoleChanged`, `auditPermissionDenied`, `auditSessionRevoked`). Reasons and metadata are scrubbed (sensitive keys and embedded credentials) before reaching the sink. `@thexjs/auth` now writes audit entries for sign-in success/failure, brute-force rate limiting, logout, session revocation, and RBAC permission denials; OAuth callback failures are reported instead of crashing, and also audited.
+- 167bded: Harden the image proxy further (closes #114):
+  
+  - **Upstream byte cap** — new `maxBytes` option (default 10 MiB). A declared
+    `Content-Length` over the cap is refused before streaming; a chunked body is
+    wrapped in a counting stream that aborts (`UpstreamImageTooLargeError`) the
+    instant the cap is crossed, stop reading the upstream, so an allow-listed
+    host can't be used as a bandwidth-amplification vector.
+  - **Private/reserved address guard** — an allow-listed hostname that is itself
+    a private or reserved IP literal (`10.x`, `172.16/12`, `192.168/16`,
+    `169.254.169.254`, loopback, link-local, CGNAT, doc/benchmark ranges, IPv6
+    ULA/link-local/loopback/multicast/v4-mapped-or-NAT64) is refused with no DNS
+    involved and no lookup race. `isPrivateOrReservedAddress` is exported for
+    reuse.
+  - **DNS-rebinding defense-in-depth** — allow-listed hostnames are resolved
+    before connecting and every returned IP must be public. Default resolver is
+    `Bun.dns.lookup` (RFC 2606 test names skipped; an NXDOMAIN/resolver error
+    fails open — the fetch remains allow-list-bound). Override with the new
+    `resolveHost` option. The check re-runs on every manual redirect hop, so a
+    hop rebinding to a private target is refused before the fetch.
+  
+  Full v4/v6 + DNS/IP regression coverage in `proxy.test.ts`.
+- 4361c32: Request body size limit (#109):
+  
+  - `createApp` gains a `maxBodySize` option (default 1 MiB), enforced ahead of
+    route/action dispatch across every body-reading surface: `/api/*` routes,
+    `/__x/actions/*` server functions, `/__x/revalidate`, and hydration-mismatch
+    beacons.
+  - Requests whose `Content-Length` exceeds the limit are rejected immediately
+    with 413. Chunked requests without a `Content-Length` are wrapped in a
+    counting stream that errors with `RequestBodyTooLargeError` (mapped to 413 by
+    the dispatch paths) the moment the limit is crossed, aborting the body before
+    it is fully buffered. Previously an attacker could POST an arbitrarily large
+    body and drive the single Bun process toward OOM.
+  - `enforceRequestBodySize` and `RequestBodyTooLargeError` are exported from
+    `@thexjs/core`.
+- 193cc6a: Log redaction (half of #79):
+  
+  - `@thexjs/core` now ships a redaction pass (`redact.ts`) applied inside the
+    structured logger's `write()`: fields under sensitive key names (`password`,
+    `token`, `secret`, `authorization`, `cookie`, `session`, `apiKey`, ...,
+    case-insensitive substring match) are replaced with `[REDACTED]`, nested
+    objects/arrays are walked recursively, and string values are scanned for
+    embedded `Bearer`/`Basic` tokens and inline `Authorization:` values.
+  - `withRequestLogging`'s catch block now redacts caught-error `.message`
+    strings before emission, so a driver or app error that embeds a secret can
+    never leak it into the log sink.
+  - This is belt-and-suspenders beside the build-time env-leak scanner: that one
+    protects client bundles, this one protects server logs, in dev and prod.
+- 3234581: Contain process-level crashes and route them to the error reporter (closes #85):
+  
+  - New `installProcessCrashHandlers()` helper (exported from `@thexjs/core`)
+    registers `uncaughtException`/`unhandledRejection` handlers that log the
+    crash and report it through the configured error reporter, so a throw
+    outside the request lifecycle (module-eval error, rejected background
+    promise) is surfaced instead of dying silently. The optional `exitOnCrash`
+    flag opts into crash-on-error semantics for supervisor-managed deploys.
+  - The generated production server entry now installs these via the shared
+    helper instead of inline code, and `x dev` installs identical handlers on the
+    dev server — closing the gap where dev had no crash reporting at all.
+  - The top-of-fetch boundary (`guardFetchErrors`), the `Bun.serve` `error`
+    hook, guarded revalidation JSON parsing and streaming-pump controller
+    handling for #92 were already in place; this adds coverage proving a broken
+    shared rate-limit store (e.g. Redis outage) surfaces as a 500 while the box
+    keeps answering `/healthz`.
+  - Worker/subprocess isolation was evaluated and rejected for SSR: per-request
+    workers would re-render the whole module graph and provide no isolation for
+    shared state/DB; serverless deploys already provide that boundary. Left for
+    the threat-model doc (#80).
+- f1c55a0: Don't echo server-function error text to clients in production (closes #110):
+  
+  - In production, an action that throws now returns `Internal error (id: <opaque>)`
+    with the same id in the `x-x-error-id` header, instead of the raw
+    `err.message`. Driver errors that embed schema details, connection strings,
+    or secrets never reach the client body.
+  - The id is attached to the exception report context (`ErrorContext.errorId`),
+    so server-side logs/APM carry the same correlation id the client can cite.
+  - In dev (`NODE_ENV !== "production"`) the message is still echoed, preserving
+    the familiar dev experience (full error text in the terminal and console).
+  - Regression test: a Postgres-style `duplicate key ... "users_email_key"`
+    message is proven absent from the production response body, and the opaque
+    id is validated in both body and header. Pairs with #79 log redaction: the
+    server stops echoing secrets to loggers *and* to clients.
+- 8f9a8bf: Escape regex metacharacters in static route segments (closes #113):
+  
+  - `routePatternToRegex` now escapes `.`, `+`, `(`, `)`, `?`, `[`, `]`, `^`,
+    `$`, `{`, `}`, `|`, `\` in literal segments before expanding `:param`/`*`
+    tokens, so a folder named `v1.2` matches only `/v1.2` (previously the `.`
+    matched any character and `/v1x2` also hit the route). Both page routing
+    (`extractParams`) and server actions (`extractActionParams`) share this
+    function, so both surfaces are fixed.
+  - Regression tests for the full metacharacter set on the page-routing side and
+    for `.`/`+` on the server-action side; dynamic `:param`/`*` tokens still
+    capture as before.
+- 7dee9e6: Emit a per-response CSP nonce instead of `script-src 'unsafe-inline'` (closes #111):
+  
+  - HTML responses (server-rendered, ISR, 404, content pages) now generate a
+    128-bit random nonce per request, stamp it on every framework inline script
+    (client navigation, live-reload, island hydration props), and build the
+    default Content-Security-Policy with `script-src 'self' 'nonce-<value>'`
+    instead of `'unsafe-inline'`.
+  - The nonce travels on an internal `x-csp-nonce` response header so ISR cache
+    hits reuse the exact value baked into the cached HTML; the header is
+    stripped before the response reaches the client. Island bundles load by
+    same-origin `src`, so `'self'` continues to authorize them.
+  - Responses with no inline scripts (API JSON, images) keep the legacy default
+    CSP — there is nothing inline to defend with a nonce.
+  - A custom `security.headers.contentSecurityPolicy` is still applied verbatim
+    and wins over the nonce.
+  - Regression tests: nonce present and `'unsafe-inline'` absent from
+    `script-src` on a default server-rendered page; the nonce matches the HTML
+    tags; ISR miss→hit reuse the same nonce; unit tests for the header builder.
+
 ## 1.3.5
 
 ### Patch Changes
