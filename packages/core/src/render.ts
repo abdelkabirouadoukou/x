@@ -13,6 +13,12 @@ export interface RenderOptions {
   clientNav?: boolean;
   /** Inject live-reload script (development mode). */
   liveReload?: boolean;
+  /**
+   * Called when the SSR stream fails mid-flight. Pass this through to
+   * `renderStreamingPage` so the app can report the failure via its error
+   * reporter/metrics instead of shipping a partial page silently.
+   */
+  onRenderError?: (error: unknown) => void;
 }
 
 export interface LoaderArgs {
@@ -118,6 +124,97 @@ export function renderStaticPage(node: ReactNode, options: RenderOptions = {}): 
   );
 }
 
+export interface RenderStreamingOptions {
+  /** Bytes already encoded ahead of the source stream's first chunk. */
+  header: Uint8Array;
+  /** Bytes to enqueue once the source stream reports done. */
+  footer: Uint8Array;
+  /**
+   * Called once when the source stream fails mid-flight. Consumers use this
+   * to report the failure (error reporter, metrics) instead of silently
+   * shipping a partial page to the client.
+   */
+  onRenderError?: (error: unknown) => void;
+  /** Called when the consumer cancels the returned stream (client dropped). */
+  onCancel?: (reason: unknown) => void;
+}
+
+/**
+ * Bridges a source `ReadableStream` (e.g. React's SSR stream) onto a
+ * response stream with real backpressure and cancellation.
+ *
+ * Backpressure: the pump is pull-driven — it only reads from the source while
+ * the sink's `desiredSize` is positive. A slow client therefore throttles
+ * reads from the source instead of buffering its output unboundedly in memory.
+ *
+ * Cancellation: `cancel(reason)` on the returned stream cancels the source
+ * reader, so a client disconnect stops the underlying render (no wasted CPU,
+ * no escaping rejection).
+ *
+ * Errors: a mid-stream failure calls `onRenderError` exactly once and then
+ * errors the response stream. The consumer chooses how to surface it.
+ */
+export function pumpStreamingResponse(
+  source: ReadableStream<Uint8Array>,
+  options: RenderStreamingOptions,
+): ReadableStream<Uint8Array> {
+  const { header, footer, onRenderError, onCancel } = options;
+  const reader = source.getReader();
+  let headerSent = false;
+  let ended = false;
+
+  async function readAhead(controller: ReadableStreamDefaultController<Uint8Array>): Promise<void> {
+    if (!headerSent) {
+      headerSent = true;
+      controller.enqueue(header);
+    }
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        if (!ended) {
+          ended = true;
+          try {
+            controller.enqueue(footer);
+          } catch {
+            // Sink already errored/closed; nothing left to flush.
+          }
+          controller.close();
+        }
+        return;
+      }
+      controller.enqueue(value);
+      // Respect backpressure: stop pulling once the sink has no room. The next
+      // pull() (consumer reading again) resumes the loop.
+      if (controller.desiredSize !== null && controller.desiredSize <= 0) return;
+    }
+  }
+
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        await readAhead(controller);
+      } catch (err) {
+        if (!ended) {
+          ended = true;
+          onRenderError?.(err);
+        }
+        try {
+          controller.error(err);
+        } catch {
+          // Sink is already closed/errored from the consumer side.
+        }
+      }
+    },
+    cancel(reason) {
+      reader.cancel(reason).catch(() => {
+        // Cancel rejection is expected on disconnect (Bun may drop the
+        // underlying reader); never let it escape as an unhandled rejection.
+      });
+      onCancel?.(reason);
+    },
+  });
+}
+
 export async function renderStreamingPage(
   node: ReactNode,
   options: RenderOptions = {},
@@ -146,42 +243,9 @@ export async function renderStreamingPage(
   const encoder = new TextEncoder();
   const header = `<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>${title}</title>${headExtras}\n  </head>\n  <body>\n    <div id="root">`;
 
-  return new ReadableStream({
-    async start(controller) {
-      controller.enqueue(encoder.encode(header));
-      const reader = reactStream.getReader();
-      async function pump(): Promise<void> {
-        try {
-          const { done, value } = await reader.read();
-          if (done) {
-            try {
-              controller.enqueue(encoder.encode(`${rootFooter}\n  ${footer}`));
-              controller.close();
-            } catch {
-              // Consumer already closed the stream (abort/timeout) — nothing
-              // left to flush, and the disconnect must not take the process
-              // down or spam uncaught exceptions.
-            }
-            return;
-          }
-          controller.enqueue(value);
-          await pump();
-        } catch (err) {
-          console.error("[x] stream read error:", err);
-          try {
-            controller.enqueue(
-              encoder.encode(
-                `${rootFooter}<div style="color:red;padding:1em;margin:1rem">Render error: ${err instanceof Error ? err.message : "Unknown"}</div>\n  ${footer}`,
-              ),
-            );
-            controller.close();
-          } catch {
-            // Controller already closed — the disconnected consumer doesn't
-            // care about the error markup.
-          }
-        }
-      }
-      await pump();
-    },
+  return pumpStreamingResponse(reactStream, {
+    header: encoder.encode(header),
+    footer: encoder.encode(`${rootFooter}\n  ${footer}`),
+    ...(options.onRenderError ? { onRenderError: options.onRenderError } : {}),
   });
 }

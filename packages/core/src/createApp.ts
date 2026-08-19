@@ -445,6 +445,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               stylesheet: stylesheetHref,
               liveReload: dev,
               islandScripts: scripts,
+              onRenderError: (error) => {
+                reportException(error, { route: route.routePath, phase: "ssr" });
+                metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
+              },
             });
             return new Response(stream, {
               headers: { "Content-Type": "text/html; charset=utf-8" },
