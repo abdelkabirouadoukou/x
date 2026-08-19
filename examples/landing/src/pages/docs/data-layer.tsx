@@ -271,6 +271,29 @@ pg_restore "$DATABASE_URL" -d "$DATABASE_URL" --clean --if-exists backup.dump`}
         instead of hand-rolling your own session store.
       </p>
 
+      <h2 className="text-xl">Per-request state contract</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        x serves every request in one persistent process, so a loader or action must not stash
+        anything in module-level (file-level) variables — a cache, a counter, a "current user"
+        singleton — because the next concurrent request can see it. Loaders receive their request
+        context through <span className="text-foreground">LoaderArgs</span> and returned{" "}
+        <span className="text-foreground">loaderData</span>; actions receive their arguments; that
+        is the whole contract.
+      </p>
+      <ul className="mt-3 list-inside list-disc space-y-2 text-muted-foreground">
+        <li>
+          If you need request-scoped context that crosses writes (e.g. a tracing span, a tenant id,
+          a user id), key it by the values already in scope or use{" "}
+          <span className="text-foreground">AsyncLocalStorage</span>, which Bun supports natively —
+          the framework itself keeps no shared mutable module state.
+        </li>
+        <li>
+          The internal registries that x does keep (island ids, server-function routes) are scoped
+          per request/rebuild, and the framework ships a concurrency test that hammers N parallel
+          requests with distinct identities to prove nothing leaks across requests.
+        </li>
+      </ul>
+
       <div className="mt-16 border-t border-border pt-8">
         <a
           href="/docs"
