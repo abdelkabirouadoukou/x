@@ -122,6 +122,29 @@ describe("server function dispatch", () => {
     expect(await res?.text()).toBe("boom");
   });
 
+  test("does not leak the raw error message to clients in production", async () => {
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    try {
+      registerServerFunctions("/fail", [], {
+        explode: async () => {
+          throw new Error('duplicate key value violates unique constraint "users_email_key"');
+        },
+      });
+      const handler = getServerFunctionHandler();
+      const res = await handler(post("/__x/actions/fail/explode", { body: "[]" }));
+      expect(res?.status).toBe(500);
+      const body = await res?.text();
+      expect(body).not.toContain("duplicate key");
+      expect(body).not.toContain("users_email_key");
+      expect(body).toMatch(/^Internal error \(id: [0-9a-f]{32}\)$/);
+      expect(res?.headers.get("x-x-error-id")).toMatch(/^[0-9a-f]{32}$/);
+    } finally {
+      if (previous === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = previous;
+    }
+  });
+
   test("ignores non-POST requests", async () => {
     registerServerFunctions("/greet", [], { greet: okFn });
     const handler = getServerFunctionHandler();

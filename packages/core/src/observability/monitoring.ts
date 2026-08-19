@@ -9,6 +9,8 @@
 export interface ErrorContext {
   route?: string;
   requestId?: string;
+  /** Opaque correlation id echoed to clients so they can reference the incident. */
+  errorId?: string;
   phase: "ssr" | "action" | "api" | "loader";
   /** Free-form discriminator, e.g. `hydration-mismatch`, for filtering. */
   tag?: string;
