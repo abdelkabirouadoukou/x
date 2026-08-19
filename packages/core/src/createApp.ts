@@ -19,7 +19,7 @@ import {
   setErrorReporter,
 } from "./observability/monitoring";
 import type { LoaderArgs, LoaderReturn } from "./render";
-import { renderPage, renderStreamingPage } from "./render";
+import { renderPage, renderPageOnce, renderStreamingPage } from "./render";
 import {
   extractParams,
   findLayoutChain,
@@ -429,22 +429,21 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               { registry },
               wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
             );
-            let scripts: string[] | undefined = islandScripts;
-            if (scripts === undefined) {
-              // Cheap discovery render: walks the tree so any <Island> in
-              // it registers itself, without committing to a response yet.
-              renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-              scripts = await resolveIslandScripts(
-                route.filePath,
-                layoutFilePaths,
-                registry.entries,
-              );
-            }
 
             const stream = await renderStreamingPage(content, {
               stylesheet: stylesheetHref,
               liveReload: dev,
-              islandScripts: scripts,
+              ...(islandScripts === undefined
+                ? {
+                    // Single-render mode: islands register into `registry`
+                    // during the one render that produces the HTML, and the
+                    // script list is resolved from that same pass in the lazy
+                    // footer — no separate discovery render, so non-deterministic
+                    // components can't diverge between two passes.
+                    resolveIslandScripts: () =>
+                      resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
+                  }
+                : { islandScripts }),
               onRenderError: (error) => {
                 reportException(error, { route: route.routePath, phase: "ssr" });
                 metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
@@ -493,19 +492,15 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               { registry },
               wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
             );
-            let scripts: string[] | undefined = islandScripts;
-            if (scripts === undefined) {
-              renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-              scripts = await resolveIslandScripts(
-                route.filePath,
-                layoutFilePaths,
-                registry.entries,
-              );
-            }
-            return renderPage(content, {
+            return renderPageOnce(content, {
               stylesheet: stylesheetHref,
               liveReload: dev,
-              islandScripts: scripts,
+              ...(islandScripts === undefined
+                ? {
+                    resolveIslandScripts: () =>
+                      resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
+                  }
+                : { islandScripts }),
             });
           };
 
@@ -878,6 +873,42 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     return new Response("Revalidated all");
   }
 
+  async function handleHydrationMismatch(req: Request): Promise<Response | null> {
+    if (new URL(req.url).pathname !== "/__x/hydration-mismatch") return null;
+    if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+    // The beacon is a read-only telemetry signal, but a random site could
+    // still spam it. Reject cross-site posts (missing Origin/Referer is
+    // tolerated — server-side emits, e.g. sendBeacon from file://, may omit
+    // them, and the worst case there is a discarded telemetry line).
+    const origin = req.headers.get("origin");
+    const referer = req.headers.get("referer");
+    const selfOrigin = `${new URL(req.url).protocol}//${new URL(req.url).host}`;
+    const attempt = origin ?? referer;
+    if (attempt && !attempt.startsWith(selfOrigin)) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    let body: { error?: string; island?: string; url?: string };
+    try {
+      const text = await req.text();
+      if (text.length > 2048) return new Response("Payload too large", { status: 413 });
+      body = JSON.parse(text) as { error?: string; island?: string; url?: string };
+    } catch {
+      return new Response("Invalid JSON body", { status: 400 });
+    }
+
+    const error = new Error(body.error ?? "hydration mismatch");
+    const routeFromUrl = body.url ? new URL(body.url).pathname : "/";
+    reportException(error, {
+      route: routeFromUrl,
+      phase: "ssr",
+      tag: "hydration-mismatch",
+    });
+    metricsReporter?.incr("x_http_hydration_mismatch", 1, { island: body.island ?? "unknown" });
+    return new Response(null, { status: 204 });
+  }
+
   if (options.development) {
     let rebuildTimeout: Timer | null = null;
     const sseClients = new Set<(event: string, data: string) => void>();
@@ -1020,6 +1051,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const revalidationResult = await handleRevalidation(req);
       if (revalidationResult !== null) return revalidationResult;
 
+      const mismatchResult = await handleHydrationMismatch(req);
+      if (mismatchResult !== null) return mismatchResult;
+
       const serverFnResult = await serverFnHandler(req);
       if (serverFnResult !== null) return serverFnResult;
 
@@ -1099,6 +1133,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
     const revalidationResult = await handleRevalidation(req);
     if (revalidationResult !== null) return revalidationResult;
+
+    const mismatchResult = await handleHydrationMismatch(req);
+    if (mismatchResult !== null) return mismatchResult;
 
     const serverFnResult = await serverFnHandler(req);
     if (serverFnResult !== null) return serverFnResult;
