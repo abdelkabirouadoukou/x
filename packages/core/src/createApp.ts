@@ -36,6 +36,7 @@ import {
 } from "./router";
 import { type CsrfOptions, checkCsrf } from "./security/csrf";
 import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
+import { IsrCache, isrCacheKey } from "./security/isr-cache";
 import {
   createRateLimiter,
   type RateLimitOptions,
@@ -144,11 +145,6 @@ export interface AppServeOptions {
 
 export interface RevalidateOptions {
   revalidate?: number;
-}
-
-interface StaticCacheEntry {
-  html: string;
-  timestamp: number;
 }
 
 interface RouteHandler {
@@ -274,7 +270,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   let notFoundComponent: ComponentType<RouteProps> = DefaultNotFound;
   let notFoundLayout: ComponentType<{ children: ReactNode }> | undefined;
   const serverFnHandler = getServerFunctionHandler(options.security?.csrf);
-  const staticCache = new Map<string, StaticCacheEntry>();
+  const staticCache = new IsrCache(500);
   let actionModules = new Map<string, ActionModuleInfo>();
   const islandBundleCache = new Map<string, string[]>();
   const islandFileCache = new Map<string, string>();
@@ -415,7 +411,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           extractParams(route.routePath, route.paramNames, new URL(req.url).pathname) ?? {};
 
         const baseHandler = async (ctx: { params: Record<string, string>; request: Request }) => {
-          const cacheKey = new URL(ctx.request.url).pathname;
+          // Cache key is the full URL (pathname + search): two ISR pages that
+          // differ only by query string are distinct resources and must not
+          // serve each other's cached HTML.
+          const cacheKey = isrCacheKey(ctx.request.url);
 
           if (mode === "server") {
             let loaderData: Record<string, unknown> = {};
@@ -469,40 +468,61 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
                 },
               });
             }
+            // Stale entry: drop it so the miss path recomputes instead of
+            // getOrCompute serving the expired HTML back to us.
+            if (cached) staticCache.delete(cacheKey);
           }
 
-          let loaderData: Record<string, unknown> = {};
-          if (loader) {
-            const result = await loader(ctx);
-            if (result instanceof Response) return result;
-            loaderData = result;
-          }
+          // Loader + render, shared by the miss path. Hoisted so a stampede of
+          // concurrent misses for the same URL renders once, not N times.
+          const computeHtml = async (): Promise<string | Response> => {
+            let loaderData: Record<string, unknown> = {};
+            if (loader) {
+              const result = await loader(ctx);
+              if (result instanceof Response) return result;
+              loaderData = result;
+            }
 
-          const registry = createIslandRegistry();
-          const content = createElement(
-            IslandProvider,
-            { registry },
-            wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
-          );
-          let scripts: string[] | undefined = islandScripts;
-          if (scripts === undefined) {
-            renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
-            scripts = await resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries);
-          }
-          const html = renderPage(content, {
-            stylesheet: stylesheetHref,
-            liveReload: dev,
-            islandScripts: scripts,
-          });
+            const registry = createIslandRegistry();
+            const content = createElement(
+              IslandProvider,
+              { registry },
+              wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
+            );
+            let scripts: string[] | undefined = islandScripts;
+            if (scripts === undefined) {
+              renderPage(content, { stylesheet: stylesheetHref, liveReload: dev });
+              scripts = await resolveIslandScripts(
+                route.filePath,
+                layoutFilePaths,
+                registry.entries,
+              );
+            }
+            return renderPage(content, {
+              stylesheet: stylesheetHref,
+              liveReload: dev,
+              islandScripts: scripts,
+            });
+          };
 
           if (revalidateSeconds > 0) {
-            staticCache.set(cacheKey, { html, timestamp: Date.now() });
+            const result = await staticCache.getOrCompute(cacheKey, computeHtml);
+            if (result instanceof Response) return result;
+            return new Response(result, {
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "X-Revalidated": "miss",
+              },
+            });
           }
+
+          const html = await computeHtml();
+          if (html instanceof Response) return html;
 
           return new Response(html, {
             headers: {
               "Content-Type": "text/html; charset=utf-8",
-              "X-Revalidated": revalidateSeconds > 0 ? "miss" : "none",
+              "X-Revalidated": "none",
             },
           });
         };
@@ -844,8 +864,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       return new Response("Invalid JSON body", { status: 400 });
     }
     if (body.path) {
-      staticCache.delete(body.path);
-      return new Response(`Revalidated: ${body.path}`);
+      // Keys are full URLs now (pathname + search); a revalidation request
+      // names a path, so purge every cached entry under that pathname —
+      // query variants of the same page are all stale together.
+      const removed = staticCache.deletePath(new URL(body.path, "http://localhost").pathname);
+      return new Response(`Revalidated: ${body.path} (${removed} cached variant(s))`);
     }
     staticCache.clear();
     return new Response("Revalidated all");
