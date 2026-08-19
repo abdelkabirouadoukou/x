@@ -62,6 +62,12 @@ export {
   setErrorReporter,
 } from "./observability/monitoring";
 export {
+  isSensitiveKey,
+  REDACTED,
+  redactString,
+  redactValue,
+} from "./observability/redact";
+export {
   type LoaderArgs,
   type LoaderReturn,
   renderPage,

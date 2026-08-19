@@ -3,6 +3,8 @@
  * object per line — easy to ingest into Datadog, Grafana Loki, Kibana, etc.
  */
 
+import { redactString, redactValue } from "./redact";
+
 export interface LogFields {
   [key: string]: unknown;
 }
@@ -17,8 +19,8 @@ function write(level: "info" | "warn" | "error", message: string, fields?: LogFi
   const entry = {
     timestamp: new Date().toISOString(),
     level,
-    message,
-    ...fields,
+    message: redactString(message),
+    ...(redactValue(fields) as LogFields | undefined),
   };
   const line = JSON.stringify(entry);
   if (level === "error") {
@@ -78,7 +80,9 @@ export function withRequestLogging<Server = unknown>(
         method: req.method,
         status: 500,
         durationMs: Math.round(performance.now() - start),
-        error: err instanceof Error ? err.message : String(err),
+        // Redacted before emission — a throwing driver or app error whose
+        // message embeds a secret must never leak it into the log sink.
+        error: redactString(err instanceof Error ? err.message : String(err)),
       });
       throw err;
     }
