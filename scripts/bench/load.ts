@@ -22,11 +22,15 @@ import { join } from "node:path";
 import { createApp } from "../../packages/core/src/createApp";
 import { createRateLimiter } from "../../packages/core/src/security/rate-limit";
 import { registerServerFunctions } from "../../packages/core/src/server-functions";
+import type { ScenarioResult, SloThresholds } from "./slo";
+import { DEFAULT_SLOS, evaluateSlo, formatViolations } from "./slo";
 
 interface BenchArgs {
   concurrency: number;
   durationMs: number;
   route: string;
+  /** Enforce SLOs and fail the run (exit 1) on violation. */
+  enforceSlo: boolean;
 }
 
 function parseArgs(argv: string[]): BenchArgs {
@@ -38,6 +42,7 @@ function parseArgs(argv: string[]): BenchArgs {
     concurrency: Number(get("--concurrency") ?? 32),
     durationMs: Number(get("--duration") ?? 5) * 1000,
     route: get("--route") ?? "/about",
+    enforceSlo: argv.includes("--slo"),
   };
 }
 
@@ -247,7 +252,24 @@ export default function About({ loaderData }: { loaderData: { items: Array<{ id:
     console.error(`\nFAILED: rate limiter burst rejected ${rejected}, expected ~90`);
     process.exit(1);
   }
+  if (args.enforceSlo) {
+    const scenarios: ScenarioResult[] = [
+      { name: "ssr-page", p95: page.p95, count: page.count, errors: page.errors },
+      { name: "server-fn", p95: serverFn.p95, count: serverFn.count, errors: serverFn.errors },
+    ];
+    const sloResult = evaluateSlo(scenarios, defaultSloThresholds());
+    if (!sloResult.passed) {
+      console.error(formatViolations(sloResult.violations));
+      console.error(`\nFAILED: load-test SLO violation (see BENCHMARKS.md for the contract)`);
+      process.exit(1);
+    }
+    console.log("SLO check passed");
+  }
   console.log("\nOK");
+}
+
+function defaultSloThresholds(): SloThresholds {
+  return { ...DEFAULT_SLOS };
 }
 
 main().catch((err) => {

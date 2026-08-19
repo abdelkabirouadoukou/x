@@ -12,7 +12,9 @@ COPY packages/core/package.json packages/core/package.json
 COPY packages/cli/package.json packages/cli/package.json
 COPY packages/env/package.json packages/env/package.json
 COPY packages/adapter-vercel/package.json packages/adapter-vercel/package.json
+COPY packages/auth/package.json packages/auth/package.json
 COPY packages/create-thexjs-app/package.json packages/create-thexjs-app/package.json
+COPY packages/hooks/package.json packages/hooks/package.json
 COPY examples/basic/package.json examples/basic/package.json
 COPY examples/default/package.json examples/default/package.json
 COPY examples/blog/package.json examples/blog/package.json
@@ -29,6 +31,9 @@ RUN bun run typecheck
 RUN bun packages/cli/src/index.ts build --outDir ../../dist --cwd examples/basic
 FROM oven/bun:1 AS production
 WORKDIR /app
+# Patch the base image's OS packages so the production image ships with the
+# latest security fixes (the CVE gate scans the built image).
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 COPY --from=build --chown=bun:bun /app/dist ./dist
 ENV NODE_ENV=production
 USER bun

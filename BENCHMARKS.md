@@ -13,6 +13,9 @@ bun scripts/bench/load.ts
 
 # Customize
 bun scripts/bench/load.ts --concurrency 50 --duration 3 --route /about
+
+# Enforce SLOs (exit non-zero on violation) — what CI runs
+bun scripts/bench/load.ts --slo
 ```
 
 The script boots a real production-mode app — the same `createApp().fetch`
@@ -44,6 +47,28 @@ Machine-readable JSON results are written to `scripts/bench/results/`.
   harness so the numbers reflect the pipeline's own cost; run with them on for
   a worst-case estimate.
 
+## SLOs (the performance contract)
+
+The load test gates the build in CI (`bench` job, `--slo`). These are the
+agreed targets; a run that misses any of them fails the PR:
+
+| SLO | Target | Meaning |
+|---|---|---|
+| p95 SSR page latency | **< 500 ms** | server-mode page with a loader, rendered end-to-end |
+| p95 server-function latency | **< 500 ms** | JSON round-trip through `/__x/actions/*` incl. CSRF check |
+| Error rate | **< 0.1 %** of requests | any ≥ 500 response or thrown fetch in a scenario window |
+
+Thresholds are deliberately loose versus the baseline table below: CI runners
+are shared and 2–4× slower than a local Apple-Silicon Mac, and the point of the
+gate is to catch a real regression (a 3–10× blow-up), not to flake on runner
+noise. Violations are reported as `✗ scenario: p95 latency Xms exceeds SLO 500ms`.
+
+Run the gate locally with:
+
+```bash
+bun scripts/bench/load.ts --slo
+```
+
 ## Baseline results
 
 Hardware: macOS (Apple Silicon), Bun 1.3.14, 32 concurrent clients, 2s warm
@@ -65,8 +90,7 @@ Notes:
 
 ## CI
 
-A non-blocking CI job (`bench`) runs the load test on every PR. It reports the
-numbers but does not gate the merge — the framework's own `bun test` suite is
-the gate. The job fails only on hard failures (500s under load or a rate
-limiter that stops enforcing its limit), not on raw speed, since that varies
-with the runner's hardware.
+The `bench` job in `.github/workflows/ci.yml` runs the load test on every PR
+**with `--slo`, and gates the merge**: `continue-on-error` was removed, so a
+run that misses an SLO (or produces 500s, or breaks the rate limiter) fails the
+job. See the SLO table above for the contract.

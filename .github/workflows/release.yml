@@ -59,3 +59,32 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # CycloneDX SBOM of the published packages' dependency tree (Syft). The
+      # release flow publishes on merge of a versioning PR; generating the SBOM
+      # as a sibling job in the same workflow run is the artifact buyers can
+      # consume without asking (in the Actions run page under "Artifacts").
+      - uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          path: packages
+          output-file: sbom.cdx.json
+          artifact-name: sbom.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json
+          if-no-files-found: error
