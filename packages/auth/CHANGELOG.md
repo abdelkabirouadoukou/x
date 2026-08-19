@@ -1,5 +1,43 @@
 # @thexjs/auth
 
+## 3.0.7
+
+### Patch Changes
+
+- d628d5e: Auth hardening (closes #75 and #112):
+  
+  - `defineAuth` now throws in production when no `secret` is configured,
+    instead of silently generating a per-process random secret that invalidates
+    every session on restart. Dev fallback uses `crypto.randomBytes`.
+  - Session and OAuth state tokens are 256-bit CSPRNG hex (`randomBytes(32)`),
+    replacing the `Math.random()`-derived suffix.
+  - Credentials sign-in is protected by a per-account brute-force guard keyed on
+    `(client IP, submitted identifier)` with exponential-backoff lockout
+    (`loginBruteForce` option; default 5 attempts / 15-minute base window).
+    Successful sign-in clears the bucket.
+  - `SessionStore` gains `revokeAllForUser(userId)` (implemented for the SQLite
+    and Postgres stores) and is exposed as `auth.revokeAllForUser` for "log out
+    everywhere" and password-change flows.
+  - OAuth2 authorization-code flow now uses PKCE (S256): the verifier is stored
+    in its own `x_oauth_pkce` cookie at sign-in, the challenge is sent on the
+    authorization URL, and the token exchange presents the matching verifier.
+    A callback missing the verifier fails closed.
+  - `forceSecureCookie` option forces the `Secure` flag on cookies outside
+    production (e.g. behind a TLS-terminating proxy or HTTPS dev tunnel).
+  - The core CSRF double-submit comparison is now constant-time (XOR over the
+    token bytes) instead of `!==`, closing a timing side-channel (#112).
+- 88902c4: feat: add audit logging for auth lifecycle and permission denials. `@thexjs/core` gains a pluggable `AuditSink` (`setAuditSink`, `createConsoleAuditSink`), the `audit` event emitter, and typed helpers (`auditLoginSuccess`, `auditLoginFailure`, `auditLogout`, `auditPasswordChanged`, `auditRoleChanged`, `auditPermissionDenied`, `auditSessionRevoked`). Reasons and metadata are scrubbed (sensitive keys and embedded credentials) before reaching the sink. `@thexjs/auth` now writes audit entries for sign-in success/failure, brute-force rate limiting, logout, session revocation, and RBAC permission denials; OAuth callback failures are reported instead of crashing, and also audited.
+- Updated dependencies [d628d5e]
+- Updated dependencies [88902c4]
+- Updated dependencies [167bded]
+- Updated dependencies [4361c32]
+- Updated dependencies [193cc6a]
+- Updated dependencies [3234581]
+- Updated dependencies [f1c55a0]
+- Updated dependencies [8f9a8bf]
+- Updated dependencies [7dee9e6]
+  - @thexjs/core@1.3.6
+
 ## 3.0.6
 
 ### Patch Changes
