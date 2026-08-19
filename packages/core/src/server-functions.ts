@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { reportException } from "./observability/monitoring";
 import { routePatternToRegex } from "./router";
+import { RequestBodyTooLargeError } from "./security/body-size";
 import { type CsrfOptions, checkCsrf } from "./security/csrf";
 
 export function generateServerFunctionClient(
@@ -117,7 +118,10 @@ export function getServerFunctionHandler(
       try {
         const body = await req.json();
         args = Array.isArray(body) ? body : [body];
-      } catch {
+      } catch (err) {
+        if (err instanceof RequestBodyTooLargeError) {
+          return new Response("Payload too large", { status: 413 });
+        }
         return new Response("Invalid request body", { status: 400 });
       }
 
