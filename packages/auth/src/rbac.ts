@@ -7,6 +7,7 @@
  */
 
 import type { MiddlewareFn } from "@thexjs/core";
+import { auditPermissionDenied, clientIpFromRequest, requestIdFromRequest } from "@thexjs/core";
 import type { Session } from "./types";
 
 export interface AuthGuardResult {
@@ -99,6 +100,17 @@ export function toMiddleware(
     const session = await getSession(ctx.request);
     const result = guard(session);
     if (result.ok) return next();
+    // Permission-denied is worth an audit trail: signed-in user + role can't
+    // do something. The session user id is the identity; IP comes from the
+    // request. Failures carry enough context for a review or brute-force scan.
+    const ip = clientIpFromRequest(ctx.request);
+    const requestId = requestIdFromRequest(ctx.request);
+    auditPermissionDenied({
+      userId: session?.user.id ?? null,
+      ip,
+      ...(requestId !== undefined ? { requestId } : {}),
+      reason: result.reason,
+    });
     if (options.redirectTo && result.status === 401) {
       return new Response(null, {
         status: 302,

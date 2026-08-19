@@ -1,6 +1,14 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { MiddlewareFn } from "@thexjs/core";
-import { checkCsrf } from "@thexjs/core";
+import {
+  auditLoginFailure,
+  auditLoginSuccess,
+  auditLogout,
+  auditSessionRevoked,
+  checkCsrf,
+  clientIpFromRequest,
+  requestIdFromRequest,
+} from "@thexjs/core";
 import { type BruteForceOptions, createBruteForceGuard } from "./brute-force";
 import { readCookie } from "./cookies";
 import {
@@ -228,11 +236,15 @@ export function defineAuth(config: AuthConfig): Auth {
     return snapshot;
   };
 
-  const createSession = async (user: AuthUser, provider: string): Promise<string> => {
+  const createSession = async (
+    user: AuthUser,
+    provider: string,
+  ): Promise<{ token: string; sessionHash: string }> => {
     const token = createSessionToken();
     const now = Date.now();
+    const sessionHash = await hash(token);
     const session: Session = {
-      token: await hash(token),
+      token: sessionHash,
       userId: user.id,
       provider,
       user: await snapshotUser(user),
@@ -240,15 +252,31 @@ export function defineAuth(config: AuthConfig): Auth {
       createdAt: now,
     };
     await resolved.store.create(session);
-    return token;
+    return { token, sessionHash };
+  };
+
+  const requestAuditContext = (
+    req: Request | undefined,
+  ): { ip: string | null; requestId?: string } => {
+    if (!req) return { ip: null };
+    const ip = clientIpFromRequest(req);
+    const requestId = requestIdFromRequest(req);
+    return { ip, ...(requestId !== undefined ? { requestId } : {}) };
   };
 
   const establishSession = async (
     user: AuthUser,
     provider: string,
     extra?: HandleRequestOptions,
+    req?: Request,
   ): Promise<Response> => {
-    const token = await createSession(user, provider);
+    const { token, sessionHash } = await createSession(user, provider);
+    auditLoginSuccess({
+      userId: user.id,
+      provider,
+      sessionHash,
+      ...requestAuditContext(req),
+    });
     const location = extra?.baseUrl
       ? new URL(resolved.successRedirect, extra.baseUrl).toString()
       : resolved.successRedirect;
@@ -285,10 +313,24 @@ export function defineAuth(config: AuthConfig): Auth {
     const url = new URL(req.url);
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
-    if (!code || !state) return new Response("Missing code or state", { status: 400 });
+    if (!code || !state) {
+      auditLoginFailure({
+        userId: null,
+        provider: provider.id,
+        ...requestAuditContext(req),
+        reason: "missing code or state",
+      });
+      return new Response("Missing code or state", { status: 400 });
+    }
 
     const stateToken = readCookie(req, OAUTH_STATE_COOKIE);
     if (!stateToken || !safeEqual(state, await hash(stateToken))) {
+      auditLoginFailure({
+        userId: null,
+        provider: provider.id,
+        ...requestAuditContext(req),
+        reason: "invalid state",
+      });
       return new Response("Invalid state", { status: 400 });
     }
 
@@ -296,13 +338,40 @@ export function defineAuth(config: AuthConfig): Auth {
     // is missing (no sign-in happened, or the cookie was dropped), fail closed
     // rather than exchanging the code without the proof-of-possession.
     const pkceVerifier = readCookie(req, OAUTH_PKCE_COOKIE);
-    if (!pkceVerifier) return new Response("Missing PKCE verifier", { status: 400 });
+    if (!pkceVerifier) {
+      auditLoginFailure({
+        userId: null,
+        provider: provider.id,
+        ...requestAuditContext(req),
+        reason: "missing PKCE verifier",
+      });
+      return new Response("Missing PKCE verifier", { status: 400 });
+    }
 
-    const tokens = await exchangeCode(provider, baseUrl, code, pkceVerifier);
-    const userInfo = await fetchUserInfo(provider, tokens.access_token);
-    const user = provider.profile(userInfo);
-    if (!user?.id) return new Response("Provider returned no user", { status: 401 });
-    return establishSession(user, provider.id, { baseUrl });
+    let user: ReturnType<typeof provider.profile> | null;
+    try {
+      const tokens = await exchangeCode(provider, baseUrl, code, pkceVerifier);
+      const userInfo = await fetchUserInfo(provider, tokens.access_token);
+      user = provider.profile(userInfo);
+    } catch (error) {
+      auditLoginFailure({
+        userId: null,
+        provider: provider.id,
+        ...requestAuditContext(req),
+        reason: error instanceof Error ? error.message : "OAuth exchange failed",
+      });
+      return new Response("OAuth exchange failed", { status: 502 });
+    }
+    if (!user?.id) {
+      auditLoginFailure({
+        userId: null,
+        provider: provider.id,
+        ...requestAuditContext(req),
+        reason: "provider returned no user",
+      });
+      return new Response("Provider returned no user", { status: 401 });
+    }
+    return establishSession(user, provider.id, { baseUrl }, req);
   };
 
   const handleCredentialsSignIn = async (
@@ -323,6 +392,12 @@ export function defineAuth(config: AuthConfig): Auth {
     const guardKey = bruteForce.keyFor(req, identifier);
     const status = bruteForce.status(guardKey);
     if (!status.ok) {
+      auditLoginFailure({
+        userId: null,
+        provider: provider.id,
+        ...requestAuditContext(req),
+        reason: "rate limited",
+      });
       return new Response("Too many sign-in attempts, try again later", {
         status: 429,
         headers: {
@@ -334,10 +409,16 @@ export function defineAuth(config: AuthConfig): Auth {
     const user = await provider.authorize(params, { request: req });
     if (!user?.id) {
       bruteForce.recordFailure(guardKey);
+      auditLoginFailure({
+        userId: null,
+        provider: provider.id,
+        ...requestAuditContext(req),
+        reason: "invalid credentials",
+      });
       return new Response("Invalid credentials", { status: 401 });
     }
     bruteForce.reset(guardKey);
-    return establishSession(user, provider.id);
+    return establishSession(user, provider.id, undefined, req);
   };
 
   const handleSession = async (req: Request): Promise<Response> => {
@@ -354,7 +435,16 @@ export function defineAuth(config: AuthConfig): Auth {
     const csrf = checkCsrf(req);
     if (!csrf.ok) return new Response(`CSRF check failed: ${csrf.reason}`, { status: 403 });
     const token = readCookie(req, SESSION_COOKIE);
-    if (token) await resolved.store.revoke(await hash(token));
+    if (token) {
+      const sessionHash = await hash(token);
+      const session = await resolved.store.find(sessionHash);
+      await resolved.store.revoke(sessionHash);
+      auditLogout({
+        userId: session?.userId ?? null,
+        ...requestAuditContext(req),
+        sessionHash,
+      });
+    }
     const res = new Response(null, {
       status: 302,
       headers: { Location: resolved.signOutRedirect },
@@ -414,13 +504,23 @@ export function defineAuth(config: AuthConfig): Auth {
     user: AuthUser,
     provider: string,
   ): Promise<Response> => {
-    const token = await createSession(user, provider);
+    const { token, sessionHash } = await createSession(user, provider);
+    auditLoginSuccess({ userId: user.id, provider, sessionHash, ip: null });
     return withSetCookie(res, sessionCookieHeader(token));
   };
 
   const clearSessionCookie = async (res: Response, req?: Request): Promise<Response> => {
     const token = req ? readCookie(req, SESSION_COOKIE) : null;
-    if (token) await resolved.store.revoke(await hash(token));
+    if (token) {
+      const sessionHash = await hash(token);
+      const session = await resolved.store.find(sessionHash);
+      await resolved.store.revoke(sessionHash);
+      auditLogout({
+        userId: session?.userId ?? null,
+        ...requestAuditContext(req),
+        sessionHash,
+      });
+    }
     return withSetCookie(res, clearSessionCookieHeader());
   };
 
@@ -431,7 +531,10 @@ export function defineAuth(config: AuthConfig): Auth {
     getSession,
     setSessionCookie,
     clearSessionCookie,
-    revokeAllForUser: (userId) => resolved.store.revokeAllForUser(userId),
+    revokeAllForUser: async (userId) => {
+      await resolved.store.revokeAllForUser(userId);
+      auditSessionRevoked({ userId, ip: null });
+    },
     requireAuth(options) {
       return toMiddleware(getSession, requireAuthGuard(), options);
     },

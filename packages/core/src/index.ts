@@ -27,6 +27,25 @@ export {
 } from "./middleware";
 export { default as DefaultNotFound } from "./not-found";
 export {
+  type AuditEntry,
+  type AuditEvent,
+  type AuditSink,
+  audit,
+  auditLoginFailure,
+  auditLoginSuccess,
+  auditLogout,
+  auditPasswordChanged,
+  auditPermissionDenied,
+  auditRoleChanged,
+  auditSessionRevoked,
+  clientIpFromRequest,
+  createConsoleAuditSink,
+  getAuditSink,
+  noopAuditSink,
+  requestIdFromRequest,
+  setAuditSink,
+} from "./observability/audit";
+export {
   installProcessCrashHandlers,
   type ProcessCrashHandlerOptions,
 } from "./observability/crash-handlers";
