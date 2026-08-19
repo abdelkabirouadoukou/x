@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { createImageProxyHandler } from "./proxy";
+import {
+  createImageProxyHandler,
+  isPrivateOrReservedAddress,
+  UpstreamImageTooLargeError,
+} from "./proxy";
 
 /**
  * The /_x/image proxy is a security boundary (SSRF guard): the whole point
@@ -114,6 +118,149 @@ describe("proxying", () => {
     const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
     const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.svg"));
     expect(res?.status).toBe(502);
+  });
+});
+
+describe("upstream size cap", () => {
+  test("rejects an upstream whose declared Content-Length exceeds the cap", async () => {
+    mockFetch(
+      async () =>
+        new Response("x".repeat(500), {
+          headers: { "content-type": "image/png", "content-length": "500" },
+        }),
+    );
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"], maxBytes: 100 });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(502);
+    expect(await res?.text()).toBe("upstream image exceeds the size limit");
+  });
+
+  test("aborts the stream mid-transfer when an undeclared-length upstream exceeds the cap", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const stream = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        await gate;
+        controller.enqueue(new TextEncoder().encode("x".repeat(64)));
+        controller.close();
+      },
+    });
+    mockFetch(async () => new Response(stream, { headers: { "content-type": "image/png" } }));
+
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"], maxBytes: 32 });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(200);
+    release();
+    await expect((res as Response).text()).rejects.toThrow(UpstreamImageTooLargeError);
+  });
+
+  test("the default cap accepts a healthy-sized image", async () => {
+    mockFetch(
+      async () =>
+        new Response("x".repeat(2048), {
+          headers: { "content-type": "image/png", "content-length": "2048" },
+        }),
+    );
+    const handler = createImageProxyHandler({ remoteHosts: ["img.example.com"] });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(200);
+    expect(await res?.text()).toHaveLength(2048);
+  });
+});
+
+describe("private/reserved address guard", () => {
+  test("classifies private and reserved ranges", () => {
+    for (const ip of [
+      "10.0.0.5",
+      "172.16.0.1",
+      "172.31.255.255",
+      "192.168.1.1",
+      "127.0.0.1",
+      "169.254.169.254",
+      "100.64.0.1",
+      "192.0.2.10",
+      "198.18.0.1",
+      "203.0.113.7",
+      "224.0.0.1",
+      "0.0.0.0",
+      "::1",
+      "::",
+      "fc00::1",
+      "fe80::1",
+      "ff02::1",
+      "2001:db8::1",
+      "::ffff:10.0.0.5",
+    ]) {
+      expect(isPrivateOrReservedAddress(ip)).toBe(true);
+    }
+    // NAT64 maps a public v4 (1.2.3.4) — not reserved; the nested v4 rules.
+    for (const ip of ["8.8.8.8", "93.184.216.34", "2606:4700::6810:84e5", "64:ff9b::1.2.3.4"]) {
+      expect(isPrivateOrReservedAddress(ip)).toBe(false);
+    }
+  });
+
+  test("refuses an allow-listed host that is a private IP literal", async () => {
+    const handler = createImageProxyHandler({ remoteHosts: ["10.0.0.5"] });
+    const res = await handler(req("/_x/image?url=http%3A%2F%2F10.0.0.5%2Fsteal.png"));
+    expect(res?.status).toBe(403);
+  });
+
+  test("refuses the cloud metadata IP even when allow-listed", async () => {
+    const handler = createImageProxyHandler({ remoteHosts: ["169.254.169.254"] });
+    const res = await handler(
+      req("/_x/image?url=http%3A%2F%2F169.254.169.254%2Flatest%2Fmeta-data%2F"),
+    );
+    expect(res?.status).toBe(403);
+  });
+
+  test("refuses an allow-listed hostname that resolves to a private IP", async () => {
+    const handler = createImageProxyHandler({
+      remoteHosts: ["img.example.com"],
+      resolveHost: async () => ["10.0.0.5"],
+    });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(403);
+  });
+
+  test("allows an allow-listed hostname that resolves to public IPs", async () => {
+    mockFetch(async () => new Response("x", { headers: { "content-type": "image/png" } }));
+    const handler = createImageProxyHandler({
+      remoteHosts: ["img.example.com"],
+      resolveHost: async () => ["93.184.216.34", "2606:4700::6810:84e5"],
+    });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(200);
+    expect(await res?.text()).toBe("x");
+  });
+
+  test("an unresolvable allow-listed hostname fails open", async () => {
+    mockFetch(async () => new Response("x", { headers: { "content-type": "image/png" } }));
+    const handler = createImageProxyHandler({
+      remoteHosts: ["img.example.com"],
+      resolveHost: async () => [],
+    });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(200);
+  });
+
+  test("rejects a redirect hop that resolves to a private IP", async () => {
+    const fetched: string[] = [];
+    mockFetch(async (url) => {
+      fetched.push(String(url));
+      return new Response(null, {
+        status: 302,
+        headers: { location: "https://cdn.example.com/img.png" },
+      });
+    });
+    const handler = createImageProxyHandler({
+      remoteHosts: ["img.example.com"],
+      resolveHost: async (host) =>
+        host === "img.example.com" ? ["93.184.216.34"] : ["192.168.1.10"],
+    });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(403);
+    // The private-resolving hop was never fetched.
+    expect(fetched).toEqual(["https://img.example.com/a.png"]);
   });
 });
 
