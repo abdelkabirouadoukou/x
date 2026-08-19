@@ -223,12 +223,18 @@ export function findMiddlewareChain(
 }
 
 export function routePatternToRegex(routePath: string): RegExp {
-  const regexStr = routePath
+  // Escape every regex metacharacter in literal segments so a folder like
+  // `v1.2` compiles to `v1\.2` (matching only `v1.2`, not `v1x2`). The
+  // dynamic tokens are left intact and expanded afterwards: `:param` keeps its
+  // capture group and `*` keeps its catch-all, so their inserted pattern
+  // syntax isn't double-escaped.
+  const escaped = routePath
+    .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
     .replace(/\//g, "\\/")
     .replace(/:(\w+)/g, "([^/]+)")
     .replace(/\*/g, "(.+)");
 
-  return new RegExp(`^${regexStr}$`);
+  return new RegExp(`^${escaped}$`);
 }
 
 export function extractParams(

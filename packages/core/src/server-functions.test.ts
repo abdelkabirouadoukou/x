@@ -94,6 +94,18 @@ describe("server function dispatch", () => {
     expect(res?.status).toBe(404);
   });
 
+  test("does not over-match static segments containing regex metacharacters", async () => {
+    registerServerFunctions("/releases/v1.2/plus+target", [], {
+      ping: async () => "pong",
+    });
+    const handler = getServerFunctionHandler();
+    const hit = await handler(post("/__x/actions/releases/v1.2/plus+target/ping", { body: "[]" }));
+    expect(hit?.status).toBe(200);
+    // `.` must not match any character, `+` must not match the previous char.
+    const miss = await handler(post("/__x/actions/releases/v1x2/plustarget/ping", { body: "[]" }));
+    expect(miss?.status).toBe(404);
+  });
+
   test("returns 400 for an invalid JSON body", async () => {
     registerServerFunctions("/greet", [], { greet: okFn });
     const handler = getServerFunctionHandler();
