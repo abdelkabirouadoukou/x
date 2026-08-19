@@ -17,11 +17,19 @@
 export interface StaticCacheEntry {
   html: string;
   timestamp: number;
+  /** CSP nonce baked into the inline scripts of `html`; must be reused when serving from cache. */
+  cspNonce: string;
+}
+
+/** Rendered HTML plus the CSP nonce it was rendered with. */
+export interface ComputeResult {
+  html: string;
+  cspNonce: string;
 }
 
 export class IsrCache {
   private readonly entries = new Map<string, StaticCacheEntry>();
-  private readonly inFlight = new Map<string, Promise<string | Response>>();
+  private readonly inFlight = new Map<string, Promise<ComputeResult | Response>>();
   private readonly maxEntries: number;
 
   constructor(maxEntries = 500) {
@@ -39,9 +47,9 @@ export class IsrCache {
     return entry;
   }
 
-  set(key: string, html: string): void {
+  set(key: string, html: string, cspNonce: string): void {
     this.entries.delete(key);
-    this.entries.set(key, { html, timestamp: Date.now() });
+    this.entries.set(key, { html, timestamp: Date.now(), cspNonce });
     this.evict();
   }
 
@@ -76,18 +84,20 @@ export class IsrCache {
    * `Response` returned by `compute` (e.g. a loader redirect) is passed
    * through and never cached.
    */
-  getOrCompute(key: string, compute: () => Promise<string | Response>): Promise<string | Response> {
+  getOrCompute(
+    key: string,
+    compute: () => Promise<ComputeResult | Response>,
+  ): Promise<ComputeResult | Response> {
     const cached = this.get(key);
-    if (cached) return Promise.resolve(cached.html);
+    if (cached) return Promise.resolve({ html: cached.html, cspNonce: cached.cspNonce });
 
     const existing = this.inFlight.get(key);
     if (existing) return existing;
 
     const promise = compute()
       .then((result) => {
-        if (typeof result === "string") {
-          this.set(key, result);
-        }
+        if (result instanceof Response) return result;
+        this.set(key, result.html, result.cspNonce);
         return result;
       })
       .finally(() => {

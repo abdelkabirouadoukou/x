@@ -122,3 +122,58 @@ describe("renderStreamingPage lazy island footer", () => {
     expect(html).toContain('<button type="button">0</button>');
   });
 });
+
+describe("CSP nonce on inline scripts", () => {
+  test("renderPage stamps the nonce on every inline script it emits", () => {
+    const html = renderPage(createElement("div", null, "hello"), {
+      title: "Nonce",
+      liveReload: true,
+      cspNonce: "nonce-xyz",
+      islandProps: { counter: '{"count":0}' },
+      islandScripts: ["/_islands/counter.js"],
+    });
+    expect(html).toContain('nonce="nonce-xyz"');
+    // Client nav + live-reload are inline scripts: both must carry the nonce.
+    expect(html.match(/<script nonce="nonce-xyz">/g)).toHaveLength(2);
+    // Island props are a non-executing data block; a nonce-based script-src
+    // still requires the element nonce to allow it.
+    expect(html).toContain(
+      '<script id="__X_ISLAND_PROPS" type="application/json" nonce="nonce-xyz">',
+    );
+    // External island scripts are same-origin, so 'self' authorises them — no nonce needed.
+    expect(html).toContain('<script data-island-script src="/_islands/counter.js"></script>');
+  });
+
+  test("renderPageOnce propagates the nonce to the rendered shell", async () => {
+    const html = await renderPageOnce(createElement("h2", null, "once"), {
+      cspNonce: "nonce-once",
+    });
+    expect(html).toContain('<script nonce="nonce-once">');
+  });
+
+  test("renderStreamingPage stamps the nonce on its inline footer scripts", async () => {
+    const stream = await renderStreamingPage(createElement("p", null, "stream"), {
+      cspNonce: "nonce-stream",
+      islandProps: { counter: '{"count":1}' },
+      islandScripts: ["/_islands/counter.js"],
+    });
+    const reader = stream.getReader();
+    let html = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) html += new TextDecoder().decode(value);
+    }
+    expect(html).toContain('<script nonce="nonce-stream">');
+    expect(html).toContain(
+      '<script id="__X_ISLAND_PROPS" type="application/json" nonce="nonce-stream">',
+    );
+    expect(html).toContain('<script data-island-script src="/_islands/counter.js"></script>');
+  });
+
+  test("without a nonce, script tags are emitted exactly as before", () => {
+    const html = renderPage(createElement("div", null, "x"), { liveReload: true });
+    expect(html).not.toContain("nonce=");
+    expect(html).toContain("<script>");
+  });
+});

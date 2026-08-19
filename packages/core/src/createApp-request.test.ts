@@ -184,6 +184,41 @@ describe("security hardening", () => {
     expect(res.headers.get("X-Content-Type-Options")).toBeNull();
   });
 
+  test("default CSP uses a per-response nonce, not script-src 'unsafe-inline'", async () => {
+    const a = await createApp({
+      pagesDir: PAGES_DIR,
+      apiDir: API_DIR,
+      development: false,
+      observability: { logging: false },
+    });
+    const res = await a.fetch(new Request("http://localhost/about"));
+    const csp = res.headers.get("Content-Security-Policy");
+    const scriptSrc = /script-src ([^;]+)/.exec(csp ?? "")?.[1];
+    expect(scriptSrc?.includes("'unsafe-inline'")).toBe(false);
+    expect(scriptSrc).toContain("'nonce-");
+    // The nonce must never leak to the client via the stripped header.
+    expect(res.headers.has("x-csp-nonce")).toBe(false);
+
+    const html = await res.text();
+    const nonce = /nonce="([^"]+)"/.exec(html)?.[1];
+    expect(nonce).toBeDefined();
+    expect(scriptSrc).toBe(`'self' 'nonce-${nonce}'`);
+  });
+
+  test("non-HTML responses keep the legacy default CSP (nothing inline to protect)", async () => {
+    const a = await createApp({
+      pagesDir: PAGES_DIR,
+      apiDir: API_DIR,
+      development: false,
+      observability: { logging: false },
+    });
+    const res = await a.fetch(new Request("http://localhost/api/hello"));
+    const scriptSrc = /script-src ([^;]+)/.exec(
+      res.headers.get("Content-Security-Policy") ?? "",
+    )?.[1];
+    expect(scriptSrc).toBe("'self' 'unsafe-inline'");
+  });
+
   test("rate limiting blocks requests past the configured limit", async () => {
     const a = await createApp({
       pagesDir: PAGES_DIR,

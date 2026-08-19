@@ -41,7 +41,7 @@ import {
 } from "./security/body-size";
 import { type CsrfOptions, checkCsrf } from "./security/csrf";
 import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
-import { IsrCache, isrCacheKey } from "./security/isr-cache";
+import { type ComputeResult, IsrCache, isrCacheKey } from "./security/isr-cache";
 import {
   createRateLimiter,
   type RateLimitOptions,
@@ -239,6 +239,7 @@ function renderContentPage(
   content: ContentEntry,
   stylesheet: string | undefined,
   dev = false,
+  nonce?: string,
 ): string {
   const title = (content.frontmatter.title as string) ?? content.slug;
   const bodyHtml = renderMarkdown(content.body);
@@ -254,7 +255,12 @@ function renderContentPage(
         dangerouslySetInnerHTML: { __html: bodyHtml },
       }),
     ),
-    { title, stylesheet, liveReload: dev },
+    {
+      title,
+      stylesheet,
+      liveReload: dev,
+      ...(nonce ? { cspNonce: nonce } : {}),
+    },
   );
   return body;
 }
@@ -347,25 +353,46 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   const loggingEnabled = options.observability?.logging ?? true;
   const imageProxyHandler = createImageProxyHandler(options.images);
 
+  const CSP_NONCE_HEADER = "x-csp-nonce";
+
+  /** 128-bit CSPRNG nonce (web-platform, base64url-unpadded). */
+  function generateCspNonce(): string {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    let bin = "";
+    for (const byte of bytes) bin += String.fromCharCode(byte);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
   function withResponseHardening(res: Response): Response {
-    return securityHeadersOptions === false
-      ? res
-      : applySecurityHeaders(res, securityHeadersOptions);
+    if (securityHeadersOptions === false) return res;
+    // The nonce travels on the response so ISR cache hits can emit the exact
+    // value baked into the cached HTML. Strip it before it reaches the client.
+    const cspNonce = res.headers.get(CSP_NONCE_HEADER) ?? undefined;
+    if (cspNonce) res.headers.delete(CSP_NONCE_HEADER);
+    return applySecurityHeaders(res, {
+      ...securityHeadersOptions,
+      ...(cspNonce ? { cspNonce } : {}),
+    });
   }
 
   async function renderNotFound(_req?: Request): Promise<Response> {
     const content = notFoundLayout
       ? createElement(notFoundLayout, null, createElement(notFoundComponent, { params: {} }))
       : createElement(notFoundComponent, { params: {} });
+    const cspNonce = generateCspNonce();
     const html = renderPage(content, {
       title: "404 — Not Found",
       stylesheet: stylesheetHref,
       liveReload: dev,
+      cspNonce,
     });
-    return new Response(html, {
+    const res = new Response(html, {
       status: 404,
       headers: { "Content-Type": "text/html; charset=utf-8" },
     });
+    res.headers.set(CSP_NONCE_HEADER, cspNonce);
+    return res;
   }
 
   const makeApiHandler =
@@ -446,10 +473,12 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               { registry },
               wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
             );
+            const cspNonce = generateCspNonce();
 
             const stream = await renderStreamingPage(content, {
               stylesheet: stylesheetHref,
               liveReload: dev,
+              cspNonce,
               ...(islandScripts === undefined
                 ? {
                     // Single-render mode: islands register into `registry`
@@ -466,9 +495,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
                 metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
               },
             });
-            return new Response(stream, {
+            const res = new Response(stream, {
               headers: { "Content-Type": "text/html; charset=utf-8" },
             });
+            res.headers.set(CSP_NONCE_HEADER, cspNonce);
+            return res;
           }
 
           const revalidateSeconds = revalidate ?? 0;
@@ -481,12 +512,14 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           if (revalidateSeconds > 0) {
             const cached = staticCache.get(cacheKey);
             if (cached && Date.now() - cached.timestamp < revalidateSeconds * 1000) {
-              return new Response(cached.html, {
+              const res = new Response(cached.html, {
                 headers: {
                   "Content-Type": "text/html; charset=utf-8",
                   "X-Revalidated": "hit",
                 },
               });
+              res.headers.set(CSP_NONCE_HEADER, cached.cspNonce);
+              return res;
             }
             // Stale entry: drop it so the miss path recomputes instead of
             // getOrCompute serving the expired HTML back to us.
@@ -495,7 +528,7 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
 
           // Loader + render, shared by the miss path. Hoisted so a stampede of
           // concurrent misses for the same URL renders once, not N times.
-          const computeHtml = async (): Promise<string | Response> => {
+          const computeHtml = async (): Promise<ComputeResult | Response> => {
             let loaderData: Record<string, unknown> = {};
             if (loader) {
               const result = await loader(ctx);
@@ -509,9 +542,11 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               { registry },
               wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
             );
-            return renderPageOnce(content, {
+            const cspNonce = generateCspNonce();
+            const html = await renderPageOnce(content, {
               stylesheet: stylesheetHref,
               liveReload: dev,
+              cspNonce,
               ...(islandScripts === undefined
                 ? {
                     resolveIslandScripts: () =>
@@ -519,28 +554,33 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
                   }
                 : { islandScripts }),
             });
+            return { html, cspNonce };
           };
 
           if (revalidateSeconds > 0) {
             const result = await staticCache.getOrCompute(cacheKey, computeHtml);
             if (result instanceof Response) return result;
-            return new Response(result, {
+            const res = new Response(result.html, {
               headers: {
                 "Content-Type": "text/html; charset=utf-8",
                 "X-Revalidated": "miss",
               },
             });
+            res.headers.set(CSP_NONCE_HEADER, result.cspNonce);
+            return res;
           }
 
-          const html = await computeHtml();
-          if (html instanceof Response) return html;
+          const result = await computeHtml();
+          if (result instanceof Response) return result;
 
-          return new Response(html, {
+          const res = new Response(result.html, {
             headers: {
               "Content-Type": "text/html; charset=utf-8",
               "X-Revalidated": "none",
             },
           });
+          res.headers.set(CSP_NONCE_HEADER, result.cspNonce);
+          return res;
         };
 
         if (middlewareModules.length > 0) {
@@ -824,10 +864,13 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
       const loadedContent: ContentHandler[] = content.map((entry) => ({
         entry,
         handler: async () => {
-          const html = renderContentPage(entry, stylesheetHref, dev);
-          return new Response(html, {
+          const cspNonce = generateCspNonce();
+          const html = renderContentPage(entry, stylesheetHref, dev, cspNonce);
+          const res = new Response(html, {
             headers: { "Content-Type": "text/html; charset=utf-8" },
           });
+          res.headers.set(CSP_NONCE_HEADER, cspNonce);
+          return res;
         },
       }));
       contentHandlers = loadedContent;

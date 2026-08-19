@@ -17,15 +17,26 @@ export interface SecurityHeadersOptions {
   contentTypeOptions?: string | false;
   /** Referrer-Policy. Default: "strict-origin-when-cross-origin". Set false to disable. */
   referrerPolicy?: string | false;
+  /**
+   * Per-response random nonce for the default Content-Security-Policy. When
+   * present, `script-src` becomes `'self' 'nonce-<value>'` instead of
+   * `'self' 'unsafe-inline'`, letting HTML responses defend against inline
+   * script injection. Ignored when a custom `contentSecurityPolicy` is set —
+   * that value is applied verbatim.
+   */
+  cspNonce?: string;
 }
 
-const DEFAULT_CSP =
-  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'";
+function defaultCsp(nonce: string | undefined): string {
+  return nonce
+    ? `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'`
+    : "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'";
+}
 
 export function buildSecurityHeaders(options: SecurityHeadersOptions = {}): Headers {
   const headers = new Headers();
 
-  const csp = options.contentSecurityPolicy ?? DEFAULT_CSP;
+  const csp = options.contentSecurityPolicy ?? defaultCsp(options.cspNonce);
   if (csp !== false) headers.set("Content-Security-Policy", csp);
 
   const hstsMaxAge = options.hstsMaxAge ?? 15552000;
