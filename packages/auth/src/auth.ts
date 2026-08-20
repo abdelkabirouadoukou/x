@@ -59,11 +59,13 @@ export interface AuthConfig {
    */
   forceSecureCookie?: boolean;
   /**
-   * Per-account brute-force protection for the credentials provider. Buckets
-   * are keyed by `(client IP, submitted identifier)`, so guessing one account
-   * from many IPs is still throttled, while other accounts from the same IP
-   * are unaffected. In-memory (single-process). Default: 5 failed attempts,
-   * 15-minute base window with exponential backoff.
+   * Per-account brute-force protection for the credentials provider. Two
+   * independent buckets are checked together: an **account** bucket keyed by
+   * the submitted identifier alone (so guessing one account from many IPs is
+   * still throttled), and an **IP** bucket keyed by the client IP (so one IP
+   * spraying many accounts is throttled while other accounts from the same
+   * network stay unaffected). In-memory (single-process). Default: 5 failed
+   * attempts, 15-minute base window with exponential backoff.
    */
   loginBruteForce?: BruteForceOptions;
   /** Session lifetime in seconds. Default: 7 days. */
@@ -386,11 +388,22 @@ export function defineAuth(config: AuthConfig): Auth {
     for (const [key, value] of form.entries()) params[key] = String(value);
 
     // Key the lockout on whatever the form calls the account identifier, so
-    // username/password forms and email/password forms both lock the account
-    // rather than the IP. Bucket is `(client IP, identifier)`.
+    // username/password forms and email/password forms both lock the account.
+    // Two independent buckets guard the two distinct attacks: the *account*
+    // bucket (identifier alone) stops guessing one account from many IPs, and
+    // the *IP* bucket stops one IP spraying many accounts. They are separate
+    // keys on purpose — a single `(IP, identifier)` key is bypassed entirely
+    // by rotating source IPs, since each new IP starts a fresh bucket.
     const identifier = params.username ?? params.email ?? params.user ?? params.identifier ?? "";
-    const guardKey = bruteForce.keyFor(req, identifier);
-    const status = bruteForce.status(guardKey);
+    const accountKey = bruteForce.accountKey(identifier);
+    const ipKey = bruteForce.ipKey(req);
+    const accountStatus = bruteForce.status(accountKey);
+    const ipStatus = bruteForce.status(ipKey);
+    const status = {
+      ok: accountStatus.ok && ipStatus.ok,
+      // Retry-After must reflect the longer of the two windows.
+      resetAt: Math.max(accountStatus.resetAt, ipStatus.resetAt),
+    };
     if (!status.ok) {
       auditLoginFailure({
         userId: null,
@@ -408,7 +421,8 @@ export function defineAuth(config: AuthConfig): Auth {
 
     const user = await provider.authorize(params, { request: req });
     if (!user?.id) {
-      bruteForce.recordFailure(guardKey);
+      bruteForce.recordFailure(accountKey);
+      bruteForce.recordFailure(ipKey);
       auditLoginFailure({
         userId: null,
         provider: provider.id,
@@ -417,7 +431,8 @@ export function defineAuth(config: AuthConfig): Auth {
       });
       return new Response("Invalid credentials", { status: 401 });
     }
-    bruteForce.reset(guardKey);
+    bruteForce.reset(accountKey);
+    bruteForce.reset(ipKey);
     return establishSession(user, provider.id, undefined, req);
   };
 

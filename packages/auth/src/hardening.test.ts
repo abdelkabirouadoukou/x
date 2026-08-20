@@ -96,42 +96,108 @@ describe("auth hardening: brute-force lockout on credentials", () => {
   afterAll(() => db.close());
 
   test("locks an account after maxAttempts consecutive failures and returns 429", async () => {
+    const ip = "203.0.113.20";
     for (let i = 0; i < 3; i++) {
-      const res = await auth.handleRequest(signInRequest("lockout@example.com", "wrong"));
+      const res = await auth.handleRequest(
+        signInRequest("lockout@example.com", "wrong", { "x-forwarded-for": ip }),
+      );
       expect(res.status).toBe(401);
     }
-    const locked = await auth.handleRequest(signInRequest("lockout@example.com", "wrong"));
+    const locked = await auth.handleRequest(
+      signInRequest("lockout@example.com", "wrong", { "x-forwarded-for": ip }),
+    );
     expect(locked.status).toBe(429);
     expect(locked.headers.get("Retry-After")).toBeTruthy();
   });
 
   test("a successful sign-in clears the lockout bucket", async () => {
+    const ip = "203.0.113.21";
     for (let i = 0; i < 2; i++) {
-      await auth.handleRequest(signInRequest("admin@example.com", "wrong"));
+      await auth.handleRequest(
+        signInRequest("admin@example.com", "wrong", { "x-forwarded-for": ip }),
+      );
     }
     const ok = await auth.handleRequest(
-      signInRequest("admin@example.com", "correct horse battery staple"),
+      signInRequest("admin@example.com", "correct horse battery staple", {
+        "x-forwarded-for": ip,
+      }),
     );
     expect(ok.status).toBe(302);
 
     for (let i = 0; i < 3; i++) {
-      await auth.handleRequest(signInRequest("admin@example.com", "wrong"));
+      await auth.handleRequest(
+        signInRequest("admin@example.com", "wrong", { "x-forwarded-for": ip }),
+      );
     }
-    const relocked = await auth.handleRequest(signInRequest("admin@example.com", "wrong"));
+    const relocked = await auth.handleRequest(
+      signInRequest("admin@example.com", "wrong", { "x-forwarded-for": ip }),
+    );
     expect(relocked.status).toBe(429);
   });
 
-  test("lockout is per account: other accounts from the same IP are unaffected", async () => {
+  test("lockout is per account: a different account from a different IP is unaffected", async () => {
     for (let i = 0; i < 3; i++) {
-      await auth.handleRequest(signInRequest("victim@example.com", "wrong"));
+      await auth.handleRequest(
+        signInRequest("victim@example.com", "wrong", { "x-forwarded-for": "203.0.113.10" }),
+      );
     }
-    expect((await auth.handleRequest(signInRequest("victim@example.com", "wrong"))).status).toBe(
-      429,
+    expect(
+      (
+        await auth.handleRequest(
+          signInRequest("victim@example.com", "wrong", { "x-forwarded-for": "203.0.113.10" }),
+        )
+      ).status,
+    ).toBe(429);
+    // A different account from a different IP keeps getting the ordinary 401,
+    // not a lockout — the account bucket is scoped to the identifier alone.
+    expect(
+      (
+        await auth.handleRequest(
+          signInRequest("other@example.com", "wrong", { "x-forwarded-for": "203.0.113.11" }),
+        )
+      ).status,
+    ).toBe(401);
+  });
+
+  test("rotating source IPs cannot dodge the account lockout", async () => {
+    // One attacker, many IPs (botnet / proxy pool). Each request comes from a
+    // different client IP — under the old `(IP, identifier)` composite key
+    // every attempt started a fresh bucket and maxAttempts was never reached.
+    for (let i = 0; i < 3; i++) {
+      const res = await auth.handleRequest(
+        signInRequest("distributed@example.com", "wrong", {
+          "x-forwarded-for": `203.0.113.${i + 1}`,
+        }),
+      );
+      expect(res.status).toBe(401);
+    }
+    // Same account, yet another IP: the account bucket is keyed by identifier
+    // alone, so it must be locked regardless of the source IP.
+    const locked = await auth.handleRequest(
+      signInRequest("distributed@example.com", "wrong", { "x-forwarded-for": "203.0.113.99" }),
     );
-    // A different account keeps getting the ordinary 401, not a lockout.
-    expect((await auth.handleRequest(signInRequest("other@example.com", "wrong"))).status).toBe(
-      401,
+    expect(locked.status).toBe(429);
+    expect(locked.headers.get("Retry-After")).toBeTruthy();
+  });
+
+  test("one IP spraying many accounts is still throttled", async () => {
+    // The IP bucket is keyed by client IP alone, so a single node trying many
+    // usernames trips it without locking out a *specific* account for anyone
+    // sharing that network.
+    for (let i = 0; i < 3; i++) {
+      const res = await auth.handleRequest(
+        signInRequest(`spray-target-${i}@example.com`, "wrong", {
+          "x-forwarded-for": "198.51.100.42",
+        }),
+      );
+      expect(res.status).toBe(401);
+    }
+    const throttled = await auth.handleRequest(
+      signInRequest("yet-another@example.com", "wrong", {
+        "x-forwarded-for": "198.51.100.42",
+      }),
     );
+    expect(throttled.status).toBe(429);
   });
 });
 
