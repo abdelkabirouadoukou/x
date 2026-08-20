@@ -176,11 +176,21 @@ interface ContentHandler {
 // Routes are matched in order in the fetch handler, so static (literal)
 // routes must sort before dynamic ones — otherwise /posts/[id] would shadow a
 // literal /posts/new depending on directory-scan order. Catch-alls go last.
+//
+// Same-category ties are broken segment-by-segment, positional specificity:
+// a literal segment beats a param which beats a catch-all. This picks a
+// deterministic winner independent of the OS's directory-scan order — e.g.
+// `/bar/[b]` vs `/[a]/foo` both matching `/bar/foo` → `/bar/[b]` wins because
+// its first segment is literal. Fully-tied routes fall back to a lexical
+// sort on the route path.
 function sortRoutes(handlers: RouteHandler[]): RouteHandler[] {
   return handlers.sort((a, b) => {
-    const bp = routeMatchesForSort(b.entry);
-    const ap = routeMatchesForSort(a.entry);
-    return ap - bp;
+    const category = routeMatchesForSort(a.entry) - routeMatchesForSort(b.entry);
+    if (category !== 0) return category;
+    for (const [as, bs] of zip(segmentSpecificity(a.entry), segmentSpecificity(b.entry))) {
+      if (as !== bs) return as - bs;
+    }
+    return a.entry.routePath < b.entry.routePath ? -1 : 1;
   });
 }
 
@@ -188,6 +198,22 @@ function routeMatchesForSort(entry: RouteEntry): number {
   const isStatic = entry.paramNames.length === 0;
   const isCatchAll = entry.routePath.includes("*");
   return isStatic ? 0 : isCatchAll ? 2 : 1;
+}
+
+/** Literal=0, param (`:x`)=1, catch-all (`*`)=2, per segment. */
+function segmentSpecificity(entry: RouteEntry): number[] {
+  return entry.routePath
+    .split("/")
+    .filter((seg) => seg.length > 0)
+    .map((seg) => (seg === "*" ? 2 : seg.startsWith(":") ? 1 : 0));
+}
+
+function zip<A, B>(as: A[], bs: B[]): Array<[A, B]> {
+  const out: Array<[A, B]> = [];
+  for (let i = 0; i < Math.max(as.length, bs.length); i++) {
+    out.push([as[i] as A, bs[i] as B]);
+  }
+  return out;
 }
 
 function projectRootFromRoutesDir(routesDir: string): string {

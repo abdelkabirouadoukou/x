@@ -53,6 +53,23 @@ Given a `pagesDir`, `scanPages` walks the directory and maps files to routes:
 
 Files and directories prefixed with `_` or `.` are never treated as routes.
 
+### Route resolution order
+
+When several routes could match one URL, the most specific one wins:
+
+1. **Static (literal) routes beat dynamic ones** — `/users/new` is served by
+   `pages/users/new.tsx`, never by `pages/users/[id].tsx`.
+2. **Single-segment params beat catch-alls** — `[slug].tsx` matches
+   `/blog/hello` over `[...rest].tsx`.
+3. **Same-category ties are broken segment-by-segment, positionally**: at the
+   first segment where two routes differ, a literal segment (`users`) beats a
+   param (`:id`) which beats a catch-all (`*`). For example `pages/users/[id].tsx`
+   (`/users/:id`) beats `pages/[slug]/profile.tsx` (`/:slug/profile`) for the
+   URL `/users/profile`, because their first segments are literal vs. param.
+   Fully tied routes (identical segment specificity) fall back to a lexical
+   sort by route path. The outcome is deterministic, independent of the OS's
+   directory-scan order — you never need to rename files to force a winner.
+
 Underlying scanners (`scanRoutes`, `scanPages`, `scanApiDir`, `scanLayouts`, `scanLayoutsDir`, `scanMiddleware`, `scanNotFound`) and chain resolvers (`findLayoutChain`, `findMiddlewareChain`) are exported if you need to build custom tooling on top of the same conventions.
 
 ## Route modes: static vs. server

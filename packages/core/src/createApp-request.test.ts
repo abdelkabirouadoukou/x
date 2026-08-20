@@ -124,6 +124,40 @@ describe("page routing", () => {
     expect(res.status).toBe(404);
     expect(res.headers.get("Content-Type")).toContain("text/html");
   });
+
+  test("two matching same-category dynamic routes resolve deterministically (#140)", async () => {
+    // `/bar/[b]` (1 literal segment) vs `/[a]/foo` (0 literal segments): both
+    // match `/bar/foo`, so the tie must be broken by literal-segment count, not
+    // by whatever order readdirSync returned on this OS.
+    const dir = join(import.meta.dir, "__fixtures__/request-tie/pages");
+    mkdirSync(join(dir, "bar"), { recursive: true });
+    mkdirSync(join(dir, "[a]"), { recursive: true });
+    writeFileSync(
+      join(dir, "bar/[b].tsx"),
+      "export default function Route() { return <h1>bar-param</h1>; }\n",
+    );
+    writeFileSync(
+      join(dir, "[a]/foo.tsx"),
+      "export default function Route() { return <h1>catchall-ish</h1>; }\n",
+    );
+
+    try {
+      const a = await createApp({
+        pagesDir: dir,
+        development: false,
+        security: { headers: false },
+        observability: { logging: false },
+      });
+      const res = await a.fetch(new Request("http://localhost/bar/foo"));
+      expect(res.status).toBe(200);
+      expect(await res.text()).toContain("<h1>bar-param</h1>");
+    } finally {
+      rmSync(join(import.meta.dir, "__fixtures__/request-tie"), {
+        recursive: true,
+        force: true,
+      });
+    }
+  });
 });
 
 describe("api routes", () => {
