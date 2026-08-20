@@ -46,6 +46,14 @@ jobs:
             exit 1
           fi
 
+      # changesets/action@v1 used to write ~/.npmrc itself from NPM_TOKEN;
+      # v2 no longer touches npm auth, so the CLI's `npm publish` must be
+      # authenticated explicitly.
+      - name: Configure npm authentication
+        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> "$HOME/.npmrc"
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Create Release PR or Publish
         # v1 parses `New tag:` from the CLI's stdout to detect published
         # packages, which @changesets/cli v3 no longer prints. v2 reads the
