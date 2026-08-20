@@ -48,6 +48,26 @@ Environment validation failed:
 | `oneOf([...values])` | one of the given string literals | return type is narrowed to the literal union |
 | `url()` | any string parseable by `new URL(...)` | |
 
+Built-in validators also expose two chaining combinators:
+
+- `.optional()` — a missing variable becomes `undefined` instead of failing;
+  a present-but-invalid value still throws. `num().optional()` is typed
+  `number | undefined`.
+- `.default(fallback)` — a missing variable yields `fallback`; a
+  present-but-invalid value still throws. `num().default(3000)` stays typed
+  `number`.
+
+```ts
+const env = createEnv({
+  server: {
+    PORT: num().default(3000),
+    SENTRY_DSN: url().optional(),
+  },
+  runtimeEnv: {},
+});
+// env.PORT === 3000, env.SENTRY_DSN === undefined
+```
+
 Each validator is just `{ parse(input: string | undefined): T }` (the `EnvValidator<T>` interface, exported as a type). Write your own for anything not covered above:
 
 ```ts
@@ -71,7 +91,7 @@ When used with `@thexjs/core`, keep the default `THEXJS_PUBLIC_` prefix: the fra
 
 ## Notes
 
-- Every field is currently **required**; there's no built-in `optional()`/`default()` wrapper. If a variable is genuinely optional in your app, read it from `process.env` directly rather than through `createEnv`, or write a validator whose `parse` returns a fallback instead of throwing on `undefined`.
+- Optional variables use `.optional()`; optional-with-fallback use `.default(v)` (see above). A required variable that's unset still fails validation.
 - `runtimeEnv` is passed in explicitly (rather than read internally) so this works the same whether you're on Bun, in a bundler that inlines `process.env.*` at build time, or in a test with a mocked env object.
 
 ## License
