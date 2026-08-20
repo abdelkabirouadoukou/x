@@ -48,6 +48,13 @@ class FakeRedis {
         this.values.set(key, { value: current.value, expiresAt: now + Number(args[1]) * 1000 });
         return Promise.resolve(1);
       }
+      case "PTTL": {
+        const key = args[0] as string;
+        const current = this.values.get(key);
+        if (current === undefined) return Promise.resolve(-2);
+        if (current.expiresAt === Number.POSITIVE_INFINITY) return Promise.resolve(-1);
+        return Promise.resolve(Math.max(0, current.expiresAt - now));
+      }
       default:
         throw new Error(`FakeRedis: unhandled command ${cmd}`);
     }
@@ -90,6 +97,33 @@ describe("createRedisRateLimitStoreFromClient", () => {
     expect((await limiterA.check(req)).ok).toBe(false);
     limiterA.dispose();
     limiterB.dispose();
+  });
+
+  test("resetAt derives from the key's remaining TTL, not Date.now()+windowMs (#135)", async () => {
+    // Mid-window: the key already has 30s of its 60s window EXPIRED away, so
+    // the real reset is only ~30s ahead. The buggy store returned
+    // Date.now()+windowMs on every call, sliding Retry-After forward and
+    // pinning resetAt ~60s ahead. With PTTL driving resetAt it must land ~30s
+    // ahead, and stay pinned across calls.
+    const t0 = Date.now();
+    const remaining = 30_000;
+    const client: RedisClientLike = {
+      sendCommand: async (cmd) => {
+        if (cmd === "INCR") return 2;
+        if (cmd === "EXPIRE") return 1;
+        if (cmd === "PTTL") return remaining;
+        throw new Error(`unhandled command ${cmd}`);
+      },
+    };
+    const store = createRedisRateLimitStoreFromClient(async () => client);
+
+    const first = await store.incr("d", 60_000);
+    const second = await store.incr("d", 60_000);
+
+    expect(first.resetAt).toBeGreaterThan(t0 + 25_000);
+    expect(first.resetAt).toBeLessThan(t0 + 35_000);
+    expect(second.resetAt).toBeGreaterThan(first.resetAt - 2_000);
+    expect(second.resetAt).toBeLessThan(first.resetAt + 2_000);
   });
 
   test("a new window starts fresh once the key's TTL elapses", async () => {
