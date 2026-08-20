@@ -3,6 +3,23 @@
 Direction and coverage status for the x framework. Newest signal first; this
 file is the honest scoreboard, not a marketing plan.
 
+## Project status
+
+The project is in **maintenance mode** while the author is busy with the
+collage. What that means:
+
+- **Feature work is frozen.** The existing surface is the surface; new ideas
+  go to the issue board for later, not into `main` this season.
+- **Community-run.** The repo is set up for contributors: issues are labeled
+  (`help wanted`, `good first issue`), and changes land through fork + PR. An
+  external maintainer is welcome to take triage/review ownership.
+- **Review cadence is best-effort.** PRs are reviewed promptly but on a
+  limited weekly window (~30–60 min). Small, test-backed PRs are the fastest
+  path through review.
+- **Good first issues**: see the
+  [7 beginner-friendly issues](https://github.com/abdelkabirouadoukou/x/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  if you want somewhere concrete to start.
+
 ## API stability matrix
 
 What you can rely on vs. what can still move. "Tested" means the behavior is
@@ -43,10 +60,11 @@ writing.
 3. **Observability reporters**: error reporter flush on shutdown, metric
    emission.
 
-## Near-term (0.x)
+## Near-term
 
 - Close the data layer + content coverage gaps above.
-- First `@thexjs/core` tagged release with a changelog via changesets.
+- Keep the per-package changelogs and docs accurate as the API settles (see
+  `CHANGELOG.md`).
 - Broaden the Vercel adapter integration test to cover layouts + middleware
   chains and islands in the rendered output.
 
@@ -87,7 +105,7 @@ Shipped items are listed with a pointer to where they landed.
    soak test is added.
 4. **Backup / disaster recovery**: documented backup and restore story for the
    SQLite/Postgres data layer (hot backup via SQLite backup API, pg_dump/pg_restore,
-   restore runbook + checklist) in `docs/data-layer`, plus runbook guidance for
+   restore runbook + checklist) in the data-layer docs page, plus runbook guidance for
    multi-instance deployments.
 5. **Security response**: disclosure SLA in `SECURITY.md` — 48h acknowledgement,
    5-business-day triage, CVSS-aligned severity, 90-day coordinated disclosure,

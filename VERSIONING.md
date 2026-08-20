@@ -14,14 +14,16 @@ written together. There is no independent release cadence per package.
 | Package | Status | Since |
 |---|---|---|
 | `@thexjs/core` | `1.x` | 1.0.0 |
-| `@thexjs/auth` | `2.x` | 1.0.0 |
+| `@thexjs/auth` | `3.x` | 1.0.0 |
 | `@thexjs/env` | `1.x` | 1.0.0 |
-| `@thexjs/adapter-vercel` | `1.x` | 1.0.0 |
 | `@thexjs/cli` | `1.x` | 1.0.0 |
+| `@thexjs/hooks` | `0.x` | — (pre-1.0) |
+| `@thexjs/adapter-vercel` | `1.x` | 1.0.0 |
 | `create-thexjs-app` | `1.x` | 1.0.0 |
 
-`1.0.0` is the first tagged baseline. Before a package reaches `1.0.0` (none
-currently), bump conservatively: prefer `patch`, avoid surprise `minor`s.
+`1.0.0` is the first tagged baseline. Before a package reaches `1.0.0`
+(currently only `@thexjs/hooks`), bump conservatively: prefer `patch`, avoid
+surprise `minor`s.
 
 ## What counts as a breaking change
 

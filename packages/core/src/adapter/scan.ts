@@ -100,15 +100,30 @@ export async function resolveBuildManifest(
         fileName === "index" || !fileName
           ? actionFile.routePath
           : `/${segments.slice(0, -1).join("/")}`;
+      const actionMod = (await import(actionFile.filePath)) as Record<string, unknown>;
+      // Match createApp/build: a batched `export const actions = {...}`
+      // registers each key as a function, and individually-named function
+      // exports are registered too. Doing only `Object.keys(actionMod)` here
+      // would produce `["actions"]` for the batched pattern, so the generated
+      // client stub would export a function literally named `actions` and the
+      // island's `import { greet }` would be `undefined` at runtime.
+      const fnNames: string[] = [];
+      const batched = actionMod.actions as
+        | Record<string, (...args: unknown[]) => Promise<unknown>>
+        | undefined;
+      if (batched) fnNames.push(...Object.keys(batched));
+      for (const [key, value] of Object.entries(actionMod)) {
+        if (key === "default" || key === "actions" || typeof value !== "function") continue;
+        fnNames.push(key);
+      }
+      if (fnNames.length > 0) {
+        actionModules.set(actionFile.filePath, { parentPath, fnNames });
+      }
       actions.push({
         parentPath,
         paramNames: actionFile.paramNames,
         module: registry.ref(actionFile.filePath, "action"),
-      });
-      const actionMod = (await import(actionFile.filePath)) as Record<string, unknown>;
-      actionModules.set(actionFile.filePath, {
-        parentPath,
-        fnNames: Object.keys(actionMod).filter((k) => k !== "default"),
+        ...(fnNames.length > 0 ? { fnNames } : {}),
       });
     }
   }

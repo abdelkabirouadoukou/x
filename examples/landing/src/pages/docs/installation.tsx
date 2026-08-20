@@ -27,7 +27,7 @@ export default function DocPage(_props: RouteProps) {
 
       <h2 className="text-xl">Create a new project</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        The fastest path is the project scaffolder. It copies a template, generates{" "}
+        The fastest path is the project scaffolder. It generates{" "}
         <span className="text-foreground">package.json</span>, resolves the latest{" "}
         <span className="text-foreground">@thexjs/core</span> and{" "}
         <span className="text-foreground">@thexjs/cli</span> versions, and runs{" "}
@@ -40,31 +40,27 @@ cd my-app
 bun run dev`}
       />
       <p className="mt-4 text-muted-foreground">
-        When prompted for a template, press Enter to accept{" "}
-        <span className="text-foreground">default</span> (recommended), a single home page to start
-        from. Other templates include <span className="text-foreground">basic</span>,{" "}
-        <span className="text-foreground">blog</span>, <span className="text-foreground">saas</span>
-        , and <span className="text-foreground">landing</span>.
+        The scaffolder is feature-based: it prompts with a multi-select of{" "}
+        <span className="text-foreground">tailwind</span>,{" "}
+        <span className="text-foreground">auth</span>,{" "}
+        <span className="text-foreground">content</span>,{" "}
+        <span className="text-foreground">hooks</span>, and{" "}
+        <span className="text-foreground">shadcn</span> — pick nothing for a plain blank project.
+        Ready-made example apps live under <span className="text-foreground">examples/</span> in the
+        repo if you prefer a fuller starting point.
       </p>
-      <TerminalBlock
-        label="template selection"
-        code={`Available templates:
-
-  default  Blank slate with a single home page. (recommended)
-  basic    Minimal starter: pages, API route, auth, dashboard.
-  blog     Markdown content collections.
-  saas     Dashboard, settings, pricing, auth, data layer.
-  landing  Marketing site with docs pages.
-
-Choose a template (default/basic/blog/saas/landing) (default):`}
-      />
       <p className="mt-4 text-muted-foreground">
-        Pass a template explicitly with <span className="text-foreground">--template</span> or{" "}
-        <span className="text-foreground">-t</span>:
+        Pass features non-interactively instead: <span className="text-foreground">--tailwind</span>
+        , <span className="text-foreground">--auth</span>,{" "}
+        <span className="text-foreground">--content</span>,{" "}
+        <span className="text-foreground">--hooks</span>,{" "}
+        <span className="text-foreground">--shadcn</span>. Also available:{" "}
+        <span className="text-foreground">--no-install</span> (skip{" "}
+        <span className="text-foreground">bun install</span>).
       </p>
       <TerminalBlock
         label="~/projects — zsh"
-        code="bun create thexjs-app@latest my-app --template default"
+        code="bun create thexjs-app@latest my-app --tailwind --auth"
       />
 
       <h2 className="text-xl">Add to an existing project</h2>

@@ -14,14 +14,14 @@ All `@thexjs/*` packages ship in **lockstep** on one versioning cycle
 | Package | Status | Support window |
 |---|---|---|
 | `@thexjs/core` | 1.x | active |
-| `@thexjs/auth` | 2.x | active |
+| `@thexjs/auth` | 3.x | active |
 | `@thexjs/env` | 1.x | active |
 | `@thexjs/adapter-vercel` | 1.x | active |
 | `@thexjs/cli` | 1.x | active |
-| `@thexjs/hooks` | 1.x | active |
+| `@thexjs/hooks` | 0.x (pre-1.0) | active, stable API coming |
 
-Pre-`1.0.0` packages (none today) bump conservatively: prefer `patch`, avoid
-surprise `minor`s (`VERSIONING.md`).
+Pre-`1.0.0` packages (currently `@thexjs/hooks`) bump conservatively: prefer
+`patch`, avoid surprise `minor`s (`VERSIONING.md`).
 
 ## What counts as a breaking change
 

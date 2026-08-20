@@ -48,9 +48,9 @@ docker run -p 3000:3000 my-x-app
 
 ## Deploy to Vercel
 
-Each example app ships a `vercel-build` script (`x build --adapter vercel`) that
-emits a Build Output API v3 tree (`.vercel/output/`), no `vercel.json` needed.
-Two ways to wire it up:
+A `vercel-build` script (`x build --adapter vercel`) emits a Build Output API
+v3 tree (`.vercel/output/`), no `vercel.json` needed. `examples/basic` and
+`examples/landing` ship one; here's how to wire those up:
 
 ### Option 1 (recommended): rootDirectory per app
 

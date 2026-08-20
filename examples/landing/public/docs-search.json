@@ -334,8 +334,38 @@
         },
         {
           "kind": "h2",
-          "text": "Dev error overlay",
+          "text": "The component & srcSet",
           "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "While the proxy streams a single remote URL, handles responsive images end to end. Remote sources are routed through /_x/image automatically and get a srcSet generated for them; local sources pass through untouched. Either way you avoid layout shift and keep img-src &#x27;self&#x27; .",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { Image } from \"@thexjs/core\"; src=\"https://cdn.example.com/hero.jpg\" width={1200} height={630} sizes=\"(min-width: 768px) 50vw, 100vw\" alt=\"Product hero\"/> >",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "For a remote src whose host is in images.remoteHosts , the generated srcSet re-serves the image through the proxy at each breakpoint in SRCSET_WIDTHS — a host that isn&#x27;t allow-listed 403s at request time, and warns in dev:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "export const SRCSET_WIDTHS = [320, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];// remote & allow-listed -> \"…/_x/image?url=…&w=320 320w, …&w=640 640w, …&w=750 750w, …\"// local src -> plain , no srcSet (no resize pipeline)",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Build that string manually with buildSrcSet(src, opts) when you need custom behavior. Beyond responsive sizing, priority sets fetchPriority=\"high\" on LCP images (everything else lazy-loads), fill absolutely positions the image in its parent (nice for hero/card layouts, exclusive with width/height), and placeholder=\"blur\" with blurDataURL shows a tiny base64 blur that fades out on load — CSS-only, no JavaScript island required.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Dev error overlay",
+          "anchor": "#sec-4"
         },
         {
           "kind": "p",
@@ -345,7 +375,7 @@
         {
           "kind": "h2",
           "text": "404 handling",
-          "anchor": "#sec-4"
+          "anchor": "#sec-5"
         },
         {
           "kind": "p",
@@ -586,7 +616,7 @@
         },
         {
           "kind": "p",
-          "text": "Every .md / .mdx file under contentDir becomes a route at its own path during build and dev. The blog template is a working example: content/posts/*.md with a [slug].tsx page that renders each post via renderMarkdown .",
+          "text": "Every .md / .mdx file under contentDir becomes a route at its own path during build and dev. The examples/blog app in the repo is a working example: content/posts/*.md with a [slug].tsx page that renders each post via renderMarkdown .",
           "anchor": ""
         }
       ]
@@ -784,6 +814,26 @@
           "kind": "p",
           "text": "If you need sessions on top of this, @thexjs/auth provides prebuilt credentials and OAuth2 (GitHub) sign-in backed by an x_sessions table in SQLite or Postgres — HMAC&#x27;d, revocable session tokens, Argon2 password hashing, and automatic CSRF on auth endpoints — instead of hand-rolling your own session store.",
           "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Per-request state contract",
+          "anchor": "#sec-9"
+        },
+        {
+          "kind": "p",
+          "text": "x serves every request in one persistent process, so a loader or action must not stash anything in module-level (file-level) variables — a cache, a counter, a \"current user\" singleton — because the next concurrent request can see it. Loaders receive their request context through LoaderArgs and returned loaderData ; actions receive their arguments; that is the whole contract.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "If you need request-scoped context that crosses writes (e.g. a tracing span, a tenant id, a user id), key it by the values already in scope or use AsyncLocalStorage , which Bun supports natively — the framework itself keeps no shared mutable module state.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "The internal registries that x does keep (island ids, server-function routes) are scoped per request/rebuild, and the framework ships a concurrency test that hammers N parallel requests with distinct identities to prove nothing leaks across requests.",
+          "anchor": ""
         }
       ]
     },
@@ -813,7 +863,7 @@
         },
         {
           "kind": "p",
-          "text": "The fastest way to start is with the project scaffolder. See Installation for prerequisites and template options. Quick version:",
+          "text": "The fastest way to start is with the project scaffolder. See Installation for prerequisites and feature options. Quick version:",
           "anchor": ""
         },
         {
@@ -823,7 +873,7 @@
         },
         {
           "kind": "p",
-          "text": "Press Enter at the template prompt to use default (recommended), a single home page. Your app will be running at http://localhost:3000 .",
+          "text": "Accept the defaults at the feature prompt (an empty selection gives a blank project with a single home page). Your app will be running at http://localhost:3000 .",
           "anchor": ""
         },
         {
@@ -934,7 +984,7 @@
         },
         {
           "kind": "p",
-          "text": "Prerequisites, create command, templates, and manual setup.",
+          "text": "Prerequisites, create command, features, and manual setup.",
           "anchor": ""
         },
         {
@@ -1013,14 +1063,24 @@
           "anchor": ""
         },
         {
+          "kind": "h3",
+          "text": "@thexjs/hooks",
+          "anchor": "#sec-11"
+        },
+        {
+          "kind": "p",
+          "text": "SSR-safe React hooks: debounce, media query, localStorage, server actions, forms.",
+          "anchor": ""
+        },
+        {
           "kind": "h2",
           "text": "Guides",
-          "anchor": "#sec-11"
+          "anchor": "#sec-12"
         },
         {
           "kind": "h3",
           "text": "Routing",
-          "anchor": "#sec-12"
+          "anchor": "#sec-13"
         },
         {
           "kind": "p",
@@ -1030,7 +1090,7 @@
         {
           "kind": "h3",
           "text": "Pages & Loaders",
-          "anchor": "#sec-13"
+          "anchor": "#sec-14"
         },
         {
           "kind": "p",
@@ -1040,7 +1100,7 @@
         {
           "kind": "h3",
           "text": "Layouts",
-          "anchor": "#sec-14"
+          "anchor": "#sec-15"
         },
         {
           "kind": "p",
@@ -1050,7 +1110,7 @@
         {
           "kind": "h3",
           "text": "API Routes",
-          "anchor": "#sec-15"
+          "anchor": "#sec-16"
         },
         {
           "kind": "p",
@@ -1060,7 +1120,7 @@
         {
           "kind": "h3",
           "text": "Server Functions",
-          "anchor": "#sec-16"
+          "anchor": "#sec-17"
         },
         {
           "kind": "p",
@@ -1070,7 +1130,7 @@
         {
           "kind": "h3",
           "text": "Islands",
-          "anchor": "#sec-17"
+          "anchor": "#sec-18"
         },
         {
           "kind": "p",
@@ -1080,7 +1140,7 @@
         {
           "kind": "h3",
           "text": "Incremental Static Regeneration",
-          "anchor": "#sec-18"
+          "anchor": "#sec-19"
         },
         {
           "kind": "p",
@@ -1090,7 +1150,7 @@
         {
           "kind": "h3",
           "text": "Client Navigation & Images",
-          "anchor": "#sec-19"
+          "anchor": "#sec-20"
         },
         {
           "kind": "p",
@@ -1100,7 +1160,7 @@
         {
           "kind": "h3",
           "text": "Content Collections",
-          "anchor": "#sec-20"
+          "anchor": "#sec-21"
         },
         {
           "kind": "p",
@@ -1110,7 +1170,7 @@
         {
           "kind": "h3",
           "text": "Middleware",
-          "anchor": "#sec-21"
+          "anchor": "#sec-22"
         },
         {
           "kind": "p",
@@ -1120,7 +1180,7 @@
         {
           "kind": "h3",
           "text": "Data Layer",
-          "anchor": "#sec-22"
+          "anchor": "#sec-23"
         },
         {
           "kind": "p",
@@ -1130,7 +1190,7 @@
         {
           "kind": "h3",
           "text": "Build & Deploy",
-          "anchor": "#sec-23"
+          "anchor": "#sec-24"
         },
         {
           "kind": "p",
@@ -1140,7 +1200,7 @@
         {
           "kind": "h3",
           "text": "Configuration",
-          "anchor": "#sec-24"
+          "anchor": "#sec-25"
         },
         {
           "kind": "p",
@@ -1150,7 +1210,7 @@
         {
           "kind": "h3",
           "text": "Security",
-          "anchor": "#sec-25"
+          "anchor": "#sec-26"
         },
         {
           "kind": "p",
@@ -1160,7 +1220,7 @@
         {
           "kind": "h3",
           "text": "Observability",
-          "anchor": "#sec-26"
+          "anchor": "#sec-27"
         },
         {
           "kind": "p",
@@ -1210,7 +1270,7 @@
         },
         {
           "kind": "p",
-          "text": "The fastest path is the project scaffolder. It copies a template, generates package.json , resolves the latest @thexjs/core and @thexjs/cli versions, and runs bun install .",
+          "text": "The fastest path is the project scaffolder. It generates package.json , resolves the latest @thexjs/core and @thexjs/cli versions, and runs bun install .",
           "anchor": ""
         },
         {
@@ -1220,22 +1280,17 @@
         },
         {
           "kind": "p",
-          "text": "When prompted for a template, press Enter to accept default (recommended), a single home page to start from. Other templates include basic , blog , saas , and landing .",
-          "anchor": ""
-        },
-        {
-          "kind": "pre",
-          "text": "Available templates:default Blank slate with a single home page. (recommended)basic Minimal starter: pages, API route, auth, dashboard.blog Markdown content collections.saas Dashboard, settings, pricing, auth, data layer.landing Marketing site with docs pages.Choose a template (default/basic/blog/saas/landing) (default):",
+          "text": "The scaffolder is feature-based: it prompts with a multi-select of tailwind , auth , content , hooks , and shadcn — pick nothing for a plain blank project. Ready-made example apps live under examples/ in the repo if you prefer a fuller starting point.",
           "anchor": ""
         },
         {
           "kind": "p",
-          "text": "Pass a template explicitly with --template or -t :",
+          "text": "Pass features non-interactively instead: --tailwind , --auth , --content , --hooks , --shadcn . Also available: --no-install (skip bun install ).",
           "anchor": ""
         },
         {
           "kind": "pre",
-          "text": "bun create thexjs-app@latest my-app --template default",
+          "text": "bun create thexjs-app@latest my-app --tailwind --auth",
           "anchor": ""
         },
         {
@@ -1341,7 +1396,7 @@
         },
         {
           "kind": "p",
-          "text": "x ships as a set of focused npm packages. You typically install @thexjs/cli and @thexjs/core through the project scaffolder; add @thexjs/env when you need validated environment variables, and @thexjs/adapter-vercel to deploy to Vercel.",
+          "text": "x ships as a set of focused npm packages. You typically install @thexjs/cli and @thexjs/core through the project scaffolder; add @thexjs/env when you need validated environment variables, @thexjs/hooks for SSR-safe React hooks, and @thexjs/adapter-vercel to deploy to Vercel.",
           "anchor": ""
         },
         {
@@ -1372,6 +1427,16 @@
         {
           "kind": "p",
           "text": "Type-safe environment variable validation with fail-fast errors.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "@thexjs/hooks",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "SSR-safe React hooks: debounce, media query, localStorage, server actions, forms.",
           "anchor": ""
         },
         {
@@ -1750,8 +1815,23 @@
         },
         {
           "kind": "h2",
-          "text": "Redirect patterns",
+          "text": "composeMiddleware",
           "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "The _middleware.ts convention builds a single handler under the hood, but you can also wire middleware yourself with composeMiddleware(fns, handler) . It folds an array of middleware functions into one onion-style chain that reaches handler only after every next() has been called.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Calling next() more than once in the same middleware throws (\"next() called multiple times\"), which catches double-dispatch bugs at runtime.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Redirect patterns",
+          "anchor": "#sec-5"
         },
         {
           "kind": "p",
@@ -2339,7 +2419,7 @@
         },
         {
           "kind": "p",
-          "text": "getSession hashes the x_session cookie, looks up the token in the store, and returns null for expired or revoked sessions. setSessionCookie(res, user, provider) and clearSessionCookie(res, req?) are also exported for programmatic flows.",
+          "text": "getSession hashes the x_session cookie, looks up the token in the store, and returns null for expired or revoked sessions. For programmatic flows, the defineAuth() result also exposes setSessionCookie(res, user, provider) and clearSessionCookie(res, req?) .",
           "anchor": ""
         },
         {
@@ -2807,12 +2887,68 @@
         },
         {
           "kind": "li",
-          "text": "Every field is currently required, with no built-in optional() or default() . For optional vars, read from process.env directly or write a validator with a fallback.",
+          "text": "Every field is required by default. Use optional() to allow a missing variable (type T | undefined ) and default(value) to substitute a fallback when it&#x27;s absent — missing optional variables no longer fail the whole validation.",
           "anchor": ""
         },
         {
           "kind": "li",
           "text": "runtimeEnv is passed explicitly so this works on Bun, in bundlers that inline process.env.* at build time, or in tests with a mocked env object.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/packages/hooks",
+      "title": "@thexjs/hooks",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Packages",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "@thexjs/hooks",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "SSR-safe React hooks for X apps. Every hook is safe inside renderToString / renderToReadableStream — none of them touch window , document , localStorage , or navigator during the server render pass. DOM access only happens in effects, after hydration.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "bun add @thexjs/hooks",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Requires React 18 or 19. For the dev UX in a new app, choose the Hooks feature from create-x-app to get it pre-installed.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Hooks",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "h2",
+          "text": "Example",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "pre",
+          "text": "import { useDebounce, useServerAction } from \"@thexjs/hooks\";function Search() { const [query, setQuery] = useState(\"\"); const q = useDebounce(query, 300); return value={query} onChange={(e) => setQuery(e.target.value)} /> >;}function LikeButton() { // `like` is a server function from the generated client const [{ isPending, error }, run] = useServerAction(like); return onClick={() => run()}>{isPending ? \"...\" : \"Like\"}>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Server actions",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "useServerAction expects an async function that talks to your server function endpoint — usually one from the client generated by @thexjs/core &#x27;s build step ( generateServerFunctionClient output). It adds the mutation-hook ergonomics: { data, error, isPending } plus a run(...args) trigger.",
           "anchor": ""
         }
       ]
@@ -2894,6 +3030,26 @@
         {
           "kind": "pre",
           "text": "import type { RouteProps } from \"@thexjs/core\";interface Product { id: string; name: string; description: string; price: number;}export default function ProductDetail({ loaderData,}: RouteProps) { const { product } = loaderData as { product: Product }; return ( > className=\"text-3xl font-bold\">{product.name}> className=\"mt-2 text-muted-foreground\">{product.description}> className=\"mt-4 text-2xl font-bold text-primary\">${product.price}> > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Streaming SSR — renderStreamingPage",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "Server pages render fully before responding. When a page depends on slow data, renderStreamingPage(node, options) flips that: it streams the HTML to the client as React renders it, so the first byte arrives before the whole page is ready. Islands, island props, navigation, and live-reload tags are all wired into the streamed shell the same way a full render is.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { renderStreamingPage } from \"@thexjs/core\";import { createElement } from \"react\";const stream = await renderStreamingPage(createElement(Page, {}), { title: \"Dashboard\", islandScripts: [\"/_x/islands/dashboard.js\"], islandProps: { userId: \"123\" },});return new Response(stream, { headers: { \"Content-Type\": \"text/html\", \"Transfer-Encoding\": \"chunked\" },});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Streaming is the right tool for slow data-dependent shells: the user sees the layout immediately while the slow parts resolve. For everything else, plain server or static rendering gives a faster end-to-end experience with less complexity.",
           "anchor": ""
         }
       ]

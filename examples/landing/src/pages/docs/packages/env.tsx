@@ -105,11 +105,11 @@ function json<T>(): EnvValidator<T> {
       <h2 className="text-xl">Notes</h2>
       <ul className="mt-3 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
-          Every field is currently required, with no built-in{" "}
-          <span className="text-foreground">optional()</span> or{" "}
-          <span className="text-foreground">default()</span>. For optional vars, read from{" "}
-          <span className="text-foreground">process.env</span> directly or write a validator with a
-          fallback.
+          Every field is required by default. Use{" "}
+          <span className="text-foreground">optional()</span> to allow a missing variable (type{" "}
+          <span className="text-foreground">T | undefined</span>) and{" "}
+          <span className="text-foreground">default(value)</span> to substitute a fallback when it's
+          absent — missing optional variables no longer fail the whole validation.
         </li>
         <li>
           <span className="text-foreground">runtimeEnv</span> is passed explicitly so this works on
