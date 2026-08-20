@@ -244,9 +244,9 @@ describe("private/reserved address guard", () => {
   });
 
   test("rejects a redirect hop that resolves to a private IP", async () => {
-    const fetched: string[] = [];
-    mockFetch(async (url) => {
-      fetched.push(String(url));
+    const fetched: Array<{ url: string; host: string | null }> = [];
+    mockFetch(async (url, init) => {
+      fetched.push({ url: String(url), host: new Headers(init?.headers).get("host") });
       return new Response(null, {
         status: 302,
         headers: { location: "https://cdn.example.com/img.png" },
@@ -259,8 +259,64 @@ describe("private/reserved address guard", () => {
     });
     const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
     expect(res?.status).toBe(403);
-    // The private-resolving hop was never fetched.
-    expect(fetched).toEqual(["https://img.example.com/a.png"]);
+    // The initial hop was connected to the verified public IP (pinned), and
+    // the private-resolving redirect hop was never fetched.
+    expect(fetched).toEqual([{ url: "https://93.184.216.34/a.png", host: "img.example.com" }]);
+  });
+
+  test("pins the connection to a resolved public IP (DNS-rebinding TOCTOU)", async () => {
+    const seen: Array<{
+      url: string;
+      host: string | null;
+      serverName?: string;
+    }> = [];
+    mockFetch(async (url, init) => {
+      const tls = (init as RequestInit & { tls?: { serverName?: string } }).tls;
+      seen.push({
+        url: String(url),
+        host: new Headers(init?.headers).get("host"),
+        ...(tls?.serverName !== undefined ? { serverName: tls.serverName } : {}),
+      });
+      return new Response("x", { headers: { "content-type": "image/png" } });
+    });
+    const handler = createImageProxyHandler({
+      remoteHosts: ["img.example.com"],
+      resolveHost: async () => ["93.184.216.34", "2606:4700::6810:84e5"],
+    });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(200);
+    // Never fetch by hostname — the connection is pinned to a verified public
+    // IP, with the hostname preserved via Host + TLS serverName so origin and
+    // certificate handling stay correct. A rebinding attacker who flips DNS
+    // after this point is now ignored.
+    expect(seen).toEqual([
+      {
+        url: "https://93.184.216.34/a.png",
+        host: "img.example.com",
+        serverName: "img.example.com",
+      },
+    ]);
+  });
+
+  test("pins each allow-listed redirect hop to its verified IP", async () => {
+    const seen: string[] = [];
+    mockFetch(async (url) => {
+      seen.push(String(url));
+      if (seen.length === 1) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://img.example.com/cdn/a.png" },
+        });
+      }
+      return new Response("ok", { headers: { "content-type": "image/png" } });
+    });
+    const handler = createImageProxyHandler({
+      remoteHosts: ["img.example.com"],
+      resolveHost: async () => ["93.184.216.34"],
+    });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(200);
+    expect(seen).toEqual(["https://93.184.216.34/a.png", "https://93.184.216.34/cdn/a.png"]);
   });
 });
 
