@@ -81,11 +81,6 @@ export async function runPostgresMigrations(
   client: PostgresClient,
   migrationsDir: string,
 ): Promise<PostgresMigrationResult> {
-  await client.unsafe(`CREATE TABLE IF NOT EXISTS _x_migrations (
-    name TEXT PRIMARY KEY,
-    applied_at TIMESTAMP DEFAULT NOW()
-  )`);
-
   let files: string[];
   try {
     files = readdirSync(migrationsDir)
@@ -109,7 +104,17 @@ export async function runPostgresMigrations(
   // all-or-nothing-per-file guarantee as before, and migrations applied before
   // a later failure stay committed.
   await client.begin(async (tx) => {
+    // The lock guards everything, including creation of the bookkeeping table
+    // itself: two booting replicas racing their first `CREATE TABLE IF NOT
+    // EXISTS _x_migrations` outside a shared lock hit Postgres's
+    // simultaneous-create race on the catalog unique indexes, escaping the
+    // serialization entirely. Inside the lock the loser simply finds the table
+    // the winner already committed.
     await tx.unsafe("SELECT pg_advisory_xact_lock($1)", [MIGRATION_LOCK_KEY]);
+    await tx.unsafe(`CREATE TABLE IF NOT EXISTS _x_migrations (
+      name TEXT PRIMARY KEY,
+      applied_at TIMESTAMP DEFAULT NOW()
+    )`);
 
     // Read applied AFTER taking the lock so the snapshot is in sync with the
     // serialized window.
