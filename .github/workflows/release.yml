@@ -47,15 +47,18 @@ jobs:
           fi
 
       - name: Create Release PR or Publish
-        uses: changesets/action@v1
+        # v1 parses `New tag:` from the CLI's stdout to detect published
+        # packages, which @changesets/cli v3 no longer prints. v2 reads the
+        # CHANGESETS_OUTPUT event file the CLI writes instead.
+        uses: changesets/action@v2
         with:
           # changeset:version = `changeset version && bun run lint:fix`, so the
           # versioning PR is never blocked by biome formatting of the rewritten
           # package.json files (JSON.stringify writes multi-line arrays).
-          version: bun run changeset:version
-          publish: bunx @changesets/cli publish
-          title: "chore: version packages"
-          commit: "chore: version packages"
+          version-script: bun run changeset:version
+          publish-script: bunx @changesets/cli publish
+          pr-title: "chore: version packages"
+          commit-message: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
