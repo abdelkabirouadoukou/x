@@ -21,7 +21,7 @@ export default function DocPage(_props: RouteProps) {
         <a href="/docs/installation" className="text-primary underline underline-offset-2">
           Installation
         </a>{" "}
-        for prerequisites and template options. Quick version:
+        for prerequisites and feature options. Quick version:
       </p>
       <CodeBlock
         label="terminal"
@@ -31,8 +31,8 @@ cd my-app
 bun run dev`}
       />
       <p className="mt-4 text-muted-foreground">
-        Press Enter at the template prompt to use <span className="text-foreground">default</span>{" "}
-        (recommended), a single home page. Your app will be running at{" "}
+        Accept the defaults at the feature prompt (an empty selection gives a blank project with a
+        single home page). Your app will be running at{" "}
         <span className="text-foreground">http://localhost:3000</span>.
       </p>
 

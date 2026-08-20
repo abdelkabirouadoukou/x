@@ -248,6 +248,9 @@ Only variables prefixed `THEXJS_PUBLIC_` may reach the browser. `@thexjs/env`'s 
 | `renderPage`, `renderStaticPage`, `renderStreamingPage`, `LoaderArgs`, `LoaderReturn` | Lower-level render functions |
 | `scanRoutes`, `scanPages`, `scanApiDir`, `scanLayouts`, `scanLayoutsDir`, `scanMiddleware`, `scanNotFound`, `findLayoutChain`, `findMiddlewareChain`, `generateManifestSource`, `writeManifest` | Routing internals |
 | `Island`, `IslandProvider`, `IslandMode`, `IslandEntry` | Selective hydration |
+| `Image`, `ImageProps`, `buildSrcSet`, `SRCSET_WIDTHS`, `setImageRemoteHosts` | Optimized image component & srcset builder |
+| `Link`, `LinkProps` | Client-side navigation link component |
+| `createImageProxyHandler`, `ImageProxyOptions` | Remote image proxy handler for `_next/image`-style rewriting |
 | `scanContent`, `renderMarkdown`, `escapeHtml`, `ContentEntry`, `Frontmatter` | Markdown content collections |
 | `composeMiddleware`, `MiddlewareContext`, `MiddlewareFn`, `MiddlewareNext` | Middleware |
 | `registerServerFunctions`, `generateServerFunctionClient`, `getServerFunctionHandler`, `resetServerFunctions` | Server functions/actions internals |
@@ -255,10 +258,13 @@ Only variables prefixed `THEXJS_PUBLIC_` may reach the browser. `@thexjs/env`'s 
 | `DefaultNotFound`, `renderErrorOverlay`, `CLIENT_NAV_SCRIPT` | Defaults / dev tooling |
 | `checkCsrf`, `verifyOrigin`, `verifyCsrfToken`, `generateCsrfToken`, `withCsrfCookie`, `CsrfOptions`, `CsrfResult` | CSRF protection |
 | `buildSecurityHeaders`, `applySecurityHeaders`, `SecurityHeadersOptions` | Security response headers (CSP/HSTS/etc.) |
-| `createRateLimiter`, `rateLimitMiddleware`, `RateLimitOptions`, `RateLimitResult`, `RateLimitServer`, `createRedisRateLimitStore` | Rate limiting (per-IP fixed window) |
+| `createRateLimiter`, `rateLimitMiddleware`, `RateLimitOptions`, `RateLimitResult`, `RateLimitStore`, `createRedisRateLimitStore` | Rate limiting (per-IP fixed window) |
 | `findLeakedEnvKeys`, `assertNoEnvLeakage`, `EnvLeakageError`, `PUBLIC_ENV_PREFIX` | Server/client env var isolation |
 | `logger`, `withRequestLogging`, `Logger`, `LogFields` | Structured JSON logging |
 | `setErrorReporter`, `getErrorReporter`, `reportException`, `createSentryReporter`, `createOtelReporter`, `combineReporters`, `noopReporter`, `ErrorReporter` | Error reporting (Sentry/OpenTelemetry hook) |
+| `setTracer`, `getTracer`, `runWithRequestSpan`, `tracePhase`, `tracePhaseSync`, `withRequestTracing`, `traceRequestId`, `dbTraceAttributes`, `TracerLike`, `TraceSpan` | Tracing / OpenTelemetry spans |
+| `createInMemoryMetrics`, `createOtlpMetricsReporter`, `withRequestMetrics`, `noopMetrics`, `MetricsReporter`, `CounterSeries`, `HistogramSeries` | Metrics collection (Prometheus/OTLP) |
+| `audit`, `setAuditSink`, `clientIpFromRequest`, `requestIdFromRequest`, `AuditSink`, `AuditEntry` | Audit logging |
 | `createHealthCheckHandler`, `HealthCheckOptions`, `HealthCheck`, `ReadinessResult` | `/healthz` and `/readyz` |
 
 ## License

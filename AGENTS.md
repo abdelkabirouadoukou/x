@@ -31,6 +31,7 @@ packages/core              framework runtime (router, SSR/SSG, islands, server f
 packages/auth              credentials + OAuth2/GitHub auth, sessions, CSRF
 packages/cli               `x dev` / `x build` / `x start` CLI
 packages/env               type-safe env var validation
+packages/hooks             client-side React hook helpers
 packages/adapter-vercel      Vercel Build Output API adapter
 packages/create-thexjs-app   `bun create thexjs-app@latest` scaffolder
 examples/basic             full demo: pages, API routes, auth, dashboard

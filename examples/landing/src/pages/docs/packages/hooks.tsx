@@ -23,7 +23,7 @@ export default function DocPage(_props: RouteProps) {
       <CodeBlock label="terminal" lang="bash" code="bun add @thexjs/hooks" />
       <p className="mt-4 text-muted-foreground">
         Requires React 18 or 19. For the dev UX in a new app, choose the Hooks feature from{" "}
-        <span className="text-foreground">create-x-app</span> to get it pre-installed.
+        <span className="text-foreground">create-thexjs-app</span> to get it pre-installed.
       </p>
 
       <h2 className="text-xl">Hooks</h2>

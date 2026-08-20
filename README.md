@@ -12,7 +12,7 @@ A full-stack React framework built on top of Bun. It has file-based routing, API
 <a href="#quick-start"><img src="https://img.shields.io/badge/Bun-1.0+-black?style=flat-square&logo=bun" alt="Bun Ready"></a>
 <a href="#features"><img src="https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react" alt="React 19"></a>
 <a href="#features"><img src="https://img.shields.io/badge/TypeScript-Strict-blue?style=flat-square&logo=typescript" alt="TypeScript"></a>
-<a href="./TASKS.md"><img src="https://img.shields.io/badge/Status-Active_Development-brightgreen?style=flat-square" alt="Status"></a>
+<a href="./ROADMAP.md"><img src="https://img.shields.io/badge/Status-Maintenance-yellow?style=flat-square" alt="Status"></a>
 <a href="https://stardance.hackclub.com/projects/41081"><img src="https://img.shields.io/badge/Stardance-hackclub-blue?style=flat-square" alt="Stardance"></a>
 </p>
 
@@ -42,7 +42,7 @@ Deploy speed. I push a commit, refresh the site, and it’s already live. That n
 
 ## Try it
 
-Not production-ready this is a solo project built to solve a problem I had and to learn how frameworks actually work underneath.
+This started as an experiment to learn how frameworks actually work underneath, and to solve a real problem I had. It's a solo project — use it for learning, poking around, or build something small on it, but treat it as curiosity software, not a production dependency.
 
 ```bash
 bun create thexjs-app@latest my-app
@@ -50,23 +50,25 @@ cd my-app
 bun run dev
 ```
 
-Pick the `default` template when prompted (just a blank home page), then the dev server runs at `http://localhost:3000`.
+The scaffolder is feature-based: it asks which features you want (`tailwind`, `auth`, `content`, `hooks`, `shadcn`) — pick nothing for a blank home page, then the dev server runs at `http://localhost:3000`. Pass features non-interactively with flags like `--tailwind --auth`; `--no-install` and `--no-git` skip the install/init steps.
 
-Other templates: `basic` (pages + API + auth + dashboard), `blog` (markdown content collections), `saas` (dashboard + data layer), `landing` (the docs site itself, including a `/play` arcade of tiny games (route matching, env-leak protection, static-vs-server calls) for anyone who'd rather poke at the framework than read about it).
+In maintenance mode (author busy with the collage), releases, reviews, and merges happen on a best-effort weekly cadence — see [ROADMAP.md](ROADMAP.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What's inside
 
 ```
-packages/core           file-based router, SSR renderer, middleware
-packages/cli             x dev / x build / x start
-packages/env             typed env variable validation
-packages/auth            credentials + OAuth2/GitHub auth, sessions, CSRF
-packages/create-thexjs-app  the scaffolder (bun create thexjs-app@latest)
-examples/default         minimal starter
-examples/basic           pages, API routes, auth, dashboard
-examples/landing         the docs site
-examples/blog            blog w/ content collections
-examples/saas            saas dashboard demo
+packages/core                 file-based router, SSR renderer, middleware
+packages/cli                  x dev / x build / x start
+packages/env                  typed env variable validation
+packages/auth                 credentials + OAuth2/GitHub auth, sessions, CSRF
+packages/hooks                client-side hook helpers (useSession, usePageData, ...)
+packages/adapter-vercel       Vercel Build Output API adapter
+packages/create-thexjs-app    the scaffolder (bun create thexjs-app@latest)
+examples/default              minimal starter
+examples/basic                pages, API routes, auth, dashboard
+examples/landing              the docs site
+examples/blog                 blog w/ content collections
+examples/saas                 saas dashboard demo
 ```
 
 A typical project looks like:
@@ -304,24 +306,23 @@ export default defineConfig({
 
 ## Versioning
 
-All `@thexjs/*` packages are **0.x and pre-1.0**. The public API is still
-settling, so expect breaking changes between minor releases. That's the
-signal you should pin versions (`^0.1.0` will still allow `0.1.x → 0.2.0`).
+Packages follow [semver](VERSIONING.md) and are pre-1.0 in spirit: the
+public API is still settling, so expect breaking changes between minor
+releases. Pin exact versions if stability matters to you.
 
 - Releases are managed with **Changesets**. Every PR touching a `packages/*`
   package adds a changeset (`bun changeset`), which bumps versions and writes
   changelogs when merged to `main`.
-- The release GitHub Action (`publish` on `main`) creates a versioning PR; a
-  maintainer merges it to cut a release. Publishing to npm requires an
-  `NPM_TOKEN` secret, which is currently not configured (see
-  `.github/workflows/release.yml`).
-- Published packages: `@thexjs/core`, `@thexjs/cli`, `@thexjs/env`,
-  `@thexjs/auth`, `@thexjs/adapter-vercel`, `create-thexjs-app`.
+- The release GitHub Action (`publish` on `main`) creates a versioning PR and
+  publishes to npm on merge.
+- Currently published: `@thexjs/core` (1.6.x), `@thexjs/cli` (1.1.x),
+  `@thexjs/env` (1.x), `@thexjs/auth` (3.x), `@thexjs/hooks` (0.x),
+  `@thexjs/adapter-vercel` (1.0.x), `create-thexjs-app` (1.x).
 
 ## Known limitations
 
-- **Pre-1.0 API**: everything above is subject to change. Treat `0.x` minors as
-  potentially breaking.
+- **Unstable API**: everything above is subject to change. Treat pre-1.0 packages
+  (and any untagged minor in 1.x/3.x) as potentially breaking.
 - **Bun-only**: the framework runs on Bun (runtime, bundler, package manager).
   There is no Node.js target.
 - **Content collections** and the **data layer** (SQLite/Postgres migrations)

@@ -116,10 +116,10 @@ session.user; // { id, name?, email? } snapshot from sign-in`}
       <p className="mt-4 text-muted-foreground">
         <span className="text-foreground">getSession</span> hashes the{" "}
         <span className="text-foreground">x_session</span> cookie, looks up the token in the store,
-        and returns <span className="text-foreground">null</span> for expired or revoked sessions.{" "}
-        <span className="text-foreground">setSessionCookie(res, user, provider)</span> and{" "}
-        <span className="text-foreground">clearSessionCookie(res, req?)</span> are also exported for
-        programmatic flows.
+        and returns <span className="text-foreground">null</span> for expired or revoked sessions.
+        For programmatic flows, the <span className="text-foreground">defineAuth()</span> result
+        also exposes <span className="text-foreground">setSessionCookie(res, user, provider)</span>{" "}
+        and <span className="text-foreground">clearSessionCookie(res, req?)</span>.
       </p>
 
       <h2 className="text-xl">Security</h2>

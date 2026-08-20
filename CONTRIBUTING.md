@@ -1,7 +1,9 @@
 # Contributing to x
 
-Thanks for wanting to help. This is a small solo framework project, so a few
-guidelines keep it reviewable and consistent.
+Thanks for wanting to help. x is a small framework run in **maintenance mode**
+by a solo author who is currently focused on the collage — so your PR
+is the primary engine for improvements right now. A few guidelines keep it
+reviewable and consistent.
 
 ## Project layout
 
@@ -12,6 +14,7 @@ packages/core                framework runtime (router, SSR/SSG, islands, server
 packages/auth                credentials + OAuth2/GitHub auth, sessions, CSRF
 packages/cli                 x dev / x build / x start
 packages/env                 type-safe env validation
+packages/hooks               client-side React hook helpers
 packages/adapter-vercel      Vercel Build Output API adapter
 packages/create-thexjs-app   `bun create thexjs-app@latest` scaffolder
 examples/*                   dogfood apps (basic, blog, default, landing, saas)
@@ -45,6 +48,19 @@ Branch off `main`, keep commits small and focused, and use the repo's commit
 style (`feat:`, `fix:`, `docs:`, `chore:`), mostly so the changelog reads
 okay later, not because I'm precious about git history.
 
+## Picking a first issue
+
+If you're new to the repo, start from the
+[`good first issue` / `help wanted` labels](https://github.com/abdelkabirouadoukou/x/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+Each issue lists acceptance criteria and a regression test to add.
+
+- **Comment on the issue first** to claim it and avoid overlap.
+- PRs are reviewed on a best-effort weekly window (maintenance mode), so
+  **small, test-backed PRs** are the fastest path through review — a focused
+  50-line change beats a broad rewrite.
+- Don't know where to start? Post a question on the issue; the maintainer
+  (or a community maintainer) will point you at the right file.
+
 Tests matter more than process here. If you touch `packages/core`, add or
 update the test next to the file you changed (`*.test.ts`, run with
 `bun test`). I'd rather review a smaller PR with a real test than a big one
@@ -55,9 +71,9 @@ CI runs the exact same three on Ubuntu and macOS, so this just saves you a
 round trip.
 
 One easy-to-miss thing: if you change a template under
-`packages/create-thexjs-app/templates/*`, update the matching `examples/*`
-app too. They're kept as parallel dogfood copies on purpose, and they drift
-out of sync more often than I'd like to admit.
+`packages/create-thexjs-app/templates/*` (`base` or `addons/*`), update the
+matching `examples/*` app too. They're kept as parallel dogfood copies on
+purpose, and they drift out of sync more often than I'd like to admit.
 
 ## Code style
 
@@ -131,11 +147,11 @@ The `.github/workflows/release.yml` workflow runs on every push to `main`:
 ### Publishing to npm
 
 Publishing requires an npm token as the `NPM_TOKEN` repo secret (plus
-`GITHUB_TOKEN`, which GitHub provides automatically). Until `NPM_TOKEN` is
-configured in the repo settings, the workflow stops at the versioning PR.
-Packages get version-bumped but nothing reaches npm. To set it up: create a
-read-only publish token on npmjs.com (with publish access to the `@thexjs`
-scope) and add it as a repo secret named `NPM_TOKEN`.
+`GITHUB_TOKEN`, which GitHub provides automatically). If `NPM_TOKEN` is
+missing, the workflow stops at the versioning PR: packages get version-bumped
+out of the repo but nothing reaches npm. To verify or set it up: check that the
+token on npmjs.com has publish access to the `@thexjs` scope and is set as a
+repo secret named `NPM_TOKEN`.
 
 Packages are published with `"publishConfig": { "access": "public" }`; `bun
 install`'s postinstall builds them before publishing.

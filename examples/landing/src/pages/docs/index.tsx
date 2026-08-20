@@ -30,7 +30,7 @@ const startSections = [
   {
     icon: Terminal,
     title: "Installation",
-    desc: "Prerequisites, create command, templates, and manual setup.",
+    desc: "Prerequisites, create command, features, and manual setup.",
     href: "/docs/installation",
   },
   {

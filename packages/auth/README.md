@@ -84,7 +84,7 @@ if (!session) return new Response("Unauthorized", { status: 401 });
 session.user; // { id, name?, email? } snapshot from sign-in
 ```
 
-`getSession` hashes the `x_session` cookie, looks up the token in the store, and returns `null` for expired/revoked sessions. `setSessionCookie(res, user, provider)` and `clearSessionCookie(res, req?)` are also exported for programmatic flows.
+`getSession` hashes the `x_session` cookie, looks up the token in the store, and returns `null` for expired/revoked sessions. For programmatic flows, the `defineAuth()` result also exposes `setSessionCookie(res, user, provider)` and `clearSessionCookie(res, req?)`.
 
 ## Security
 

@@ -45,6 +45,7 @@ const sidebarSections: {
       { href: "/docs/data-layer", label: "Data Layer" },
       { href: "/docs/build-deploy", label: "Build & Deploy" },
       { href: "/docs/configuration", label: "Configuration" },
+      { href: "/docs/migration", label: "Migration Guide" },
       { href: "/docs/security", label: "Security" },
       { href: "/docs/observability", label: "Observability" },
     ],

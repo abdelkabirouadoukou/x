@@ -133,8 +133,8 @@ export default function BlogPost({ loaderData }: RouteProps) {
         Every <span className="text-foreground">.md</span>/
         <span className="text-foreground">.mdx</span> file under{" "}
         <span className="text-foreground">contentDir</span> becomes a route at its own path during
-        build and dev. The <span className="text-foreground">blog</span> template is a working
-        example: <span className="text-foreground">content/posts/*.md</span> with a{" "}
+        build and dev. The <span className="text-foreground">examples/blog</span> app in the repo is
+        a working example: <span className="text-foreground">content/posts/*.md</span> with a{" "}
         <span className="text-foreground">[slug].tsx</span> page that renders each post via{" "}
         <span className="text-foreground">renderMarkdown</span>.
       </p>
