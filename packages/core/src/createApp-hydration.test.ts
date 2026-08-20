@@ -127,6 +127,48 @@ describe("hydration mismatch endpoint", () => {
     expect(res.status).toBe(403);
   });
 
+  test("rejects an origin that merely prefixes the app origin (#138)", async () => {
+    const a = await createApp({
+      pagesDir: PAGES_DIR,
+      apiDir: API_DIR,
+      development: false,
+      security: { headers: false },
+      observability: { logging: false },
+    });
+
+    // "http://localhost.evil.com" starts with "http://localhost" but is a
+    // different origin — the handler must exact-match, not prefix-match.
+    for (const attacker of ["http://localhost.evil.com", "https://localhost"]) {
+      const res = await a.fetch(
+        new Request(ENDPOINT, {
+          method: "POST",
+          headers: { origin: attacker },
+          body: JSON.stringify({ error: "spam", island: "Whatever" }),
+        }),
+      );
+      expect(res.status).toBe(403);
+    }
+  });
+
+  test("rejects an opaque Origin header (`Origin: null`) instead of treating it as absent", async () => {
+    const a = await createApp({
+      pagesDir: PAGES_DIR,
+      apiDir: API_DIR,
+      development: false,
+      security: { headers: false },
+      observability: { logging: false },
+    });
+
+    const res = await a.fetch(
+      new Request(ENDPOINT, {
+        method: "POST",
+        headers: { origin: "null" },
+        body: JSON.stringify({ error: "spam", island: "Whatever" }),
+      }),
+    );
+    expect(res.status).toBe(403);
+  });
+
   test("rejects an oversized beacon body", async () => {
     const a = await createApp({
       pagesDir: PAGES_DIR,

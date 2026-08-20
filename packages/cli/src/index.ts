@@ -9,6 +9,7 @@ import {
   findConfig,
 } from "./config-detect.js";
 import { runDoctor } from "./doctor.js";
+import { compileTailwindAsync } from "./tailwind.js";
 import { xError, xInfo, xSuccess, xWarn } from "./terminal.js";
 
 // Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
@@ -78,6 +79,8 @@ function parseArgv(argv: string[]): {
   return { command: rest[0], cwd, adapter, outDir };
 }
 
+export { compileTailwindAsync } from "./tailwind.js";
+
 const { command, cwd, adapter, outDir: outDirFlag } = parseArgv(Bun.argv.slice(2));
 const projectDir = cwd ? resolve(process.cwd(), cwd) : process.cwd();
 
@@ -113,7 +116,11 @@ async function cmdDev(): Promise<void> {
     if (r.status !== 0) xWarn("Tailwind compilation failed, serving raw CSS.");
   }
 
-  // Watch for CSS changes and recompile Tailwind
+  // Watch for CSS changes and recompile Tailwind. Must be async (`spawn`, not
+  // `spawnSync`): the server is already serving requests by the time a save
+  // lands, and Bun is single-threaded — a blocking recompile would freeze every
+  // in-flight request and all live-reload sockets for the duration. The pre-boot
+  // compile above stays sync, since nothing is serving yet at that point.
   const twSrc = join(projectDir, "src/styles");
   if (existsSync(twSrc)) {
     const { watch } = await import("node:fs");
@@ -122,7 +129,7 @@ async function cmdDev(): Promise<void> {
       if (twTimeout) clearTimeout(twTimeout);
       twTimeout = setTimeout(() => {
         xInfo("recompiling Tailwind CSS...");
-        spawnSync("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], { cwd: projectDir });
+        compileTailwindAsync(twInput, twOutput, projectDir);
       }, 200);
     });
   }
@@ -158,10 +165,14 @@ async function cmdDev(): Promise<void> {
     if (shuttingDown) return;
     shuttingDown = true;
     xInfo(`received ${signal} - shutting down`);
-    server?.stop(true);
-    const exit = () => process.exit(0);
-    const drainTimer = setTimeout(exit, 3000);
-    drainTimer.unref?.();
+    // Hard-cap fallback: if `stop(true)` hangs for any reason, don't leave the
+    // terminal unresponsive forever.
+    const exitFallback = setTimeout(() => process.exit(0), 3000);
+    exitFallback.unref?.();
+    void server?.stop(true).then(() => {
+      clearTimeout(exitFallback);
+      process.exit(0);
+    });
   }
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));

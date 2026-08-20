@@ -1,6 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { reportException } from "./observability/monitoring";
+import { tracePhase } from "./observability/tracing";
 import { routePatternToRegex } from "./router";
 import { RequestBodyTooLargeError } from "./security/body-size";
 import { type CsrfOptions, checkCsrf } from "./security/csrf";
@@ -126,7 +127,11 @@ export function getServerFunctionHandler(
       }
 
       try {
-        const result = await fn(...args);
+        const result = await tracePhase(
+          "x.action",
+          { route: concretePath, action: actionName },
+          () => fn(...args),
+        );
         return Response.json(result);
       } catch (err) {
         // Never echo raw error text to clients in production: a driver error

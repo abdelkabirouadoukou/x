@@ -91,6 +91,19 @@ export {
   redactValue,
 } from "./observability/redact";
 export {
+  dbTraceAttributes,
+  getTracer,
+  OTEL_ERROR_STATUS_CODE,
+  runWithRequestSpan,
+  setTracer,
+  type TracerLike,
+  type TraceSpan,
+  tracePhase,
+  tracePhaseSync,
+  traceRequestId,
+  withRequestTracing,
+} from "./observability/tracing";
+export {
   type LoaderArgs,
   type LoaderReturn,
   renderPage,

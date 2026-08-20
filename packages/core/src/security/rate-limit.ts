@@ -223,7 +223,13 @@ export function createRedisRateLimitStoreFromClient(
       if (count === 1) {
         await c.sendCommand("EXPIRE", redisKey, String(ttlSeconds));
       }
-      return { count, resetAt: Date.now() + windowMs };
+      // Derive resetAt from the key's actual remaining TTL rather than from a
+      // fresh wall-clock window on every call: Retry-After must converge on the
+      // real window reset the EXPIRE enforces, not slide forward with each
+      // request. PTTL returns ms (negative when the key is missing/no TTL).
+      const pttl = Number(await c.sendCommand("PTTL", redisKey));
+      const remainingMs = pttl > 0 ? pttl : 0;
+      return { count, resetAt: Date.now() + remainingMs };
     },
   };
 }

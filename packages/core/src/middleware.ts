@@ -1,3 +1,5 @@
+import { tracePhase } from "./observability/tracing";
+
 export interface MiddlewareContext {
   params: Record<string, string>;
   request: Request;
@@ -22,6 +24,11 @@ export function composeMiddleware(
       }
       return handler(ctx);
     };
-    return dispatch(0);
+    // The composed chain (middleware onion + final handler) is one span so a
+    // slow redirect / auth gate / body read shows up in the trace. Called
+    // outside a traced request (e.g. standalone use) this is a no-op.
+    return tracePhase("x.middleware", { route: new URL(ctx.request.url).pathname }, () =>
+      dispatch(0),
+    );
   };
 }

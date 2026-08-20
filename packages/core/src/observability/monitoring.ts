@@ -6,6 +6,8 @@
  * here degrades to a no-op if nothing is configured.
  */
 
+import { OTEL_ERROR_STATUS_CODE } from "./tracing";
+
 export interface ErrorContext {
   route?: string;
   requestId?: string;
@@ -81,8 +83,6 @@ export interface OtelSpanLike {
 export interface OtelTracerLike {
   startSpan(name: string): OtelSpanLike;
 }
-
-const OTEL_ERROR_STATUS_CODE = 2; // matches @opentelemetry/api's SpanStatusCode.ERROR
 
 export function createOtelReporter(tracer: OtelTracerLike): ErrorReporter {
   return {

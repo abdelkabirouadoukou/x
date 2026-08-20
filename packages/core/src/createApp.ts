@@ -18,6 +18,7 @@ import {
   reportException,
   setErrorReporter,
 } from "./observability/monitoring";
+import { tracePhase, withRequestTracing } from "./observability/tracing";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderPageOnce, renderStreamingPage } from "./render";
 import {
@@ -39,7 +40,7 @@ import {
   enforceRequestBodySize,
   RequestBodyTooLargeError,
 } from "./security/body-size";
-import { type CsrfOptions, checkCsrf } from "./security/csrf";
+import { type CsrfOptions, checkCsrf, originFromHeader, requestOrigin } from "./security/csrf";
 import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
 import { type ComputeResult, IsrCache, isrCacheKey } from "./security/isr-cache";
 import {
@@ -175,11 +176,21 @@ interface ContentHandler {
 // Routes are matched in order in the fetch handler, so static (literal)
 // routes must sort before dynamic ones — otherwise /posts/[id] would shadow a
 // literal /posts/new depending on directory-scan order. Catch-alls go last.
+//
+// Same-category ties are broken segment-by-segment, positional specificity:
+// a literal segment beats a param which beats a catch-all. This picks a
+// deterministic winner independent of the OS's directory-scan order — e.g.
+// `/bar/[b]` vs `/[a]/foo` both matching `/bar/foo` → `/bar/[b]` wins because
+// its first segment is literal. Fully-tied routes fall back to a lexical
+// sort on the route path.
 function sortRoutes(handlers: RouteHandler[]): RouteHandler[] {
   return handlers.sort((a, b) => {
-    const bp = routeMatchesForSort(b.entry);
-    const ap = routeMatchesForSort(a.entry);
-    return ap - bp;
+    const category = routeMatchesForSort(a.entry) - routeMatchesForSort(b.entry);
+    if (category !== 0) return category;
+    for (const [as, bs] of zip(segmentSpecificity(a.entry), segmentSpecificity(b.entry))) {
+      if (as !== bs) return as - bs;
+    }
+    return a.entry.routePath < b.entry.routePath ? -1 : 1;
   });
 }
 
@@ -187,6 +198,22 @@ function routeMatchesForSort(entry: RouteEntry): number {
   const isStatic = entry.paramNames.length === 0;
   const isCatchAll = entry.routePath.includes("*");
   return isStatic ? 0 : isCatchAll ? 2 : 1;
+}
+
+/** Literal=0, param (`:x`)=1, catch-all (`*`)=2, per segment. */
+function segmentSpecificity(entry: RouteEntry): number[] {
+  return entry.routePath
+    .split("/")
+    .filter((seg) => seg.length > 0)
+    .map((seg) => (seg === "*" ? 2 : seg.startsWith(":") ? 1 : 0));
+}
+
+function zip<A, B>(as: A[], bs: B[]): Array<[A, B]> {
+  const out: Array<[A, B]> = [];
+  for (let i = 0; i < Math.max(as.length, bs.length); i++) {
+    out.push([as[i] as A, bs[i] as B]);
+  }
+  return out;
 }
 
 function projectRootFromRoutesDir(routesDir: string): string {
@@ -402,7 +429,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         const method = req.method;
         const handlerFn = module[method];
         if (typeof handlerFn === "function") {
-          const result = await (handlerFn as (r: Request) => unknown)(req);
+          const result = await tracePhase("x.api", { route: route.routePath, method }, async () =>
+            (handlerFn as (r: Request) => unknown)(req),
+          );
           if (result instanceof Response) return result;
           if (result === undefined || result === null) {
             return new Response("OK", { status: 200 });
@@ -463,7 +492,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           if (mode === "server") {
             let loaderData: Record<string, unknown> = {};
             if (loader) {
-              const result = await loader(ctx);
+              const result = await tracePhase("x.loader", { route: route.routePath }, () =>
+                loader(ctx),
+              );
               if (result instanceof Response) return result;
               loaderData = result;
             }
@@ -475,26 +506,31 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
             );
             const cspNonce = generateCspNonce();
 
-            const stream = await renderStreamingPage(content, {
-              stylesheet: stylesheetHref,
-              liveReload: dev,
-              cspNonce,
-              ...(islandScripts === undefined
-                ? {
-                    // Single-render mode: islands register into `registry`
-                    // during the one render that produces the HTML, and the
-                    // script list is resolved from that same pass in the lazy
-                    // footer — no separate discovery render, so non-deterministic
-                    // components can't diverge between two passes.
-                    resolveIslandScripts: () =>
-                      resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
-                  }
-                : { islandScripts }),
-              onRenderError: (error) => {
-                reportException(error, { route: route.routePath, phase: "ssr" });
-                metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
-              },
-            });
+            const stream = await tracePhase(
+              "x.ssr",
+              { route: route.routePath, streaming: true },
+              () =>
+                renderStreamingPage(content, {
+                  stylesheet: stylesheetHref,
+                  liveReload: dev,
+                  cspNonce,
+                  ...(islandScripts === undefined
+                    ? {
+                        // Single-render mode: islands register into `registry`
+                        // during the one render that produces the HTML, and the
+                        // script list is resolved from that same pass in the lazy
+                        // footer — no separate discovery render, so non-deterministic
+                        // components can't diverge between two passes.
+                        resolveIslandScripts: () =>
+                          resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
+                      }
+                    : { islandScripts }),
+                  onRenderError: (error) => {
+                    reportException(error, { route: route.routePath, phase: "ssr" });
+                    metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
+                  },
+                }),
+            );
             const res = new Response(stream, {
               headers: { "Content-Type": "text/html; charset=utf-8" },
             });
@@ -531,7 +567,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           const computeHtml = async (): Promise<ComputeResult | Response> => {
             let loaderData: Record<string, unknown> = {};
             if (loader) {
-              const result = await loader(ctx);
+              const result = await tracePhase("x.loader", { route: route.routePath }, () =>
+                loader(ctx),
+              );
               if (result instanceof Response) return result;
               loaderData = result;
             }
@@ -543,17 +581,22 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
             );
             const cspNonce = generateCspNonce();
-            const html = await renderPageOnce(content, {
-              stylesheet: stylesheetHref,
-              liveReload: dev,
-              cspNonce,
-              ...(islandScripts === undefined
-                ? {
-                    resolveIslandScripts: () =>
-                      resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
-                  }
-                : { islandScripts }),
-            });
+            const html = await tracePhase(
+              "x.ssr",
+              { route: route.routePath, streaming: false },
+              () =>
+                renderPageOnce(content, {
+                  stylesheet: stylesheetHref,
+                  liveReload: dev,
+                  cspNonce,
+                  ...(islandScripts === undefined
+                    ? {
+                        resolveIslandScripts: () =>
+                          resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
+                      }
+                    : { islandScripts }),
+                }),
+            );
             return { html, cspNonce };
           };
 
@@ -967,11 +1010,24 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     // still spam it. Reject cross-site posts (missing Origin/Referer is
     // tolerated — server-side emits, e.g. sendBeacon from file://, may omit
     // them, and the worst case there is a discarded telemetry line).
-    const origin = req.headers.get("origin");
-    const referer = req.headers.get("referer");
-    const selfOrigin = `${new URL(req.url).protocol}//${new URL(req.url).host}`;
-    const attempt = origin ?? referer;
-    if (attempt && !attempt.startsWith(selfOrigin)) {
+    //
+    // Exact-match the canonical origin: parsing (then comparing the full
+    // `origin` string) is required, since a prefix match would let
+    // `https://localhost.evil.com` pass, not just `https://localhost`. A
+    // present-but-unparseable header (`Origin: null` from a sandboxed/opaque
+    // origin) is a cross-site signal, not a missing one, so refuse it.
+    const selfOrigin = requestOrigin(req);
+    const rawOrigin = req.headers.get("origin");
+    const rawReferer = req.headers.get("referer");
+    const origin = originFromHeader(rawOrigin);
+    const referer = originFromHeader(rawReferer);
+    if (origin !== null) {
+      if (origin !== selfOrigin) return new Response("Forbidden", { status: 403 });
+    } else if (rawOrigin !== null) {
+      return new Response("Forbidden", { status: 403 });
+    } else if (referer !== null) {
+      if (referer !== selfOrigin) return new Response("Forbidden", { status: 403 });
+    } else if (rawReferer !== null) {
       return new Response("Forbidden", { status: 403 });
     }
 
@@ -1177,9 +1233,13 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     ) =>
       withResponseHardening(await guardFetchErrors(withBodySizeLimit(devFetchInner), req, server));
     const devFetchBase = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
+    // Tracing is outermost so spans cover logging + metrics + hardening. It
+    // stamps the request id into the request it forwards, so the logging
+    // wrapper below it correlates to the same request id.
+    const devFetchTraced = withRequestTracing(devFetchBase);
     const devFetch = metricsReporter
-      ? withRequestMetrics(metricsReporter, devFetchBase)
-      : devFetchBase;
+      ? withRequestMetrics(metricsReporter, devFetchTraced)
+      : devFetchTraced;
 
     return {
       routes: {},
@@ -1261,9 +1321,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   ) =>
     withResponseHardening(await guardFetchErrors(withBodySizeLimit(prodFetchInner), req, server));
   const prodFetchBase = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
+  const prodFetchTraced = withRequestTracing(prodFetchBase);
   const prodFetch = metricsReporter
-    ? withRequestMetrics(metricsReporter, prodFetchBase)
-    : prodFetchBase;
+    ? withRequestMetrics(metricsReporter, prodFetchTraced)
+    : prodFetchTraced;
 
   return {
     routes: {},

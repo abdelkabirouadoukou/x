@@ -4,10 +4,18 @@
  * The framework's general-purpose rate limiter is IP-keyed and shared across
  * the whole app, so a distributed attack (many IPs, one account) or a shared
  * NAT/office IP walks right past it. This guard is scoped tighter than that:
- * the bucket key is `(client IP, submitted identifier)`, so N consecutive
- * failed attempts against one account lock *that account* regardless of how
- * many IPs are doing the guessing, without throttling legitimate traffic to
- * other accounts from the same network.
+ * two *independent* buckets are checked together —
+ *
+ * - **Account bucket** (keyed by the submitted identifier alone): N
+ *   consecutive failed attempts against one account lock *that account*
+ *   regardless of how many IPs are doing the guessing.
+ * - **IP bucket** (keyed by the client IP alone): a single IP spraying many
+ *   accounts is throttled without locking out any one account for everyone
+ *   who shares that network.
+ *
+ * They are separate keys deliberately: a composite `(IP, account)` key gives
+ * neither protection — an attacker rotating source IPs starts a fresh bucket
+ * on every attempt, so no bucket ever accumulates toward `maxAttempts`.
  *
  * In-memory (single-process) by default, with exponential backoff: each
  * failure extends the lockout window (`windowMs * 2^(failures-1)`, capped),
@@ -37,14 +45,29 @@ export function createBruteForceGuard(options: BruteForceOptions = {}) {
   const windowMs = options.windowMs ?? 15 * 60_000;
   const buckets = new Map<string, Bucket>();
 
-  function clientIp(req: Request): string {
+  /** Client IP, or null when neither proxy header is present. */
+  function clientIp(req: Request): string | null {
     const forwarded = req.headers.get("x-forwarded-for");
-    if (forwarded) return forwarded.split(",")[0]?.trim() ?? "unknown";
-    return req.headers.get("x-real-ip") ?? "unknown";
+    if (forwarded) return forwarded.split(",")[0]?.trim() || null;
+    return req.headers.get("x-real-ip") || null;
   }
 
-  function keyFor(req: Request, identifier: string): string {
-    return `login:${clientIp(req)}:${identifier}`;
+  /**
+   * Account-scoped bucket key: the submitted identifier alone. Namespaced
+   * separately from the IP bucket so a crafted identifier that happens to look
+   * like an IP (or vice versa) can't merge the two buckets.
+   */
+  function accountKey(identifier: string): string {
+    return `login:account:${identifier}`;
+  }
+
+  /**
+   * IP-scoped bucket key: the client IP alone (one IP spraying many accounts),
+   * or null when the client IP can't be determined — see {@link clientIp}.
+   */
+  function ipKey(req: Request): string | null {
+    const ip = clientIp(req);
+    return ip === null ? null : `login:ip:${ip}`;
   }
 
   /** Current lockout state for `key`, without recording anything. */
@@ -96,7 +119,8 @@ export function createBruteForceGuard(options: BruteForceOptions = {}) {
   timer.unref?.();
 
   return {
-    keyFor,
+    accountKey,
+    ipKey,
     status,
     recordFailure,
     reset,

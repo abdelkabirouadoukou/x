@@ -16,6 +16,13 @@
  *   race. For hostname allow-list entries the target is additionally resolved
  *   and every returned IP must be public (DNS-rebinding defense-in-depth);
  *   supply `resolveHost` to override the default `Bun.dns.lookup`.
+ * - **Post-verify connection pinning** — resolving a hostname and then
+ *   letting `fetch` re-resolve it re-opens a TOCTOU window: a DNS-rebinding
+ *   attacker who controls the resolver can answer the verification query with
+ *   public IPs and the connection query with a metadata/private IP. So once
+ *   a hostname's IPs are verified public, the connection is pinned to a
+ *   verified IP with the hostname sent as the `Host` header (and, for https,
+ *   as the TLS serverName, keeping SNI + certificate validation correct).
  */
 
 export const DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -190,6 +197,83 @@ async function resolveHostDefault(hostname: string): Promise<string[]> {
   }
 }
 
+/** Bun-specific fetch option: TLS settings (SNI/serverName override). */
+type BunFetchTls = { tls?: { serverName: string } };
+type BunRequestInit = RequestInit & BunFetchTls;
+
+/** URL with its hostname replaced by `ip`, preserving scheme and port. */
+function urlForIp(target: URL, ip: string): URL {
+  const pinned = new URL(target.toString());
+  // The WHATWG hostname setter silently ignores a bare IPv6 literal (it only
+  // accepts `[cafe::1]`), which would leave the original hostname in place and
+  // let fetch re-resolve it — reopening the DNS-rebinding window while
+  // resolveProxyTarget still reports "ok". Bracketing IPv6 keeps the pin;
+  // plain IPv4 passes through unchanged.
+  pinned.hostname = ip.includes(":") ? `[${ip}]` : ip;
+  return pinned;
+}
+
+/**
+ * Returns the pinned fetch target for an allow-listed URL, where the hostname
+ * has already been resolved and verified public by the caller.
+ *
+ * Connecting by hostname would re-resolve inside `fetch` — a DNS-rebinding
+ * attacker could return a public IP for the check a moment earlier and a
+ * private/metadata IP for the actual connection (TOCTOU). Instead, connect
+ * directly to the verified IP, send the original hostname as the `Host`
+ * header, and for https set the TLS serverName so SNI + certificate
+ * validation still target the hostname (not the IP).
+ */
+function pinToVerifiedIp(target: URL, verifiedIp: string): { url: URL; init: BunRequestInit } {
+  const init: BunRequestInit = { redirect: "manual", headers: { host: target.host } };
+  if (target.protocol === "https:") {
+    init.tls = { serverName: target.hostname };
+  }
+  return { url: urlForIp(target, verifiedIp), init };
+}
+
+type ResolvedProxyTarget =
+  | { status: "ok"; url: URL; init: BunRequestInit }
+  | { status: "reject-literal" }
+  | { status: "reject-dns" };
+
+/**
+ * Resolves and pins a proxy target without ever letting `fetch` re-resolve it.
+ *
+ * - An IP literal is used as-is (a reserved literal is refused).
+ * - A hostname is resolved once; if any answer is private/reserved the target
+ *   is refused, otherwise the connection is pinned to a verified public IP so
+ *   a DNS-rebinding attacker can't swap the answer between this check and the
+ *   actual connection. Empty answers / resolver errors fail open (fetch the
+ *   hostname as-is), so a DNS outage can't break image loading.
+ */
+async function resolveProxyTarget(
+  target: URL,
+  resolveHost: (hostname: string) => Promise<string[]>,
+): Promise<ResolvedProxyTarget> {
+  if (isIpLiteral(target.hostname)) {
+    if (isPrivateOrReservedAddress(target.hostname)) {
+      return { status: "reject-literal" };
+    }
+    return { status: "ok", url: target, init: { redirect: "manual" as const } };
+  }
+  let ips: string[] = [];
+  try {
+    ips = await resolveHost(target.hostname);
+  } catch {
+    ips = [];
+  }
+  if (ips.some((ip) => isPrivateOrReservedAddress(ip))) {
+    return { status: "reject-dns" };
+  }
+  const verifiedIp = ips[0];
+  if (verifiedIp !== undefined) {
+    const { url, init } = pinToVerifiedIp(target, verifiedIp);
+    return { status: "ok", url, init };
+  }
+  return { status: "ok", url: target, init: { redirect: "manual" as const } };
+}
+
 /** Wraps an upstream body in a counting stream that aborts past `maxBytes`. */
 function enforceImageByteCount(
   body: ReadableStream<Uint8Array> | null,
@@ -259,32 +343,32 @@ export function createImageProxyHandler(
       return new Response("host not allow-listed for image proxy", { status: 403 });
     }
 
-    // Reject an allow-listed hostname that is itself a private/reserved IP
-    // literal — deterministic, no DNS involved. Note: a hostname equal to a
-    // private literal can only be in the allow-list if the operator put it
-    // there, but the metadata IPs (169.254.169.254 and friends) are too
-    // dangerous a default to leave to operator error.
-    if (isIpLiteral(parsed.hostname) && isPrivateOrReservedAddress(parsed.hostname)) {
-      return new Response("target is a private or reserved address", { status: 403 });
-    }
+    // Resolve the target once, verify every IP is public, and pin the
+    // connection to a verified IP so nothing re-resolves (DNS-rebinding
+    // TOCTOU). Literal private/reserved targets are refused outright.
+    const rejectFor = (
+      status: Exclude<ResolvedProxyTarget["status"], "ok">,
+      hop: boolean,
+    ): Response => {
+      if (status === "reject-literal") {
+        return new Response(
+          hop
+            ? "upstream redirected to a private or reserved address"
+            : "target is a private or reserved address",
+          { status: 403 },
+        );
+      }
+      return new Response(
+        hop
+          ? "upstream redirect resolves to a private or reserved address"
+          : "target resolves to a private or reserved address",
+        { status: 403 },
+      );
+    };
 
-    // DNS-rebinding defense-in-depth: every IP the allow-listed hostname
-    // resolves to must be public before we connect. Best-effort: a resolver
-    // outage or empty answer fails open (the fetch itself still subject to
-    // the allow-list and the deterministic literal guard).
-    if (!isIpLiteral(parsed.hostname)) {
-      let publicIp = true;
-      try {
-        const ips = await resolveHost(parsed.hostname);
-        publicIp = !ips.some((ip) => isPrivateOrReservedAddress(ip));
-      } catch {
-        publicIp = true;
-      }
-      if (!publicIp) {
-        return new Response("target resolves to a private or reserved address", {
-          status: 403,
-        });
-      }
+    const initial = await resolveProxyTarget(parsed, resolveHost);
+    if (initial.status !== "ok") {
+      return rejectFor(initial.status, false);
     }
 
     // Optional width/quality hints, forwarded by <Image> for responsive
@@ -315,8 +399,9 @@ export function createImageProxyHandler(
       // `redirect: "manual"` (the default in the fetch spec only for "restricted"
       // sets) prevents automatic redirect-following, which could let an
       // allow-listed origin redirect us to an internal/metadata endpoint. Each
-      // hop is instead followed by hand and re-checked against the allow-list.
-      upstream = await fetch(parsed, { redirect: "manual" });
+      // hop is instead followed by hand and re-checked against the allow-list,
+      // and re-pinned (resolve once, verify public, connect to the verified IP).
+      upstream = await fetch(initial.url, initial.init);
       for (let hop = 0; hop < 5; hop++) {
         if (!isRedirect(upstream.status)) break;
         const location = upstream.headers.get("location");
@@ -329,28 +414,13 @@ export function createImageProxyHandler(
         if (!allowedUrl(next)) {
           return new Response("upstream redirected off the allow-list", { status: 403 });
         }
-        // Re-run the address guard on each hop — the interesting SSRF case is
+        // Re-run the resolve + pin on each hop — the interesting SSRF case is
         // exactly a redirect hop landing on a private/reserved target.
-        if (isIpLiteral(next.hostname) && isPrivateOrReservedAddress(next.hostname)) {
-          return new Response("upstream redirected to a private or reserved address", {
-            status: 403,
-          });
+        const hopTarget = await resolveProxyTarget(next, resolveHost);
+        if (hopTarget.status !== "ok") {
+          return rejectFor(hopTarget.status, true);
         }
-        if (!isIpLiteral(next.hostname)) {
-          let publicIp = true;
-          try {
-            const ips = await resolveHost(next.hostname);
-            publicIp = !ips.some((ip) => isPrivateOrReservedAddress(ip));
-          } catch {
-            publicIp = true;
-          }
-          if (!publicIp) {
-            return new Response("upstream redirect resolves to a private or reserved address", {
-              status: 403,
-            });
-          }
-        }
-        upstream = await fetch(next, { redirect: "manual" });
+        upstream = await fetch(hopTarget.url, hopTarget.init);
       }
     } catch (err) {
       return new Response(`upstream fetch failed: ${String(err)}`, { status: 502 });

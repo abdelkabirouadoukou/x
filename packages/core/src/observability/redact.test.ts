@@ -52,6 +52,43 @@ describe("redactString", () => {
     expect(out).not.toContain("dXNlcjpwYXNz");
     expect(out).toContain(REDACTED);
   });
+
+  test("replaces Authorization/auth values exactly, no literal `$1` (regression for #9)", () => {
+    // The old regex used a non-capturing `(?:authorization|auth)` group but the
+    // replacement still referenced `$1`, so output contained the literal text
+    // "$1 [REDACTED]". The group must capture so the keyword survives.
+    expect(redactString("Authorization: fhqwhgads")).toBe(`Authorization ${REDACTED}`);
+    expect(redactString("authorization: fhqwhgads")).toBe(`authorization ${REDACTED}`);
+    expect(redactString("auth: fhqwhgads")).toBe(`auth ${REDACTED}`);
+    expect(redactString("auth=fhqwhgads")).toBe(`auth ${REDACTED}`);
+    expect(redactString("Authorization: fhqwhgads")).not.toContain("$1");
+    expect(redactString("Authorization: fhqwhgads")).not.toContain("fhqwhgads");
+  });
+
+  test("masks a connection-string password (regression for #136)", () => {
+    const out = redactString(
+      "failed to connect: postgres://deploy:supersecret@db.internal:5432/app",
+    );
+    expect(out).toBe("failed to connect: postgres://deploy:[REDACTED]@db.internal:5432/app");
+    expect(out).not.toContain("supersecret");
+  });
+
+  test("masks the userinfo password across URI schemes, keeping scheme/host", () => {
+    const out = redactString(
+      "mysql://alice:hunter2@db:3306/app, redis://:pw@cache:6379, dial tcp https://user:token@auth/api",
+    );
+    expect(out).toEqual(
+      "mysql://alice:[REDACTED]@db:3306/app, redis://:[REDACTED]@cache:6379, dial tcp https://user:[REDACTED]@auth/api",
+    );
+    expect(out).not.toContain("hunter2");
+    expect(out).not.toContain("pw");
+    expect(out).not.toContain("token");
+  });
+
+  test("leaves userinfo without a password untouched", () => {
+    const out = redactString("postgres://readonly@db/app");
+    expect(out).toBe("postgres://readonly@db/app");
+  });
 });
 
 describe("redactValue", () => {
@@ -92,6 +129,14 @@ describe("redactValue", () => {
     expect(out.items[0]?.token).toBe(REDACTED);
     expect(out.items[0]?.name).toBe("a");
     expect(out.items[1]?.name).toBe("b");
+  });
+
+  test("redacts a connection string embedded in an error message value (regression for #136)", () => {
+    const out = redactValue({
+      error: "connect ECONNREFUSED postgres://admin:hush@db:5432/prod",
+    }) as { error: string };
+    expect(out.error).toBe("connect ECONNREFUSED postgres://admin:[REDACTED]@db:5432/prod");
+    expect(out.error).not.toContain("hush");
   });
 
   test("leaves numbers, booleans and null untouched", () => {

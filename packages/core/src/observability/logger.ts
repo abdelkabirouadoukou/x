@@ -4,6 +4,7 @@
  */
 
 import { redactString, redactValue } from "./redact";
+import { traceRequestId } from "./tracing";
 
 export interface LogFields {
   [key: string]: unknown;
@@ -49,7 +50,10 @@ export function withRequestLogging<Server = unknown>(
 ): (req: Request, server?: Server) => Promise<Response> {
   return async (req: Request, server?: Server) => {
     const start = performance.now();
-    const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+    // Single source of truth for the id: withRequestTracing mints it when the
+    // ingress didn't provide one; reuse rather than minting a second uuid so
+    // the log line, the response header and the trace span all agree.
+    const requestId = traceRequestId(req);
     const route = new URL(req.url).pathname;
 
     try {
