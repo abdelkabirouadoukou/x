@@ -164,14 +164,17 @@ describe.if(Boolean(PG_TEST_URL))("runPostgresMigrations", () => {
   });
 
   /** Creates a throwaway database, runs `fn` against it, and drops it. */
-  async function withDatabase<T>(fn: (client: PostgresClient) => Promise<T>): Promise<T> {
+  async function withDatabase<T>(
+    fn: (client: PostgresClient, url: string) => Promise<T>,
+  ): Promise<T> {
     const dbName = `x_mig_${crypto.randomUUID().replace(/-/g, "")}`;
     await admin.unsafe(`CREATE DATABASE "${dbName}"`);
     const url = new URL(PG_TEST_URL as string);
     url.pathname = `/${dbName}`;
-    const client = connectPostgres({ url: url.toString(), max: 1 });
+    const urlString = url.toString();
+    const client = connectPostgres({ url: urlString, max: 1 });
     try {
-      return await fn(client);
+      return await fn(client, urlString);
     } finally {
       (client as unknown as { close(): void }).close();
       await admin.unsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
@@ -285,6 +288,38 @@ describe.if(Boolean(PG_TEST_URL))("runPostgresMigrations", () => {
         name: string;
       }[];
       expect(rows.map((r) => r.name)).toEqual(["first", "second"]);
+    });
+  });
+
+  test("two concurrent runs against the same database don't crash the loser", async () => {
+    resetFixtures();
+    writeMigration(
+      "001_create_users.sql",
+      "CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT NOT NULL);",
+    );
+
+    await withDatabase(async (client, url) => {
+      // Two separate pools on the same database, started at the same time —
+      // the multi-replica boot pattern. Without the advisory lock, whichever
+      // pool commits second hits the `_x_migrations` PRIMARY KEY on its
+      // bookkeeping INSERT and rejects out of `runPostgresMigrations` (a
+      // crash-loop). With the lock, one run applies and the other sees the
+      // record and skips.
+      const second = connectPostgres({ url, max: 1 });
+      try {
+        const [a, b] = await Promise.all([
+          runPostgresMigrations(client, FIXTURE_DIR),
+          runPostgresMigrations(second, FIXTURE_DIR),
+        ]);
+
+        // Exactly one run applied the migration; the other legitimately skipped.
+        const appliedCount = a.applied.length + b.applied.length;
+        expect(appliedCount).toBe(1);
+        expect(await tableExists(client, "users")).toBe(true);
+        expect(await appliedNames(client)).toEqual(["001_create_users.sql"]);
+      } finally {
+        (second as unknown as { close(): void }).close();
+      }
     });
   });
 });

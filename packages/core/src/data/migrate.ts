@@ -69,6 +69,14 @@ export interface PostgresMigrationResult {
   skipped: string[];
 }
 
+/**
+ * Advisory-lock key that serializes concurrent migration runs across
+ * processes/replicas. A fixed constant so every replica contends on the same
+ * lock (chosen to be large and arbitrary to avoid colliding with app-lock
+ * keys). Run inside the transaction, so it auto-releases on commit.
+ */
+const MIGRATION_LOCK_KEY = 791975531451977;
+
 export async function runPostgresMigrations(
   client: PostgresClient,
   migrationsDir: string,
@@ -77,11 +85,6 @@ export async function runPostgresMigrations(
     name TEXT PRIMARY KEY,
     applied_at TIMESTAMP DEFAULT NOW()
   )`);
-
-  const rows = (await client.unsafe("SELECT name FROM _x_migrations")) as {
-    name: string;
-  }[];
-  const applied = new Set(rows.map((r) => r.name));
 
   let files: string[];
   try {
@@ -93,25 +96,63 @@ export async function runPostgresMigrations(
   }
 
   const result: PostgresMigrationResult = { applied: [], skipped: [] };
+  let failed: unknown = null;
 
-  for (const file of files) {
-    if (applied.has(file)) {
-      result.skipped.push(file);
-      continue;
+  // Serialize the whole run: N replicas booting together must not all apply
+  // the same migration (the loser's bookkeeping INSERT hits `_x_migrations`
+  // PRIMARY KEY and crashes the boot). The table's own PRIMARY KEY can't stop
+  // them — the DDL they run first is not idempotent. A pool-safe serialization
+  // is a single wrapping transaction holding a transaction-scoped advisory
+  // lock: `begin()` pins every `tx.unsafe` to one connection, so the lock is
+  // actually held by the work it guards, and it releases on commit. Each
+  // migration still rolls back independently via savepoints — same
+  // all-or-nothing-per-file guarantee as before, and migrations applied before
+  // a later failure stay committed.
+  await client.begin(async (tx) => {
+    await tx.unsafe("SELECT pg_advisory_xact_lock($1)", [MIGRATION_LOCK_KEY]);
+
+    // Read applied AFTER taking the lock so the snapshot is in sync with the
+    // serialized window.
+    const rows = (await tx.unsafe("SELECT name FROM _x_migrations")) as {
+      name: string;
+    }[];
+    const applied = new Set(rows.map((r) => r.name));
+
+    let seq = 0;
+    for (const file of files) {
+      if (applied.has(file)) {
+        result.skipped.push(file);
+        continue;
+      }
+      // First failure stops the run (matching pre-lock behavior of throwing on
+      // the first broken migration) but does not roll back the run so far.
+      if (failed !== null) break;
+
+      const raw = readFileSync(join(migrationsDir, file), "utf-8");
+      const savepoint = `x_migration_${seq++}`;
+      await tx.unsafe(`SAVEPOINT ${savepoint}`);
+      try {
+        // Parameterized ($1) bookkeeping insert instead of string interpolation
+        // so a migration filename can't inject SQL into the bookkeeping
+        // statement.
+        await tx.unsafe(raw);
+        await tx.unsafe("INSERT INTO _x_migrations (name) VALUES ($1)", [file]);
+        await tx.unsafe(`RELEASE SAVEPOINT ${savepoint}`);
+        console.log(`[x] migration applied: ${file}`);
+        result.applied.push(file);
+      } catch (err) {
+        // Roll back just this migration's statements; keep the wrapping
+        // transaction alive so everything applied so far commits.
+        await tx.unsafe(`ROLLBACK TO SAVEPOINT ${savepoint}`).catch(() => {});
+        await tx.unsafe(`RELEASE SAVEPOINT ${savepoint}`).catch(() => {});
+        failed = err;
+      }
     }
-    const raw = readFileSync(join(migrationsDir, file), "utf-8");
-    // Same all-or-nothing guarantee as the SQLite runner: migration SQL +
-    // bookkeeping insert run inside one transaction, so a failing migration
-    // rolls back cleanly and can be retried after a fix. The insert is
-    // parameterized ($1) instead of string-interpolated, so a migration
-    // filename can't inject SQL into the bookkeeping statement.
-    await client.begin(async (tx) => {
-      await tx.unsafe(raw);
-      await tx.unsafe("INSERT INTO _x_migrations (name) VALUES ($1)", [file]);
-    });
-    console.log(`[x] migration applied: ${file}`);
-    result.applied.push(file);
-  }
+  });
+
+  // The outer `begin()` committed the successful migrations above; rethrow the
+  // failure once the transaction is closed.
+  if (failed !== null) throw failed;
 
   return result;
 }
