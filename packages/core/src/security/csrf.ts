@@ -34,7 +34,8 @@ export interface CsrfResult {
   reason?: string;
 }
 
-function originFromHeader(value: string | null): string | null {
+/** Parses an `Origin`/`Referer` header value to its canonical origin, or null when unparseable/absent. */
+export function originFromHeader(value: string | null): string | null {
   if (!value) return null;
   try {
     return new URL(value).origin;
@@ -43,7 +44,15 @@ function originFromHeader(value: string | null): string | null {
   }
 }
 
-function requestOrigin(req: Request): string | null {
+/**
+ * Canonical "self" origin of a request (`protocol://host`). Shared with code
+ * that must compare an Origin/Referer header against the app's own origin
+ * without the CSRF check's strictness (e.g. the hydration-mismatch beacon,
+ * which tolerates missing headers). Parsing is crucial: prefix matching
+ * (`new URL(o).origin.startsWith(selfOrigin)`) lets `https://app.example.com
+ * .evil.com` through, so callers must exact-match this value.
+ */
+export function requestOrigin(req: Request): string {
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
 }

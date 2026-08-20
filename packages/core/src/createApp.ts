@@ -40,7 +40,7 @@ import {
   enforceRequestBodySize,
   RequestBodyTooLargeError,
 } from "./security/body-size";
-import { type CsrfOptions, checkCsrf } from "./security/csrf";
+import { type CsrfOptions, checkCsrf, originFromHeader, requestOrigin } from "./security/csrf";
 import { applySecurityHeaders, type SecurityHeadersOptions } from "./security/headers";
 import { type ComputeResult, IsrCache, isrCacheKey } from "./security/isr-cache";
 import {
@@ -984,11 +984,24 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     // still spam it. Reject cross-site posts (missing Origin/Referer is
     // tolerated — server-side emits, e.g. sendBeacon from file://, may omit
     // them, and the worst case there is a discarded telemetry line).
-    const origin = req.headers.get("origin");
-    const referer = req.headers.get("referer");
-    const selfOrigin = `${new URL(req.url).protocol}//${new URL(req.url).host}`;
-    const attempt = origin ?? referer;
-    if (attempt && !attempt.startsWith(selfOrigin)) {
+    //
+    // Exact-match the canonical origin: parsing (then comparing the full
+    // `origin` string) is required, since a prefix match would let
+    // `https://localhost.evil.com` pass, not just `https://localhost`. A
+    // present-but-unparseable header (`Origin: null` from a sandboxed/opaque
+    // origin) is a cross-site signal, not a missing one, so refuse it.
+    const selfOrigin = requestOrigin(req);
+    const rawOrigin = req.headers.get("origin");
+    const rawReferer = req.headers.get("referer");
+    const origin = originFromHeader(rawOrigin);
+    const referer = originFromHeader(rawReferer);
+    if (origin !== null) {
+      if (origin !== selfOrigin) return new Response("Forbidden", { status: 403 });
+    } else if (rawOrigin !== null) {
+      return new Response("Forbidden", { status: 403 });
+    } else if (referer !== null) {
+      if (referer !== selfOrigin) return new Response("Forbidden", { status: 403 });
+    } else if (rawReferer !== null) {
       return new Response("Forbidden", { status: 403 });
     }
 
