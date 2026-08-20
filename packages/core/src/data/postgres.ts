@@ -1,4 +1,6 @@
 /** A Postgres client scoped to a single transaction (auto-commit/rollback). */
+import { dbTraceAttributes, tracePhase } from "../observability/tracing";
+
 export interface PostgresTransactionClient {
   unsafe(query: string, params?: unknown[]): Promise<unknown>;
   (strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown>;
@@ -147,7 +149,12 @@ export function connectPostgres(options: PostgresOptions = {}): PostgresClient {
   return new Proxy(sql, {
     get(target, prop, receiver) {
       if (prop === "unsafe") {
-        return (query: string, params?: unknown[]) => run(() => client.unsafe(query, params));
+        return (query: string, params?: unknown[]) =>
+          run(() =>
+            tracePhase("x.db", dbTraceAttributes("postgres", query), () =>
+              client.unsafe(query, params),
+            ),
+          );
       }
       if (prop === "begin") {
         return <T>(fn: (tx: PostgresTransactionClient) => Promise<T>) =>
@@ -158,7 +165,15 @@ export function connectPostgres(options: PostgresOptions = {}): PostgresClient {
     },
     apply(_target, _thisArg, args: [TemplateStringsArray, ...unknown[]]) {
       const [strings, ...values] = args;
-      return run(() => client(strings, ...values));
+      // Template literals interpolate params inline; only the (placeholder-
+      // rich) static part is recorded as the statement so bound values never
+      // leak into the trace.
+      const statement = strings.join("?");
+      return run(() =>
+        tracePhase("x.db", dbTraceAttributes("postgres", statement), () =>
+          client(strings, ...values),
+        ),
+      );
     },
   }) as unknown as PostgresClient;
 }

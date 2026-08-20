@@ -18,6 +18,7 @@ import {
   reportException,
   setErrorReporter,
 } from "./observability/monitoring";
+import { tracePhase, withRequestTracing } from "./observability/tracing";
 import type { LoaderArgs, LoaderReturn } from "./render";
 import { renderPage, renderPageOnce, renderStreamingPage } from "./render";
 import {
@@ -402,7 +403,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
         const method = req.method;
         const handlerFn = module[method];
         if (typeof handlerFn === "function") {
-          const result = await (handlerFn as (r: Request) => unknown)(req);
+          const result = await tracePhase("x.api", { route: route.routePath, method }, async () =>
+            (handlerFn as (r: Request) => unknown)(req),
+          );
           if (result instanceof Response) return result;
           if (result === undefined || result === null) {
             return new Response("OK", { status: 200 });
@@ -463,7 +466,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           if (mode === "server") {
             let loaderData: Record<string, unknown> = {};
             if (loader) {
-              const result = await loader(ctx);
+              const result = await tracePhase("x.loader", { route: route.routePath }, () =>
+                loader(ctx),
+              );
               if (result instanceof Response) return result;
               loaderData = result;
             }
@@ -475,26 +480,31 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
             );
             const cspNonce = generateCspNonce();
 
-            const stream = await renderStreamingPage(content, {
-              stylesheet: stylesheetHref,
-              liveReload: dev,
-              cspNonce,
-              ...(islandScripts === undefined
-                ? {
-                    // Single-render mode: islands register into `registry`
-                    // during the one render that produces the HTML, and the
-                    // script list is resolved from that same pass in the lazy
-                    // footer — no separate discovery render, so non-deterministic
-                    // components can't diverge between two passes.
-                    resolveIslandScripts: () =>
-                      resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
-                  }
-                : { islandScripts }),
-              onRenderError: (error) => {
-                reportException(error, { route: route.routePath, phase: "ssr" });
-                metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
-              },
-            });
+            const stream = await tracePhase(
+              "x.ssr",
+              { route: route.routePath, streaming: true },
+              () =>
+                renderStreamingPage(content, {
+                  stylesheet: stylesheetHref,
+                  liveReload: dev,
+                  cspNonce,
+                  ...(islandScripts === undefined
+                    ? {
+                        // Single-render mode: islands register into `registry`
+                        // during the one render that produces the HTML, and the
+                        // script list is resolved from that same pass in the lazy
+                        // footer — no separate discovery render, so non-deterministic
+                        // components can't diverge between two passes.
+                        resolveIslandScripts: () =>
+                          resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
+                      }
+                    : { islandScripts }),
+                  onRenderError: (error) => {
+                    reportException(error, { route: route.routePath, phase: "ssr" });
+                    metricsReporter?.incr("x_http_errors_total", 1, { phase: "ssr" });
+                  },
+                }),
+            );
             const res = new Response(stream, {
               headers: { "Content-Type": "text/html; charset=utf-8" },
             });
@@ -531,7 +541,9 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
           const computeHtml = async (): Promise<ComputeResult | Response> => {
             let loaderData: Record<string, unknown> = {};
             if (loader) {
-              const result = await loader(ctx);
+              const result = await tracePhase("x.loader", { route: route.routePath }, () =>
+                loader(ctx),
+              );
               if (result instanceof Response) return result;
               loaderData = result;
             }
@@ -543,17 +555,22 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
               wrapWithLayouts(Component, ctx.params, loaderData, layoutModules),
             );
             const cspNonce = generateCspNonce();
-            const html = await renderPageOnce(content, {
-              stylesheet: stylesheetHref,
-              liveReload: dev,
-              cspNonce,
-              ...(islandScripts === undefined
-                ? {
-                    resolveIslandScripts: () =>
-                      resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
-                  }
-                : { islandScripts }),
-            });
+            const html = await tracePhase(
+              "x.ssr",
+              { route: route.routePath, streaming: false },
+              () =>
+                renderPageOnce(content, {
+                  stylesheet: stylesheetHref,
+                  liveReload: dev,
+                  cspNonce,
+                  ...(islandScripts === undefined
+                    ? {
+                        resolveIslandScripts: () =>
+                          resolveIslandScripts(route.filePath, layoutFilePaths, registry.entries),
+                      }
+                    : { islandScripts }),
+                }),
+            );
             return { html, cspNonce };
           };
 
@@ -1177,9 +1194,13 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
     ) =>
       withResponseHardening(await guardFetchErrors(withBodySizeLimit(devFetchInner), req, server));
     const devFetchBase = loggingEnabled ? withRequestLogging(devFetchHardened) : devFetchHardened;
+    // Tracing is outermost so spans cover logging + metrics + hardening. It
+    // stamps the request id into the request it forwards, so the logging
+    // wrapper below it correlates to the same request id.
+    const devFetchTraced = withRequestTracing(devFetchBase);
     const devFetch = metricsReporter
-      ? withRequestMetrics(metricsReporter, devFetchBase)
-      : devFetchBase;
+      ? withRequestMetrics(metricsReporter, devFetchTraced)
+      : devFetchTraced;
 
     return {
       routes: {},
@@ -1261,9 +1282,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   ) =>
     withResponseHardening(await guardFetchErrors(withBodySizeLimit(prodFetchInner), req, server));
   const prodFetchBase = loggingEnabled ? withRequestLogging(prodFetchHardened) : prodFetchHardened;
+  const prodFetchTraced = withRequestTracing(prodFetchBase);
   const prodFetch = metricsReporter
-    ? withRequestMetrics(metricsReporter, prodFetchBase)
-    : prodFetchBase;
+    ? withRequestMetrics(metricsReporter, prodFetchTraced)
+    : prodFetchTraced;
 
   return {
     routes: {},
