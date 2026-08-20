@@ -5,10 +5,11 @@
 import { BASE_DEPENDENCIES, BASE_DEV_DEPENDENCIES, FEATURES, type FeatureId } from "./templates.js";
 
 // Fallback versions used if the registry lookup fails (e.g. offline).
-// Bump these when you publish a new @thexjs/core / @thexjs/cli version.
-export const FALLBACK_CORE_VERSION = "1.2.2";
+// Keep in sync with the latest published @thexjs/* versions on npm
+// (tracked by issue #151). Bump these when you publish a new package version.
+export const FALLBACK_CORE_VERSION = "1.6.0";
 export const FALLBACK_CLI_VERSION = "1.1.2";
-export const FALLBACK_HOOKS_VERSION = "0.1.0";
+export const FALLBACK_HOOKS_VERSION = "0.2.0";
 
 export interface ResolvedVersions {
   coreVersion: string;
