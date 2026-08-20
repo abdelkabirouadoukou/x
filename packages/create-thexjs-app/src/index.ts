@@ -23,7 +23,8 @@ import {
   spinner,
   text,
 } from "@clack/prompts";
-import { BASE_DEPENDENCIES, BASE_DEV_DEPENDENCIES, FEATURES, type FeatureId } from "./templates.js";
+import { buildPackageJson, resolveVersions } from "./package-json.js";
+import { FEATURES, type FeatureId } from "./templates.js";
 
 function abort(message: string): never {
   cancel(message);
@@ -34,11 +35,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_ROOT = join(__dirname, "..", "templates");
 const BASE_TEMPLATE = join(TEMPLATES_ROOT, "base");
 const ADDONS_ROOT = join(TEMPLATES_ROOT, "addons");
-
-// Fallback version used if the registry lookup fails (e.g. offline).
-// Bump this when you publish a new @thexjs/core / @thexjs/cli version.
-const FALLBACK_CORE_VERSION = "1.2.2";
-const FALLBACK_HOOKS_VERSION = "0.1.0";
 
 interface CliOptions {
   projectName?: string;
@@ -117,22 +113,6 @@ function slugify(name: string): string {
   );
 }
 
-async function fetchLatestVersion(pkg: string): Promise<string | null> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`https://registry.npmjs.org/${pkg}/latest`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    if (!res.ok) return null;
-    const data = (await res.json()) as { version?: string };
-    return data.version ?? null;
-  } catch {
-    return null;
-  }
-}
-
 function ensureDir(path: string): void {
   if (!existsSync(path)) mkdirSync(path, { recursive: true });
 }
@@ -165,49 +145,6 @@ function finalizeGitignore(targetDir: string): void {
   if (!existsSync(from)) return;
   const to = join(targetDir, ".gitignore");
   renameSync(from, to);
-}
-
-function buildPackageJson(
-  name: string,
-  features: FeatureId[],
-  coreVersion: string,
-  cliVersion: string,
-  hooksVersion?: string,
-): string {
-  const dependencies: Record<string, string> = {
-    ...BASE_DEPENDENCIES,
-    "@thexjs/core": `^${coreVersion}`,
-  };
-  const devDependencies: Record<string, string> = {
-    ...BASE_DEV_DEPENDENCIES,
-    "@thexjs/cli": `^${cliVersion}`,
-  };
-
-  if (features.includes("hooks") && hooksVersion) {
-    dependencies["@thexjs/hooks"] = `^${hooksVersion}`;
-  }
-
-  for (const feature of features) {
-    const meta = FEATURES.find((f) => f.id === feature);
-    if (!meta) continue;
-    Object.assign(dependencies, meta.dependencies);
-    Object.assign(devDependencies, meta.devDependencies);
-  }
-
-  const pkg = {
-    name,
-    private: true,
-    type: "module",
-    scripts: {
-      dev: "x dev",
-      build: "x build",
-      start: "x start",
-    },
-    dependencies,
-    devDependencies,
-  };
-
-  return `${JSON.stringify(pkg, null, 2)}\n`;
 }
 
 function buildXConfig(features: FeatureId[]): string {
@@ -304,11 +241,7 @@ async function main(): Promise<void> {
   }
 
   spin.message("Resolving latest @thexjs versions");
-  const coreVersion = (await fetchLatestVersion("@thexjs/core")) ?? FALLBACK_CORE_VERSION;
-  const cliVersion = (await fetchLatestVersion("@thexjs/cli")) ?? FALLBACK_CORE_VERSION;
-  const hooksVersion = features.includes("hooks")
-    ? ((await fetchLatestVersion("@thexjs/hooks")) ?? FALLBACK_HOOKS_VERSION)
-    : undefined;
+  const { coreVersion, cliVersion, hooksVersion } = await resolveVersions(features);
 
   writeFileSync(
     join(targetDir, "package.json"),

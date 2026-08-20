@@ -53,6 +53,11 @@ export interface ResolvedAction {
   parentPath: string;
   paramNames: string[];
   module: CompiledModuleRef;
+  /** Client-visible function names for this action module — the names the
+   *  island-bundle stub generator emits fetch() calls for. Includes each key
+   *  of a batched `export const actions = {...}` plus individually-exported
+   *  functions. */
+  fnNames?: string[];
 }
 
 export interface BuildManifest {

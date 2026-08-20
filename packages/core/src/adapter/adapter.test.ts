@@ -160,4 +160,42 @@ export default function Home() {
     expect(await res?.text()).toBe("ok");
     rmSync(fnDir, { recursive: true, force: true });
   });
+
+  test("action modules using a batched `actions` export expose per-function fnNames", async () => {
+    const dir = join(FIXTURE_DIR, "batched-actions");
+    // The batched pattern exports only `actions` — no individual named exports
+    // from the module itself. Naively taking `Object.keys(module)` would yield
+    // `["actions"]` instead of the functions inside.
+    touch(
+      dir,
+      "src/actions/subscribe.ts",
+      `function greet(name: string): Promise<string> {
+  return Promise.resolve("hi " + name);
+}
+function farewell(name: string): Promise<string> {
+  return Promise.resolve("bye " + name);
+}
+export const actions = { greet, farewell };
+`,
+    );
+
+    const scratch = join(dir, ".resolve");
+    const manifest = await resolveBuildManifest(
+      {
+        projectRoot: dir,
+        pagesDir: join(dir, "src/pages"),
+        actionsDir: join(dir, "src/actions"),
+      },
+      scratch,
+    );
+
+    expect(manifest.hasServerSurface).toBe(true);
+    expect(manifest.actions).toHaveLength(1);
+    expect(manifest.actions[0]?.parentPath).toBe("/");
+    // The client stub is generated from fnNames, so this must enumerate the
+    // batched functions — not the single `actions` export key.
+    expect(manifest.actions[0]?.fnNames).toEqual(["greet", "farewell"]);
+
+    rmSync(dir, { recursive: true, force: true });
+  });
 });
