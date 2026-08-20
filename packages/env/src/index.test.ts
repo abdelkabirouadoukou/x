@@ -37,6 +37,33 @@ describe("validators", () => {
     expect(url().parse("https://example.com")).toBe("https://example.com");
     expect(() => url().parse("not a url")).toThrow("Expected a valid URL");
   });
+
+  test("optional() turns a missing var into undefined", () => {
+    expect(str().optional().parse(undefined)).toBeUndefined();
+    expect(num().optional().parse(undefined)).toBeUndefined();
+    expect(num().optional().parse("42")).toBe(42);
+  });
+
+  test("optional() still validates present values", () => {
+    expect(() => num().optional().parse("abc")).toThrow('got "abc"');
+    expect(() => bool().optional().parse("yes")).toThrow("Expected a boolean");
+  });
+
+  test("default() substitutes a fallback for a missing var", () => {
+    expect(num().default(3000).parse(undefined)).toBe(3000);
+    expect(str().default("dev").parse(undefined)).toBe("dev");
+  });
+
+  test("default() still validates present values", () => {
+    expect(num().default(3000).parse("8080")).toBe(8080);
+    expect(() => num().default(3000).parse("abc")).toThrow('got "abc"');
+  });
+
+  test("optional() composes with default()", () => {
+    const v = num().optional().default(0);
+    expect(v.parse(undefined)).toBe(0);
+    expect(v.parse("7")).toBe(7);
+  });
 });
 
 describe("createEnv", () => {
@@ -113,5 +140,46 @@ describe("createEnv", () => {
     // if they drift, client-exposed vars would pass validation but fail the
     // production build (or leak). Pin the contract here.
     expect(DEFAULT_CLIENT_PREFIX).toBe("THEXJS_PUBLIC_");
+  });
+
+  test("optional() server vars pass without being set", () => {
+    const env = createEnv({
+      server: {
+        SENTRY_DSN: url().optional(),
+        PORT: num().optional(),
+      },
+      runtimeEnv: { PORT: "8080" },
+    });
+    expect(env.SENTRY_DSN).toBeUndefined();
+    expect(env.PORT).toBe(8080);
+  });
+
+  test("default() server vars yield the fallback when unset", () => {
+    const env = createEnv({
+      server: {
+        PORT: num().default(3000),
+        NODE_ENV: oneOf(["development", "production"] as const).default("development"),
+      },
+      runtimeEnv: {},
+    });
+    expect(env.PORT).toBe(3000);
+    expect(env.NODE_ENV).toBe("development");
+  });
+
+  test("optional() client vars can be omitted and typed as undefined", () => {
+    const env = createEnv({
+      client: { THEXJS_PUBLIC_ANALYTICS_ID: str().optional() },
+      runtimeEnv: {},
+    });
+    expect(env.THEXJS_PUBLIC_ANALYTICS_ID).toBeUndefined();
+  });
+
+  test("defaulted vars still fail on invalid present values", () => {
+    expect(() =>
+      createEnv({
+        server: { PORT: num().default(3000) },
+        runtimeEnv: { PORT: "not-a-number" },
+      }),
+    ).toThrow(/server\.PORT: Expected a number/);
   });
 });
