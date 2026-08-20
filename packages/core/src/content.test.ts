@@ -163,11 +163,14 @@ describe("scanContent", () => {
   test("surfaces the offending file path when frontmatter is invalid", () => {
     const badDir = join(import.meta.dir, "__fixtures__/content-bad");
     mkdirSync(badDir, { recursive: true });
-    writeFileSync(join(badDir, "broken.md"), `---
+    writeFileSync(
+      join(badDir, "broken.md"),
+      `---
 title: "unclosed
 ---
 Body
-`);
+`,
+    );
     try {
       expect(() => scanContent(badDir)).toThrow("broken.md");
     } finally {
