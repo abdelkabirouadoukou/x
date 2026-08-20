@@ -22,11 +22,12 @@ export function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_RE.test(key);
 }
 
-/** Masks bearer/basic credentials and inline `Authorization: ...` values in a string. */
+/** Masks bearer/basic credentials, inline `Authorization: ...` values and URI userinfo (connection strings) in a string. */
 export function redactString(input: string): string {
   return input
     .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=:-]+/gi, "$1 " + REDACTED)
-    .replace(/\b(?:authorization|auth)\s*[:=]\s*[^\s,;]+/gi, "$1 " + REDACTED);
+    .replace(/\b(?:authorization|auth)\s*[:=]\s*[^\s,;]+/gi, "$1 " + REDACTED)
+    .replace(/(\b[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^/\s@:]*:)([^/\s]*)(@)/g, `$1${REDACTED}$3`);
 }
 
 /**
