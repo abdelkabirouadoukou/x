@@ -43,7 +43,7 @@ describe("isSensitiveKey", () => {
 describe("redactString", () => {
   test("masks a Bearer token inline", () => {
     const out = redactString("request failed: Bearer eyJhbGciOiJIUzI1NiJ9.value");
-    expect(out).toContain("Bearer " + REDACTED);
+    expect(out).toContain(`Bearer ${REDACTED}`);
     expect(out).not.toContain("eyJhbGciOiJIUzI1NiJ9");
   });
 
@@ -157,7 +157,7 @@ describe("logger redaction on write", () => {
     captureLog.restore();
 
     const line = captureLog.lines[0];
-    expect(line).toContain('"password":"' + REDACTED + '"');
+    expect(line).toContain(`"password":"${REDACTED}"`);
     expect(line).not.toContain("hunter2");
     expect(line).toContain('"user":"alice"');
   });

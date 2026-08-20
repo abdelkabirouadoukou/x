@@ -16,10 +16,13 @@ export interface ChainableValidator<T> {
   optional: () => EnvValidator<T | undefined> & ChainableValidator<T | undefined>;
   /**
    * Substitute `fallback` when the variable is missing. A present but invalid
-   * value still fails validation. The resulting validator never yields
-   * `undefined`, so the inferred type stays `T`.
+   * value still fails validation. `undefined` is removed from the chained
+   * result, so `num().optional().default(0)` stays typed `number` and
+   * `default(undefined)` is a compile-time error.
    */
-  default: (fallback: T) => EnvValidator<T> & ChainableValidator<T>;
+  default: (
+    fallback: Exclude<T, undefined>,
+  ) => EnvValidator<Exclude<T, undefined>> & ChainableValidator<Exclude<T, undefined>>;
 }
 
 type ScalarValidator<T> = EnvValidator<T> & ChainableValidator<T>;
@@ -29,8 +32,12 @@ function chainable<T>(parse: (input: string | undefined) => T): ScalarValidator<
     parse,
     optional: () =>
       chainable<T | undefined>((input) => (input === undefined ? undefined : parse(input))),
-    default: (fallback: T) =>
-      chainable<T>((input) => (input === undefined ? fallback : parse(input))),
+    default: (fallback: Exclude<T, undefined>) =>
+      chainable<Exclude<T, undefined>>((input) =>
+        // `parse` only yields `undefined` for a missing input, which the
+        // fallback path already covered, so this branch is never undefined.
+        input === undefined ? fallback : (parse(input) as Exclude<T, undefined>),
+      ),
   };
 }
 

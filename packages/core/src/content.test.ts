@@ -59,6 +59,87 @@ Body content
     expect(frontmatter).toEqual({});
     expect(body).toBe("Just content");
   });
+
+  test("parses nested object frontmatter", () => {
+    const { frontmatter } = parseFrontmatter(`---
+seo:
+  title: Page Title
+  description: A description
+author: Jane
+---
+Body
+`);
+    expect(frontmatter).toEqual({
+      seo: { title: "Page Title", description: "A description" },
+      author: "Jane",
+    });
+  });
+
+  test("parses block scalars and sequences", () => {
+    const { frontmatter } = parseFrontmatter(`---
+tags:
+  - one
+  - two
+summary: |
+  First line.
+  Second line.
+---
+Body
+`);
+    expect(frontmatter).toEqual({
+      tags: ["one", "two"],
+      summary: "First line.\nSecond line.\n",
+    });
+  });
+
+  test("coerces YAML scalar types", () => {
+    const { frontmatter } = parseFrontmatter(`---
+draft: true
+priority: 10
+ratio: 1.5
+price: null
+---
+Body
+`);
+    expect(frontmatter).toEqual({
+      draft: true,
+      priority: 10,
+      ratio: 1.5,
+      price: null,
+    });
+  });
+
+  test("does not split the closing delimiter out of a value line", () => {
+    const { frontmatter, body } = parseFrontmatter(`---
+title: a---b
+---
+Body
+`);
+    expect(frontmatter.title).toBe("a---b");
+    expect(body.trim()).toBe("Body");
+  });
+
+  test("rejects syntactically invalid YAML instead of dropping it silently", () => {
+    expect(() =>
+      parseFrontmatter(`---
+title: "unclosed
+---
+Body
+`),
+    ).toThrow("Invalid YAML in frontmatter");
+  });
+
+  test("rejects a non-mapping top-level value", () => {
+    expect(() =>
+      parseFrontmatter(`---
+- just
+- a
+- list
+---
+Body
+`),
+    ).toThrow("expected a top-level mapping");
+  });
 });
 
 describe("scanContent", () => {
@@ -77,6 +158,24 @@ describe("scanContent", () => {
   test("skips non-markdown files", () => {
     const entries = scanContent(FIXTURE_DIR);
     expect(entries.some((e) => e.filePath.endsWith("plain.txt"))).toBe(false);
+  });
+
+  test("surfaces the offending file path when frontmatter is invalid", () => {
+    const badDir = join(import.meta.dir, "__fixtures__/content-bad");
+    mkdirSync(badDir, { recursive: true });
+    writeFileSync(
+      join(badDir, "broken.md"),
+      `---
+title: "unclosed
+---
+Body
+`,
+    );
+    try {
+      expect(() => scanContent(badDir)).toThrow("broken.md");
+    } finally {
+      rmSync(badDir, { recursive: true, force: true });
+    }
   });
 });
 

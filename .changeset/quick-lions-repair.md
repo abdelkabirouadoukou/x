@@ -2,7 +2,7 @@
 "@thexjs/env": minor
 ---
 
-Add `optional()` and `default()` combinators to every env validator:
+Add `optional()` and `default()` combinators to every built-in env validator:
 
 - `num().optional()` → `number | undefined`, missing variable no longer fails
   validation; a present but invalid value still throws

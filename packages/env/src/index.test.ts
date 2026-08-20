@@ -61,7 +61,9 @@ describe("validators", () => {
 
   test("optional() composes with default()", () => {
     const v = num().optional().default(0);
-    expect(v.parse(undefined)).toBe(0);
+    // compile-time assertion: default() narrows away `undefined`
+    const narrowed: number = v.parse(undefined);
+    expect(narrowed).toBe(0);
     expect(v.parse("7")).toBe(7);
   });
 });

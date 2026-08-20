@@ -144,6 +144,13 @@ const posts = scanContent("./src/content/blog");
 const html = renderMarkdown(posts[0].body);
 ```
 
+Frontmatter is parsed as **YAML** (via Bun's native parser): nested mappings, block
+scalars (`|`, `>`), `- item` sequences, and scalar type coercion
+(`draft: true` → boolean, `priority: 10` → number) work as expected. A value
+containing `: ` (colon + space) must be quoted. Malformed YAML or a
+non-mapping top-level value throws a build-time error naming the offending
+file instead of being silently dropped.
+
 ## Data layer
 
 Thin, typed wrappers over Bun's built-in SQLite and Postgres clients, plus a minimal migration runner. Import from the `@thexjs/core/data` subpath:

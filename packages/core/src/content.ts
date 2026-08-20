@@ -33,7 +33,14 @@ export function scanContent(rootDir: string): ContentEntry[] {
       if (!CONTENT_FILE.test(name)) continue;
 
       const raw = readFileSync(full, "utf-8");
-      const { frontmatter, body } = parseFrontmatter(raw);
+      let frontmatter: Frontmatter;
+      let body: string;
+      try {
+        ({ frontmatter, body } = parseFrontmatter(raw));
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        throw new Error(`${message} (in ${full})`);
+      }
       const rel = relative(rootDir, full).replace(CONTENT_FILE, "");
       const slug = name.replace(CONTENT_FILE, "");
       const routePath = toContentRoutePath(rel);
@@ -59,42 +66,42 @@ export function parseFrontmatter(raw: string): { frontmatter: Frontmatter; body:
     return { frontmatter: {}, body: trimmed };
   }
 
-  const endIndex = trimmed.indexOf("---", 3);
-  if (endIndex === -1) {
+  // The closing delimiter is a `---` on its own line. Searching for `---`
+  // anywhere would match a value like `title: a---b` mid-line and silently
+  // truncate the frontmatter.
+  const rest = trimmed.slice(3);
+  const endMatch = /^---[ \t]*$/m.exec(rest);
+  if (endMatch === null) {
     return { frontmatter: {}, body: trimmed };
   }
 
-  const fmRaw = trimmed.slice(3, endIndex).trim();
-  const body = trimmed.slice(endIndex + 3).trimStart();
-  const frontmatter = parseYamlLines(fmRaw);
+  const fmRaw = rest.slice(0, endMatch.index);
+  const body = rest.slice(endMatch.index + endMatch[0].length).trimStart();
+
+  let frontmatter: Frontmatter;
+  try {
+    frontmatter = parseYaml(fmRaw);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    throw new Error(`Invalid YAML in frontmatter: ${message}`);
+  }
 
   return { frontmatter, body };
 }
 
-function parseYamlLines(raw: string): Frontmatter {
-  const result: Frontmatter = {};
-  for (const line of raw.split("\n")) {
-    const colon = line.indexOf(":");
-    if (colon === -1) continue;
-    const key = line.slice(0, colon).trim();
-    let value: unknown = line.slice(colon + 1).trim();
-    if (typeof value === "string" && value.startsWith('"') && value.endsWith('"')) {
-      value = value.slice(1, -1);
-    }
-    if (typeof value === "string" && value.startsWith("[")) {
-      try {
-        value = JSON.parse(value);
-      } catch {
-        value = (value as string)
-          .slice(1, -1)
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
-    }
-    result[key] = value;
+/**
+ * Parses frontmatter as YAML via Bun's native parser (full YAML 1.2 subset:
+ * nested mappings, block scalars `|`/`>`, `- item` sequences, and scalar type
+ * coercion like `draft: true` → boolean). Top-level values must be a mapping —
+ * a scalar or array is rejected loudly instead of being silently dropped.
+ */
+function parseYaml(raw: string): Frontmatter {
+  const parsed: unknown = Bun.YAML.parse(raw);
+  if (parsed === undefined || parsed === null) return {};
+  if (typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("expected a top-level mapping of key/value pairs");
   }
-  return result;
+  return parsed as Frontmatter;
 }
 
 export function escapeHtml(s: string): string {
