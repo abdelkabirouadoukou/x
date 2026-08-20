@@ -122,7 +122,7 @@ The `.github/workflows/release.yml` workflow runs on every push to `main`:
 
 1. Installs dependencies and runs `build:packages`, `typecheck`, `lint`, and
    `test`: the job fails if any of these fail, before anything is released.
-2. `changesets/action@v1` then:
+2. `changesets/action@v2` then:
    - If pending changesets exist, it opens/updates a **"Version Packages"** PR
      that bumps versions and writes changelogs. Merge that PR.
    - If the merged commit is a versioning commit, it **publishes** every
