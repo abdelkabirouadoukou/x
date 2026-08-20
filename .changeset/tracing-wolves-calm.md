@@ -17,8 +17,13 @@ OpenTelemetry tracing correlation (half of #79):
   `x.action` (server functions), `x.middleware` (the composed onion +
   handler), and `x.db` (both `connectSQLite` and `connectPostgres`, wrapping
   `query`/`run`/`execute`/template-tag calls). `x.db` spans record
-  `db.system`, `db.operation` and a redacted + truncated `db.statement` so
-  embedded literals never leak.
+  `db.system`, `db.operation` and a `db.statement` that is redacted and
+  truncated: quoted string literals are collapsed to `?` placeholders and
+  bearer/authorization-shaped values are masked, so constants never ride along
+  in the trace. The `connectPostgres` template-tag path goes further — values
+  are bound out-of-band so its recorded statements are placeholder-only by
+  construction. Raw SQL passed to `unsafe()`/`bun:sqlite` is masked the same
+  way.
 - Errors inside any span set the span to `ERROR` and record an exception.
   `runWithRequestSpan`, `tracePhase`, `tracePhaseSync` and `dbTraceAttributes`
   are exported for app-level advanced usage.

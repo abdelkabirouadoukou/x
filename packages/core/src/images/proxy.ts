@@ -204,7 +204,12 @@ type BunRequestInit = RequestInit & BunFetchTls;
 /** URL with its hostname replaced by `ip`, preserving scheme and port. */
 function urlForIp(target: URL, ip: string): URL {
   const pinned = new URL(target.toString());
-  pinned.hostname = ip;
+  // The WHATWG hostname setter silently ignores a bare IPv6 literal (it only
+  // accepts `[cafe::1]`), which would leave the original hostname in place and
+  // let fetch re-resolve it — reopening the DNS-rebinding window while
+  // resolveProxyTarget still reports "ok". Bracketing IPv6 keeps the pin;
+  // plain IPv4 passes through unchanged.
+  pinned.hostname = ip.includes(":") ? `[${ip}]` : ip;
   return pinned;
 }
 

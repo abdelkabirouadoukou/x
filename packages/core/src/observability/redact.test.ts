@@ -53,6 +53,18 @@ describe("redactString", () => {
     expect(out).toContain(REDACTED);
   });
 
+  test("replaces Authorization/auth values exactly, no literal `$1` (regression for #9)", () => {
+    // The old regex used a non-capturing `(?:authorization|auth)` group but the
+    // replacement still referenced `$1`, so output contained the literal text
+    // "$1 [REDACTED]". The group must capture so the keyword survives.
+    expect(redactString("Authorization: fhqwhgads")).toBe(`Authorization ${REDACTED}`);
+    expect(redactString("authorization: fhqwhgads")).toBe(`authorization ${REDACTED}`);
+    expect(redactString("auth: fhqwhgads")).toBe(`auth ${REDACTED}`);
+    expect(redactString("auth=fhqwhgads")).toBe(`auth ${REDACTED}`);
+    expect(redactString("Authorization: fhqwhgads")).not.toContain("$1");
+    expect(redactString("Authorization: fhqwhgads")).not.toContain("fhqwhgads");
+  });
+
   test("masks a connection-string password (regression for #136)", () => {
     const out = redactString(
       "failed to connect: postgres://deploy:supersecret@db.internal:5432/app",

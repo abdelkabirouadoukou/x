@@ -26,7 +26,7 @@ export function isSensitiveKey(key: string): boolean {
 export function redactString(input: string): string {
   return input
     .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=:-]+/gi, "$1 " + REDACTED)
-    .replace(/\b(?:authorization|auth)\s*[:=]\s*[^\s,;]+/gi, "$1 " + REDACTED)
+    .replace(/\b(authorization|auth)\s*[:=]\s*[^\s,;]+/gi, "$1 " + REDACTED)
     .replace(/(\b[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^/\s@:]*:)([^/\s]*)(@)/g, `$1${REDACTED}$3`);
 }
 

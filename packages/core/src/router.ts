@@ -294,9 +294,12 @@ export function href<T extends keyof RouteMap & string>(
   }
   // Catch-all params have no \`:name\` token in the path — they render as an
   // anonymous \`*\` segment. Substitute them in segment order, keeping \`/\`
-  // between encoded fragments so multi-segment values stay readable.
+  // between encoded fragments so multi-segment values stay readable. An exact
+  // segment-token check (prefixed by \`/\`) is required: a prefix scan of
+  // \`:key\` would also match a longer \`:id2\` param and skip the wildcard.
+  const isNamedToken = (key: string) => new RegExp(\`(^|/):\${key}(?=/|$)\`).test(path);
   for (const [key, value] of Object.entries(params)) {
-    if (!path.includes(\`:\${key}\`)) {
+    if (!isNamedToken(key)) {
       const encoded = String(value)
         .split("/")
         .map(encodeURIComponent)

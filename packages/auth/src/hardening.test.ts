@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { defineAuth, OAUTH_PKCE_COOKIE, OAUTH_STATE_COOKIE, SESSION_COOKIE } from "./auth";
+import { createBruteForceGuard } from "./brute-force";
 import { createSQLiteSessionStore } from "./session";
 
 const BASE_URL = "http://localhost:3000";
@@ -41,6 +42,14 @@ const credentialsProvider = {
       params.password === "correct horse battery staple"
     ) {
       return { id: "u_1", name: "Admin", email: "admin@example.com" };
+    }
+    // A second account no other test touches, so this can use it as the
+    // "attacker-controlled" account without inheriting a locked bucket.
+    if (
+      params.email === "owner@example.com" &&
+      params.password === "correct horse battery staple"
+    ) {
+      return { id: "u_2", name: "Owner", email: "owner@example.com" };
     }
     return null;
   },
@@ -198,6 +207,108 @@ describe("auth hardening: brute-force lockout on credentials", () => {
       }),
     );
     expect(throttled.status).toBe(429);
+  });
+
+  test("a successful login does NOT clear the aggregate IP bucket (#133)", async () => {
+    // Attacker controls one account (admin@example.com). Failure-sprinkling
+    // against other accounts from the attacker's IP fills the IP bucket; the
+    // attacker then signing into their own account must NOT reset it, or the
+    // spray limit would be trivially bypassed by alternating failures with a
+    // single successful login.
+    const ip = "203.0.113.40";
+    // Two failures (not three) so the IP bucket is one short of locking, and
+    // the attacker's own successful login below must NOT top it up or erase it.
+    for (let i = 0; i < 2; i++) {
+      await auth.handleRequest(
+        signInRequest(`spray-victim-${i}@example.com`, "wrong", { "x-forwarded-for": ip }),
+      );
+    }
+    // Attacker's own successful login (resets only their account bucket)...
+    const own = await auth.handleRequest(
+      signInRequest("owner@example.com", "correct horse battery staple", { "x-forwarded-for": ip }),
+    );
+    expect(own.status).toBe(302); // ...unless the IP bucket was mistakenly cleared
+    // ...must leave the IP bucket intact: the very next failure after the
+    // success already tops the bucket up to maxAttempts...
+    expect(
+      (
+        await auth.handleRequest(
+          signInRequest("spray-victim-2@example.com", "wrong", { "x-forwarded-for": ip }),
+        )
+      ).status,
+    ).toBe(401);
+    // ...and the one after that is throttled immediately.
+    const next = await auth.handleRequest(
+      signInRequest("spray-victim-3@example.com", "wrong", { "x-forwarded-for": ip }),
+    );
+    expect(next.status).toBe(429);
+  });
+
+  test("empty identifiers are not folded into one global account bucket (#133)", async () => {
+    // A custom credentials provider may call the field `login`/`handle`/...,
+    // which this flow doesn't recognize → identifier "". Those failures must
+    // not all land in a single `login:` key (which would lock the whole
+    // provider); the account axis is skipped and only the IP axis applies.
+    const form = new FormData();
+    form.set("password", "wrong");
+    const emptyId = (extra: Record<string, string> = {}): Request =>
+      new Request(`${BASE_URL}/api/auth/signin/local`, {
+        method: "POST",
+        headers: { origin: BASE_URL, ...extra },
+        body: form,
+      });
+
+    for (let i = 0; i < 3; i++) {
+      const res = await auth.handleRequest(emptyId({ "x-forwarded-for": `203.0.113.5${i}` }));
+      expect(res.status).toBe(401);
+    }
+    // A fresh empty-id attempt from a new IP is not throttled: failures only
+    // accumulate per-IP. (Under a shared `login:` account key, three failures
+    // from any IPs would lock this fourth attempt.)
+    const fresh = await auth.handleRequest(emptyId({ "x-forwarded-for": "203.0.113.99" }));
+    expect(fresh.status).toBe(401);
+  });
+
+  test("clients with no IP header are not throttled as one shared 'unknown' IP (#133)", async () => {
+    // No x-forwarded-for / x-real-ip anywhere: the IP axis must be skipped
+    // (per-IP bucket would otherwise merge every header-less client into one
+    // `unknown` bucket and lock them all out together).
+    for (let i = 0; i < 3; i++) {
+      await auth.handleRequest(signInRequest("headless-a@example.com", "wrong"));
+    }
+    expect(
+      (await auth.handleRequest(signInRequest("headless-a@example.com", "wrong"))).status,
+    ).toBe(429); // account bucket locked the account itself...
+    // ...but a different account, also header-less, is a fresh account bucket.
+    expect(
+      (await auth.handleRequest(signInRequest("headless-b@example.com", "wrong"))).status,
+    ).toBe(401);
+  });
+});
+
+// Real-Postgres integration tests. Skipped unless DATABASE_URL is set (see
+// PG_TEST_URL above); CI provides one through a postgres service container.
+describe("auth hardening: brute-force guard internals", () => {
+  test("account and IP buckets are namespaced apart (#133)", () => {
+    const guard = createBruteForceGuard({ maxAttempts: 3, windowMs: 60_000 });
+    guard.dispose();
+    // An identifier that looks like an IP must not key the same bucket as the
+    // actual client IP — a collision would share failures/resets between the
+    // account and IP axes and break independent throttling.
+    const identifier = "198.51.100.42";
+    const req = new Request("http://x/", {
+      headers: { "x-forwarded-for": identifier },
+    });
+    expect(guard.accountKey(identifier)).not.toBe(guard.ipKey(req));
+  });
+
+  test("ipKey is null when no client IP is knowable (#133)", () => {
+    const guard = createBruteForceGuard();
+    guard.dispose();
+    const bare = new Request("http://x/");
+    expect(guard.ipKey(bare)).toBeNull();
+    const withIp = new Request("http://x/", { headers: { "x-real-ip": "203.0.113.7" } });
+    expect(guard.ipKey(withIp)).toBe("login:ip:203.0.113.7");
   });
 });
 

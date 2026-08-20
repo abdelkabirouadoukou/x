@@ -49,7 +49,8 @@ class FakeRedis {
         return Promise.resolve(1);
       }
       case "PTTL": {
-        const key = args[0] as string;
+        const key = args[0];
+        if (key === undefined) throw new Error("FakeRedis: PTTL requires a key");
         const current = this.values.get(key);
         if (current === undefined) return Promise.resolve(-2);
         if (current.expiresAt === Number.POSITIVE_INFINITY) return Promise.resolve(-1);

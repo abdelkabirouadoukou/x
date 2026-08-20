@@ -177,6 +177,23 @@ describe("withRequestTracing", () => {
     expect(root.ended).toBe(true);
   });
 
+  test("a throwing handler records the exception exactly once (regression for #11)", async () => {
+    // The wrapper used to call fail() in its own catch *and* let
+    // runWithRequestSpan's catch record the same error again, so the root span
+    // carried two identical exceptions and the error status was set twice.
+    const handler = withRequestTracing<never>(async () => {
+      throw new Error("kaboom");
+    });
+
+    await expect(handler(new Request("http://x.test/boom"))).rejects.toThrow("kaboom");
+
+    const root = tracer.spans[0] as RecordingSpan;
+    expect(root.name).toBe("x.http");
+    expect(root.exceptions).toHaveLength(1);
+    expect(root.status?.code).toBe(2);
+    expect(root.status?.message).toBe("kaboom");
+  });
+
   test("reuses an inbound x-request-id instead of minting a second one", async () => {
     let seen = "";
     const handler = withRequestTracing<never>(async (req) => {
@@ -217,6 +234,22 @@ describe("dbTraceAttributes", () => {
     expect(statement).not.toContain("abc_123");
     // Truncation keeps giant statements out of the trace backend.
     expect(statement.length).toBeLessThanOrEqual(512);
+  });
+
+  test("collapses quoted string literals to a placeholder (regression for #13)", () => {
+    // Inline constants (email addresses, tokens, passwords interpolated with
+    // unsafe()/raw sqlite) would otherwise ride along in the recorded
+    // statement. Both single- and double-quoted literals are masked.
+    const attrs = dbTraceAttributes(
+      "postgres",
+      `SELECT * FROM users WHERE email = 'alice@example.com' AND role = "admin" AND note = 'it''s'`,
+    );
+    const statement = String(attrs["db.statement"]);
+    expect(statement).not.toContain("alice@example.com");
+    expect(statement).not.toContain("admin");
+    expect(statement).toContain("email = '?'");
+    expect(statement).toContain('role = "?"');
+    expect(statement).toContain("note = '?'");
   });
 });
 

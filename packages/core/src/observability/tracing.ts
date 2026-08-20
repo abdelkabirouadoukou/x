@@ -184,17 +184,28 @@ export function tracePhaseSync<T>(
 }
 
 /**
+ * Masks quoted string literals in a SQL statement so bound values / inline
+ * constants never surface in a trace attribute. Both single- and double-quoted
+ * strings are collapsed to a `?` placeholder (doubled quotes — Postgres '' and
+ * "" escapes — included) before the statement is recorded.
+ */
+function maskSqlLiterals(statement: string): string {
+  return statement.replace(/'(?:[^']|'')*'/g, "'?'").replace(/"(?:[^"]|"")*"/g, '"?"');
+}
+
+/**
  * Attribute set for a `x.db` span: driver vendor, the statement's operation
  * family (SELECT/INSERT/...) and a redacted + truncated statement. Statements
  * can embed literals; `redactString` masks bearer/authorization-shaped parts,
- * and truncation keeps giant queries out of the trace backend.
+ * `maskSqlLiterals` collapses every quoted string, and truncation keeps giant
+ * queries out of the trace backend.
  */
 export function dbTraceAttributes(system: string, statement: string): Record<string, unknown> {
   const keyword = /^\s*(\w+)/.exec(statement)?.[1]?.toLowerCase();
   return {
     "db.system": system,
     "db.operation": keyword ?? "other",
-    "db.statement": redactString(statement).trim().slice(0, 512),
+    "db.statement": maskSqlLiterals(redactString(statement)).trim().slice(0, 512),
   };
 }
 
@@ -229,15 +240,10 @@ export function withRequestTracing<Server = unknown>(
     return runWithRequestSpan(
       requestId,
       { route: url.pathname, method: req.method },
-      async (finish, fail) => {
-        try {
-          const res = await handler(req, server);
-          finish({ "http.response.status_code": res.status });
-          return res;
-        } catch (error) {
-          fail(error);
-          throw error;
-        }
+      async (finish) => {
+        const res = await handler(req, server);
+        finish({ "http.response.status_code": res.status });
+        return res;
       },
     );
   };

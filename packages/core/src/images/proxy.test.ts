@@ -298,6 +298,36 @@ describe("private/reserved address guard", () => {
     ]);
   });
 
+  test("pins an IPv6 answer using a bracketed literal (regression for #132)", async () => {
+    const seen: Array<{ url: string; host: string | null; serverName?: string }> = [];
+    mockFetch(async (url, init) => {
+      const tls = (init as RequestInit & { tls?: { serverName?: string } }).tls;
+      seen.push({
+        url: String(url),
+        host: new Headers(init?.headers).get("host"),
+        ...(tls?.serverName !== undefined ? { serverName: tls.serverName } : {}),
+      });
+      return new Response("x", { headers: { "content-type": "image/png" } });
+    });
+    const handler = createImageProxyHandler({
+      remoteHosts: ["img.example.com"],
+      // IPv6 resolves first. The WHATWG hostname setter rejects a *bare* IPv6
+      // literal, so an unbracketed assignment would silently leave the
+      // hostname in place and the fetch would re-resolve (DNS-rebinding
+      // window). The pin must use the bracketed form to actually bind.
+      resolveHost: async () => ["2606:4700::6810:84e5"],
+    });
+    const res = await handler(req("/_x/image?url=https%3A%2F%2Fimg.example.com%2Fa.png"));
+    expect(res?.status).toBe(200);
+    expect(seen).toEqual([
+      {
+        url: "https://[2606:4700::6810:84e5]/a.png",
+        host: "img.example.com",
+        serverName: "img.example.com",
+      },
+    ]);
+  });
+
   test("pins each allow-listed redirect hop to its verified IP", async () => {
     const seen: string[] = [];
     mockFetch(async (url) => {

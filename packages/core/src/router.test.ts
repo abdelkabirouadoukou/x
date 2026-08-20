@@ -125,6 +125,26 @@ describe("generateManifestSource", () => {
     expect(mod.href("/posts/:id", { id: "hello world" })).toBe("/posts/hello%20world");
     expect(mod.href("/about")).toBe("/about");
   });
+
+  test("href() catch-all detection is exact, not a prefix of longer params (#134)", async () => {
+    // `id` is the catch-all name here, but the path also carries `:id2` — a
+    // prefix check for `:id` would match `:id2` and skip the wildcard, leaving
+    // the catch-all value dropped. The segment token must match exactly.
+    const source = generateManifestSource([
+      {
+        filePath: "/virtual.tsx",
+        routePath: "/:id2/*",
+        paramNames: ["id2", "id"],
+        isApi: false,
+      },
+    ]);
+    const manifestPath = join(FIXTURE_DIR, "generated-x-routes-prefix.ts");
+    writeFileSync(manifestPath, source, "utf-8");
+    const mod = (await import(manifestPath)) as {
+      href: (path: string, params?: Record<string, string>) => string;
+    };
+    expect(mod.href("/:id2/*", { id2: "section", id: "a/b/c" })).toBe("/section/a/b/c");
+  });
 });
 
 describe("extractParams", () => {

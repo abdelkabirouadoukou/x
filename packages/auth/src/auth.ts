@@ -63,9 +63,12 @@ export interface AuthConfig {
    * independent buckets are checked together: an **account** bucket keyed by
    * the submitted identifier alone (so guessing one account from many IPs is
    * still throttled), and an **IP** bucket keyed by the client IP (so one IP
-   * spraying many accounts is throttled while other accounts from the same
-   * network stay unaffected). In-memory (single-process). Default: 5 failed
-   * attempts, 15-minute base window with exponential backoff.
+   * spraying many accounts is throttled while other clients — e.g. other users
+   * behind the same NAT — remain unaffected, since each has its own IP). If the
+   * identifier or client IP can't be determined, only the *other* axis is
+   * enforced rather than folding everyone into one global bucket. In-memory
+   * (single-process). Default: 5 failed attempts, 15-minute base window with
+   * exponential backoff.
    */
   loginBruteForce?: BruteForceOptions;
   /** Session lifetime in seconds. Default: 7 days. */
@@ -393,16 +396,20 @@ export function defineAuth(config: AuthConfig): Auth {
     // bucket (identifier alone) stops guessing one account from many IPs, and
     // the *IP* bucket stops one IP spraying many accounts. They are separate
     // keys on purpose — a single `(IP, identifier)` key is bypassed entirely
-    // by rotating source IPs, since each new IP starts a fresh bucket.
+    // by rotating source IPs, since each new IP starts a fresh bucket. An
+    // absent identifier (a custom provider whose field isn't `username`/`email`
+    // /`user`/`identifier`) or an absent client IP is skipped rather than
+    // folded into a single shared bucket that would lock out the whole app.
     const identifier = params.username ?? params.email ?? params.user ?? params.identifier ?? "";
-    const accountKey = bruteForce.accountKey(identifier);
+    const accountKey = identifier !== "" ? bruteForce.accountKey(identifier) : null;
     const ipKey = bruteForce.ipKey(req);
-    const accountStatus = bruteForce.status(accountKey);
-    const ipStatus = bruteForce.status(ipKey);
+    const accountStatus = accountKey === null ? null : bruteForce.status(accountKey);
+    const ipStatus = ipKey === null ? null : bruteForce.status(ipKey);
     const status = {
-      ok: accountStatus.ok && ipStatus.ok,
+      // A missing axis is skipped (treated as allowed), not as a lockout.
+      ok: (accountStatus === null || accountStatus.ok) && (ipStatus === null || ipStatus.ok),
       // Retry-After must reflect the longer of the two windows.
-      resetAt: Math.max(accountStatus.resetAt, ipStatus.resetAt),
+      resetAt: Math.max(accountStatus?.resetAt ?? 0, ipStatus?.resetAt ?? 0),
     };
     if (!status.ok) {
       auditLoginFailure({
@@ -421,8 +428,8 @@ export function defineAuth(config: AuthConfig): Auth {
 
     const user = await provider.authorize(params, { request: req });
     if (!user?.id) {
-      bruteForce.recordFailure(accountKey);
-      bruteForce.recordFailure(ipKey);
+      if (accountKey !== null) bruteForce.recordFailure(accountKey);
+      if (ipKey !== null) bruteForce.recordFailure(ipKey);
       auditLoginFailure({
         userId: null,
         provider: provider.id,
@@ -431,8 +438,11 @@ export function defineAuth(config: AuthConfig): Auth {
       });
       return new Response("Invalid credentials", { status: 401 });
     }
-    bruteForce.reset(accountKey);
-    bruteForce.reset(ipKey);
+    // Reset only the account bucket. The IP bucket must keep counting until its
+    // window naturally expires: it aggregates attempts across *all* accounts
+    // from that IP, and clearing it on any successful login would let an
+    // attacker who owns one account keep resetting the spray counter.
+    if (accountKey !== null) bruteForce.reset(accountKey);
     return establishSession(user, provider.id, undefined, req);
   };
 

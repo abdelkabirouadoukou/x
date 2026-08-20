@@ -45,20 +45,29 @@ export function createBruteForceGuard(options: BruteForceOptions = {}) {
   const windowMs = options.windowMs ?? 15 * 60_000;
   const buckets = new Map<string, Bucket>();
 
-  function clientIp(req: Request): string {
+  /** Client IP, or null when neither proxy header is present. */
+  function clientIp(req: Request): string | null {
     const forwarded = req.headers.get("x-forwarded-for");
-    if (forwarded) return forwarded.split(",")[0]?.trim() ?? "unknown";
-    return req.headers.get("x-real-ip") ?? "unknown";
+    if (forwarded) return forwarded.split(",")[0]?.trim() || null;
+    return req.headers.get("x-real-ip") || null;
   }
 
-  /** Account-scoped bucket key: the submitted identifier alone. */
+  /**
+   * Account-scoped bucket key: the submitted identifier alone. Namespaced
+   * separately from the IP bucket so a crafted identifier that happens to look
+   * like an IP (or vice versa) can't merge the two buckets.
+   */
   function accountKey(identifier: string): string {
-    return `login:${identifier}`;
+    return `login:account:${identifier}`;
   }
 
-  /** IP-scoped bucket key: the client IP alone (one IP spraying many accounts). */
-  function ipKey(req: Request): string {
-    return `login:${clientIp(req)}`;
+  /**
+   * IP-scoped bucket key: the client IP alone (one IP spraying many accounts),
+   * or null when the client IP can't be determined — see {@link clientIp}.
+   */
+  function ipKey(req: Request): string | null {
+    const ip = clientIp(req);
+    return ip === null ? null : `login:ip:${ip}`;
   }
 
   /** Current lockout state for `key`, without recording anything. */

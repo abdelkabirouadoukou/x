@@ -9,6 +9,7 @@ import {
   findConfig,
 } from "./config-detect.js";
 import { runDoctor } from "./doctor.js";
+import { compileTailwindAsync } from "./tailwind.js";
 import { xError, xInfo, xSuccess, xWarn } from "./terminal.js";
 
 // Strip leading "run" so `x run dev` / `x run build` / `x run start` all work
@@ -78,25 +79,7 @@ function parseArgv(argv: string[]): {
   return { command: rest[0], cwd, adapter, outDir };
 }
 
-/**
- * Asynchronously compiles Tailwind CSS. Used by the dev file-watcher, where
- * the server is already accepting requests — `spawn` (async) keeps the
- * single-threaded event loop free during compilation, whereas `spawnSync`
- * would block every in-flight request and live-reload socket. Pre-boot
- * compiles in `cmdDev`/`cmdBuild` (nothing serving yet) stay synchronous.
- */
-export function compileTailwindAsync(
-  twInput: string,
-  twOutput: string,
-  cwd: string,
-): ReturnType<typeof spawn> {
-  const proc = spawn("bunx", ["tailwindcss", "-i", twInput, "-o", twOutput], { cwd });
-  proc.on("error", (err) => xWarn(`Tailwind compilation failed: ${err.message}`));
-  proc.on("exit", (code) => {
-    if (code !== 0) xWarn("Tailwind compilation failed.");
-  });
-  return proc;
-}
+export { compileTailwindAsync } from "./tailwind.js";
 
 const { command, cwd, adapter, outDir: outDirFlag } = parseArgv(Bun.argv.slice(2));
 const projectDir = cwd ? resolve(process.cwd(), cwd) : process.cwd();
