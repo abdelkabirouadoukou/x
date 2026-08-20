@@ -110,6 +110,21 @@ describe("generateManifestSource", () => {
     expect(source).toContain("slug: string");
     expect(source).toContain("export function href");
   });
+
+  test("generated href() fills catch-all params instead of dropping them (#134)", async () => {
+    const routes = scanRoutes(FIXTURE_DIR);
+    const source = generateManifestSource(routes);
+    const manifestPath = join(FIXTURE_DIR, "generated-x-routes.ts");
+    writeFileSync(manifestPath, source, "utf-8");
+
+    const mod = (await import(manifestPath)) as {
+      href: (path: string, params?: Record<string, string>) => string;
+    };
+    expect(mod.href("/docs/*", { slug: "guide/intro" })).toBe("/docs/guide/intro");
+    expect(mod.href("/docs/*", { slug: "a b/c" })).toBe("/docs/a%20b/c");
+    expect(mod.href("/posts/:id", { id: "hello world" })).toBe("/posts/hello%20world");
+    expect(mod.href("/about")).toBe("/about");
+  });
 });
 
 describe("extractParams", () => {
