@@ -1,5 +1,52 @@
 # @thexjs/core
 
+## 1.6.0
+
+### Minor Changes
+
+- 3637faf: Migration runners (`runSQLiteMigrations` / `runPostgresMigrations`) now
+  record a sha256 checksum of each migration file in `_x_migrations.checksum`
+  alongside the name, and detect drift when an already-applied file is edited:
+  
+  - `_x_migrations.checksum` is stored on apply and backfilled for existing
+    deployments (`ADD COLUMN` via pragma probe on SQLite, `IF NOT EXISTS` on
+    Postgres).
+  
+  - On re-run, applied files whose content no longer matches the stored
+    checksum are reported in the new `result.drifted` array and logged with a
+    warning by default. Pass `{ onDrift: "fail" }` to abort instead of
+    continuing with a mismatched schema.
+  
+  - Migrations recorded before checksums existed show up in the new
+    `result.unknownContent` array and are only warned on — never failed — so
+    existing deployments keep booting quietly while being made aware of the
+    unverifiable history.
+  
+  - Both result types gain `drifted` / `unknownContent` and now always include
+    them (previously `drifted`/`unknownContent` did not exist).
+- d3ecd41: Frontmatter is now parsed as real YAML via Bun's native parser instead of a
+  hand-rolled line subset that silently dropped anything non-trivial.
+  
+  What changed:
+  
+  - Nested mappings (`seo:\n  title: ...`), block scalars (`|`, `>`), and
+    `- item` sequence syntax parse correctly instead of losing data.
+  - Scalar types are coerced per YAML 1.2 (`draft: true` → boolean,
+    `priority: 10` → number, `price: null` → null). Previously everything stayed
+    a string.
+  - Malformed YAML and non-mapping top-level values (e.g. a bare sequence) now
+    throw a build-time error naming the offending file instead of being silently
+    discarded.
+  - The closing `---` delimiter is now recognized only at the start of its own
+    line, so a value like `title: a---b` no longer truncates the frontmatter.
+  
+  Behavioral notes: a value containing `: ` (colon + space) must now be quoted
+  per YAML rules, and `key:` with no value yields `null` rather than `""`.
+
+### Patch Changes
+
+- 37820d5: Style-only: use template literals in the redaction module (no behavior change).
+
 ## 1.5.0
 
 ### Minor Changes
