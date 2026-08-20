@@ -1,4 +1,5 @@
 export {
+  type MigrationOptions,
   type MigrationResult,
   type PostgresMigrationResult,
   runPostgresMigrations,

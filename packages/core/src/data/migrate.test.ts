@@ -148,6 +148,97 @@ describe("runSQLiteMigrations", () => {
     expect(rows.map((r) => r.name)).toEqual(["first", "second"]);
     db.close();
   });
+
+  test("records a content checksum for each applied migration", () => {
+    resetFixtures();
+    writeMigration("001_create_users.sql", "CREATE TABLE users (id INTEGER PRIMARY KEY);");
+
+    const db = new Database(":memory:");
+    runSQLiteMigrations(db, FIXTURE_DIR);
+
+    const rows = db.query("SELECT name, checksum FROM _x_migrations").all() as {
+      name: string;
+      checksum: string | null;
+    }[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.checksum).toMatch(/^[0-9a-f]{64}$/);
+    db.close();
+  });
+
+  test("warns (but continues) when an applied migration file changed on disk", () => {
+    resetFixtures();
+    writeMigration("001_create_users.sql", "CREATE TABLE users (id INTEGER PRIMARY KEY);");
+
+    const db = new Database(":memory:");
+    runSQLiteMigrations(db, FIXTURE_DIR);
+
+    writeMigration(
+      "001_create_users.sql",
+      "CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL);",
+    );
+
+    const second = runSQLiteMigrations(db, FIXTURE_DIR);
+    expect(second.applied).toEqual([]);
+    expect(second.drifted).toEqual(["001_create_users.sql"]);
+    expect(second.skipped).toEqual(["001_create_users.sql"]);
+    db.close();
+  });
+
+  test("hard-fails on drift when onDrift is 'fail'", () => {
+    resetFixtures();
+    writeMigration("001_create_users.sql", "CREATE TABLE users (id INTEGER PRIMARY KEY);");
+
+    const db = new Database(":memory:");
+    runSQLiteMigrations(db, FIXTURE_DIR);
+
+    writeMigration(
+      "001_create_users.sql",
+      "CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL);",
+    );
+
+    expect(() => runSQLiteMigrations(db, FIXTURE_DIR, { onDrift: "fail" })).toThrow(
+      /different content/,
+    );
+    db.close();
+  });
+
+  test("treats pre-checksum rows as unknown content and never fails on them", () => {
+    resetFixtures();
+    writeMigration("001_legacy.sql", "CREATE TABLE legacy (id INTEGER PRIMARY KEY);");
+
+    const db = new Database(":memory:");
+    // Simulate a deployment that recorded migrations before checksums existed:
+    // old table shape, no checksum column, no hash stored.
+    db.run(`CREATE TABLE _x_migrations (
+      name TEXT PRIMARY KEY,
+      applied_at TEXT DEFAULT (datetime('now'))
+    )`);
+    db.run("INSERT INTO _x_migrations (name) VALUES ('001_legacy.sql')");
+    db.run("CREATE TABLE legacy (id INTEGER PRIMARY KEY)");
+
+    // The runner backfills the column and reports the row as unknown content
+    // even in hard-fail mode — never a hard error.
+    const result = runSQLiteMigrations(db, FIXTURE_DIR, { onDrift: "fail" });
+    expect(result.unknownContent).toEqual(["001_legacy.sql"]);
+    expect(result.skipped).toEqual(["001_legacy.sql"]);
+    expect(result.drifted).toEqual([]);
+    db.close();
+  });
+
+  test("unmodified applied migrations skip silently with no drift flags", () => {
+    resetFixtures();
+    writeMigration("001_create_users.sql", "CREATE TABLE users (id INTEGER PRIMARY KEY);");
+
+    const db = new Database(":memory:");
+    runSQLiteMigrations(db, FIXTURE_DIR);
+
+    const second = runSQLiteMigrations(db, FIXTURE_DIR);
+    expect(second.applied).toEqual([]);
+    expect(second.skipped).toEqual(["001_create_users.sql"]);
+    expect(second.drifted).toEqual([]);
+    expect(second.unknownContent).toEqual([]);
+    db.close();
+  });
 });
 
 // Real-Postgres integration tests. Skipped unless DATABASE_URL is set (see
@@ -320,6 +411,54 @@ describe.if(Boolean(PG_TEST_URL))("runPostgresMigrations", () => {
       } finally {
         (second as unknown as { close(): void }).close();
       }
+    });
+  });
+
+  test("records a content checksum and detects drift after an edit", async () => {
+    resetFixtures();
+    writeMigration("001_create_users.sql", "CREATE TABLE users (id SERIAL PRIMARY KEY);");
+
+    await withDatabase(async (client) => {
+      await runPostgresMigrations(client, FIXTURE_DIR);
+      const rows = (await client.unsafe("SELECT name, checksum FROM _x_migrations")) as {
+        name: string;
+        checksum: string | null;
+      }[];
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.checksum).toMatch(/^[0-9a-f]{64}$/);
+
+      writeMigration(
+        "001_create_users.sql",
+        "CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT NOT NULL);",
+      );
+
+      const second = await runPostgresMigrations(client, FIXTURE_DIR);
+      expect(second.applied).toEqual([]);
+      expect(second.drifted).toEqual(["001_create_users.sql"]);
+      expect(second.skipped).toEqual(["001_create_users.sql"]);
+
+      await expect(runPostgresMigrations(client, FIXTURE_DIR, { onDrift: "fail" })).rejects.toThrow(
+        /different content/,
+      );
+    });
+  });
+
+  test("treats pre-checksum rows as unknown content and never fails on them", async () => {
+    resetFixtures();
+    writeMigration("001_legacy.sql", "CREATE TABLE legacy (id SERIAL PRIMARY KEY);");
+
+    await withDatabase(async (client) => {
+      // Old table shape: name + applied_at, no checksum column.
+      await client.unsafe(
+        "CREATE TABLE _x_migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMP DEFAULT NOW())",
+      );
+      await client.unsafe("INSERT INTO _x_migrations (name) VALUES ('001_legacy.sql')");
+      await client.unsafe("CREATE TABLE legacy (id SERIAL PRIMARY KEY)");
+
+      const result = await runPostgresMigrations(client, FIXTURE_DIR, { onDrift: "fail" });
+      expect(result.unknownContent).toEqual(["001_legacy.sql"]);
+      expect(result.skipped).toEqual(["001_legacy.sql"]);
+      expect(result.drifted).toEqual([]);
     });
   });
 });
