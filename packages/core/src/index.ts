@@ -1,3 +1,13 @@
+export {
+  type BackpressureController,
+  type BackpressureHandler,
+  type BackpressureLease,
+  type BackpressureOptions,
+  type BackpressureSnapshot,
+  BackpressureSaturatedError,
+  createBackpressureController,
+  withBackpressure,
+} from "./backpressure";
 export { type BuildOptions, build, type RouteMode } from "./build";
 export { CLIENT_NAV_SCRIPT } from "./client-nav";
 export {
