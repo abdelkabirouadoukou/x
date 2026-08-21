@@ -72,9 +72,7 @@ function abortReason(signal: AbortSignal): unknown {
  * amount of work that may be active or waiting inside one process at a time.
  * Queued requests are promoted FIFO as active leases are released.
  */
-export function createBackpressureController(
-  options: BackpressureOptions,
-): BackpressureController {
+export function createBackpressureController(options: BackpressureOptions): BackpressureController {
   const maxConcurrent = positiveInteger(options.maxConcurrent, "maxConcurrent");
   const maxQueue = nonNegativeInteger(options.maxQueue ?? 0, "maxQueue");
   const retryAfterSeconds = positiveInteger(options.retryAfterSeconds ?? 1, "retryAfterSeconds");

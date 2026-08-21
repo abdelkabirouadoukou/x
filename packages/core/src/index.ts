@@ -3,8 +3,8 @@ export {
   type BackpressureHandler,
   type BackpressureLease,
   type BackpressureOptions,
-  type BackpressureSnapshot,
   BackpressureSaturatedError,
+  type BackpressureSnapshot,
   createBackpressureController,
   withBackpressure,
 } from "./backpressure";

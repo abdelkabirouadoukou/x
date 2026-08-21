@@ -160,9 +160,7 @@ describe("withBackpressure", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     const aborter = new AbortController();
-    const abandoned = handler(
-      new Request("http://localhost/slow", { signal: aborter.signal }),
-    );
+    const abandoned = handler(new Request("http://localhost/slow", { signal: aborter.signal }));
     aborter.abort(new Error("client disconnected"));
 
     try {
