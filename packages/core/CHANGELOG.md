@@ -1,5 +1,11 @@
 # @thexjs/core
 
+## 1.7.0
+
+### Minor Changes
+
+- b1d49fb: Add opt-in per-process backpressure primitives for bounded concurrent request work, FIFO queueing, cancellation-aware waiting, and explicit 503 saturation responses.
+
 ## 1.6.1
 
 ### Patch Changes
