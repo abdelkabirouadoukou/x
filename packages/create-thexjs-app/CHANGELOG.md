@@ -1,5 +1,13 @@
 # create-thexjs-app
 
+## 1.2.2
+
+### Patch Changes
+
+- c0073da: Surface the underlying git error when `git init` fails during scaffolding instead of always reporting a generic "is git installed?" message.
+- 4c4ac8a: Fix `--shadcn` scaffolding silently dropping the shadcn feature when the tailwind auto-enable ran; missing feature requirements are now auto-enabled generically from the `requires` metadata and the selected features are always kept.
+- ff588b6: Every scaffolded project now ships AI-agent wiring: `.mcp.json` (Claude Code) and `.cursor/mcp.json` pointing at the `thexjs` MCP server, plus an `AGENTS.md` conventions reference with a `CLAUDE.md` pointer.
+
 ## 1.2.1
 
 ### Patch Changes

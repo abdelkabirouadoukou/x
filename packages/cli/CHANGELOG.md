@@ -1,5 +1,11 @@
 # @thexjs/cli
 
+## 1.1.3
+
+### Patch Changes
+
+- b567ad5: Fix the `doctor` version-consistency check to evaluate real semver ranges instead of silently skipping `^`/`~` dependencies, which are what generated projects use.
+
 ## 1.1.2
 
 ### Patch Changes

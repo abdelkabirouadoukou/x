@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/mcp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "MCP server that gives AI coding agents (Claude Code, Cursor, Claude Desktop, Windsurf...) grounded, accurate knowledge of the x framework's conventions, so they stop guessing Next.js/TanStack Start syntax.",
   "keywords": [
     "mcp",
