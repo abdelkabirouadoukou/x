@@ -18,6 +18,7 @@ written together. There is no independent release cadence per package.
 | `@thexjs/env` | `1.x` | 1.0.0 |
 | `@thexjs/cli` | `1.x` | 1.0.0 |
 | `@thexjs/hooks` | `0.x` | — (pre-1.0) |
+| `@thexjs/mcp` | `0.x` | — (pre-1.0) |
 | `@thexjs/adapter-vercel` | `1.x` | 1.0.0 |
 | `create-thexjs-app` | `1.x` | 1.0.0 |
 

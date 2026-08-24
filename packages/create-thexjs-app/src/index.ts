@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
   cancel,
@@ -119,6 +119,30 @@ function finalizeGitignore(targetDir: string): void {
   renameSync(from, to);
 }
 
+// Same npm dotfile-stripping issue as .gitignore above — ship as `_mcp.json`
+// and rename to `.mcp.json` (the Claude Code project-scoped MCP config
+// convention) when scaffolding. `.cursor/` gets the same treatment: npm
+// strips dot-prefixed paths from tarballs, so the Cursor config ships under
+// `_cursor/` and the directory is renamed here.
+function finalizeAgentConfigs(targetDir: string): void {
+  const mcpFrom = join(targetDir, "_mcp.json");
+  if (existsSync(mcpFrom)) {
+    renameSync(mcpFrom, join(targetDir, ".mcp.json"));
+  }
+  const cursorFrom = join(targetDir, "_cursor");
+  if (existsSync(cursorFrom)) {
+    const cursorTo = join(targetDir, ".cursor");
+    if (!existsSync(cursorTo)) {
+      renameSync(cursorFrom, cursorTo);
+    } else {
+      for (const entry of readdirSync(cursorFrom)) {
+        cpSync(join(cursorFrom, entry), join(cursorTo, entry));
+      }
+      rmSync(cursorFrom, { recursive: true, force: true });
+    }
+  }
+}
+
 function buildXConfig(features: FeatureId[]): string {
   const lines: string[] = [];
   lines.push('import { defineConfig } from "@thexjs/core";');
@@ -212,6 +236,7 @@ async function main(): Promise<void> {
   ensureDir(targetDir);
   mergeTree(BASE_TEMPLATE, targetDir);
   finalizeGitignore(targetDir);
+  finalizeAgentConfigs(targetDir);
 
   for (const feature of features) {
     copyAddon(feature, targetDir);

@@ -15,6 +15,7 @@ COPY packages/adapter-vercel/package.json packages/adapter-vercel/package.json
 COPY packages/auth/package.json packages/auth/package.json
 COPY packages/create-thexjs-app/package.json packages/create-thexjs-app/package.json
 COPY packages/hooks/package.json packages/hooks/package.json
+COPY packages/mcp/package.json packages/mcp/package.json
 COPY examples/basic/package.json examples/basic/package.json
 COPY examples/default/package.json examples/default/package.json
 COPY examples/blog/package.json examples/blog/package.json
