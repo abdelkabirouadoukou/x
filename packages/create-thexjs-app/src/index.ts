@@ -23,6 +23,7 @@ import {
   spinner,
   text,
 } from "@clack/prompts";
+import { initGitRepo } from "./git.js";
 import { buildPackageJson, resolveVersions } from "./package-json.js";
 import { FEATURES, type FeatureId } from "./templates.js";
 
@@ -254,16 +255,12 @@ async function main(): Promise<void> {
   if (options.git) {
     const initSpin = spinner();
     initSpin.start("Initializing git repository (main branch)");
-    // Force the default branch to "main" regardless of the user's local
-    // `init.defaultBranch` config (which may otherwise default to master).
-    const result = spawnSync("git", ["init", "-q", "-b", "main"], {
-      cwd: targetDir,
-      stdio: "ignore",
-    });
-    if (result.status === 0) {
-      initSpin.stop("Git repository initialized on main");
+    const result = initGitRepo(targetDir);
+    if (result.ok) {
+      initSpin.stop(result.message);
     } else {
-      initSpin.stop("Git could not be initialized (is git installed?)");
+      initSpin.stop("Git repository not initialized");
+      log.warn(result.message);
     }
   }
 
