@@ -147,6 +147,16 @@ function finalizeGitignore(targetDir: string): void {
   renameSync(from, to);
 }
 
+// Same npm dotfile-stripping issue as .gitignore above — ship as `_mcp.json`
+// and rename to `.mcp.json` (the Claude Code project-scoped MCP config
+// convention) when scaffolding.
+function finalizeMcpConfig(targetDir: string): void {
+  const from = join(targetDir, "_mcp.json");
+  if (!existsSync(from)) return;
+  const to = join(targetDir, ".mcp.json");
+  renameSync(from, to);
+}
+
 function buildXConfig(features: FeatureId[]): string {
   const lines: string[] = [];
   lines.push('import { defineConfig } from "@thexjs/core";');
@@ -235,6 +245,7 @@ async function main(): Promise<void> {
   ensureDir(targetDir);
   mergeTree(BASE_TEMPLATE, targetDir);
   finalizeGitignore(targetDir);
+  finalizeMcpConfig(targetDir);
 
   for (const feature of features) {
     copyAddon(feature, targetDir);

@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "x dev",
     "start": "x start",
-    "build": "x build && bun run scripts/gen-docs-search.ts",
-    "vercel-build": "x build --adapter vercel && bun run scripts/gen-docs-search.ts"
+    "build": "x build && bun run scripts/gen-docs-search.ts && bun run scripts/gen-llms-txt.ts",
+    "vercel-build": "x build --adapter vercel && bun run scripts/gen-docs-search.ts && bun run scripts/gen-llms-txt.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -28,6 +28,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "@thexjs/cli": "workspace:*",
-    "@thexjs/adapter-vercel": "workspace:*"
+    "@thexjs/adapter-vercel": "workspace:*",
+    "@thexjs/mcp": "workspace:*"
   }
 }

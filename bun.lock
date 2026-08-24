@@ -93,6 +93,7 @@
         "@tailwindcss/cli": "^4.3.3",
         "@thexjs/adapter-vercel": "workspace:*",
         "@thexjs/cli": "workspace:*",
+        "@thexjs/mcp": "workspace:*",
         "@types/react": "^19.2.18",
         "@types/react-dom": "^19.2.4",
         "tailwindcss": "^4.3.3",
@@ -168,7 +169,7 @@
     },
     "packages/core": {
       "name": "@thexjs/core",
-      "version": "1.5.0",
+      "version": "1.7.0",
       "devDependencies": {
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
@@ -181,7 +182,7 @@
     },
     "packages/create-thexjs-app": {
       "name": "create-thexjs-app",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "bin": {
         "create-thexjs-app": "./dist/index.js",
       },
@@ -195,7 +196,7 @@
     },
     "packages/env": {
       "name": "@thexjs/env",
-      "version": "1.0.2",
+      "version": "1.1.0",
       "devDependencies": {
         "tsup": "^8.3.0",
       },
@@ -216,6 +217,20 @@
       },
       "peerDependencies": {
         "react": "^18.0.0 || ^19.0.0",
+      },
+    },
+    "packages/mcp": {
+      "name": "@thexjs/mcp",
+      "version": "0.1.0",
+      "bin": {
+        "thexjs-mcp": "./dist/index.js",
+      },
+      "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.30.0",
+        "zod": "^3.23.8",
+      },
+      "devDependencies": {
+        "tsup": "^8.3.0",
       },
     },
   },
@@ -566,6 +581,8 @@
     "@thexjs/example-basic": ["@thexjs/example-basic@workspace:examples/basic"],
 
     "@thexjs/hooks": ["@thexjs/hooks@workspace:packages/hooks"],
+
+    "@thexjs/mcp": ["@thexjs/mcp@workspace:packages/mcp"],
 
     "@ts-morph/common": ["@ts-morph/common@0.27.0", "", { "dependencies": { "fast-glob": "^3.3.3", "minimatch": "^10.0.1", "path-browserify": "^1.0.1" } }, "sha512-Wf29UqxWDpc+i61k3oIOzcUfQt79PIT9y/MWfAGlrkjg6lBC1hwDECLXPVJAhWjiGbfBCxZd65F/LIZF3+jeJQ=="],
 

@@ -64,6 +64,7 @@ packages/auth                 credentials + OAuth2/GitHub auth, sessions, CSRF
 packages/hooks                client-side hook helpers (useSession, usePageData, ...)
 packages/adapter-vercel       Vercel Build Output API adapter
 packages/create-thexjs-app    the scaffolder (bun create thexjs-app@latest)
+packages/mcp                  MCP server so AI agents get x's conventions right
 examples/default              minimal starter
 examples/basic                pages, API routes, auth, dashboard
 examples/landing              the docs site
@@ -303,6 +304,22 @@ export default defineConfig({
   port: 3000,
 });
 ```
+
+## AI agent support
+
+Most people building on x, including experienced devs, lean on AI coding
+agents to get things done — and a general-purpose agent will confidently
+write Next.js/Remix/TanStack Start syntax that looks right but isn't x's.
+Two things ground agents in x's actual conventions instead:
+
+- **`@thexjs/mcp`** — an MCP server with `list_topics` / `get_docs` /
+  `search_docs` / `scaffold_file` tools. Every project scaffolded with
+  `bun create thexjs-app@latest` wires it up automatically (`.mcp.json` for
+  Claude Code, `.cursor/mcp.json` for Cursor). See
+  [packages/mcp/README.md](packages/mcp/README.md).
+- **`AGENTS.md`** (+ a `CLAUDE.md` pointer) — shipped in every scaffolded
+  project as a fallback for agents without MCP access, covering routing,
+  loaders, server functions, and the env-var prefix convention.
 
 ## Versioning
 

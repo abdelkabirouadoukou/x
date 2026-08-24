@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "thexjs": {
+      "command": "bunx",
+      "args": ["@thexjs/mcp"]
+    }
+  }
+}

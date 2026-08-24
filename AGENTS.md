@@ -34,6 +34,7 @@ packages/env               type-safe env var validation
 packages/hooks             client-side React hook helpers
 packages/adapter-vercel      Vercel Build Output API adapter
 packages/create-thexjs-app   `bun create thexjs-app@latest` scaffolder
+packages/mcp                 MCP server exposing x's docs/conventions as tools for coding agents
 examples/basic             full demo: pages, API routes, auth, dashboard
 examples/default           minimal starter
 examples/landing           x's own docs site

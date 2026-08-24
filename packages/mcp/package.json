@@ -1,0 +1,49 @@
+{
+  "name": "@thexjs/mcp",
+  "version": "0.0.0",
+  "description": "MCP server that gives AI coding agents (Claude Code, Cursor, Claude Desktop, Windsurf...) grounded, accurate knowledge of the x framework's conventions, so they stop guessing Next.js/TanStack Start syntax.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agent",
+    "claude",
+    "cursor",
+    "x",
+    "thexjs"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "thexjs-mcp": "./dist/index.js"
+  },
+  "exports": {
+    "./docs": {
+      "types": "./dist/docs.d.ts",
+      "import": "./dist/docs.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup --entry.index=src/index.ts --entry.docs=src/docs.ts --format esm --dts --clean --target node18 --shims false --no-splitting",
+    "prepublishOnly": "bun run build",
+    "start": "bun src/index.ts"
+  },
+  "engines": {
+    "node": ">=18",
+    "bun": ">=1.3.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0"
+  }
+}
