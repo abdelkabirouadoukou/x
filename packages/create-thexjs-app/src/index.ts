@@ -1,16 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  renameSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import {
   cancel,
   confirm,
@@ -25,17 +16,21 @@ import {
 } from "@clack/prompts";
 import { initGitRepo } from "./git.js";
 import { buildPackageJson, resolveVersions } from "./package-json.js";
-import { FEATURES, type FeatureId } from "./templates.js";
+import {
+  BASE_TEMPLATE,
+  copyAddon,
+  ensureDir,
+  FEATURES,
+  type FeatureId,
+  featureLabel,
+  mergeTree,
+  normalizeFeatures,
+} from "./templates.js";
 
 function abort(message: string): never {
   cancel(message);
   process.exit(1);
 }
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const TEMPLATES_ROOT = join(__dirname, "..", "templates");
-const BASE_TEMPLATE = join(TEMPLATES_ROOT, "base");
-const ADDONS_ROOT = join(TEMPLATES_ROOT, "addons");
 
 interface CliOptions {
   projectName?: string;
@@ -114,30 +109,6 @@ function slugify(name: string): string {
   );
 }
 
-function ensureDir(path: string): void {
-  if (!existsSync(path)) mkdirSync(path, { recursive: true });
-}
-
-function mergeTree(src: string, dest: string): void {
-  ensureDir(dest);
-  for (const entry of readdirSync(src)) {
-    const from = join(src, entry);
-    const to = join(dest, entry);
-    const stat = statSync(from);
-    if (stat.isDirectory()) {
-      mergeTree(from, to);
-    } else {
-      cpSync(from, to);
-    }
-  }
-}
-
-function copyAddon(addon: FeatureId, targetDir: string): void {
-  const src = join(ADDONS_ROOT, addon);
-  if (!existsSync(src)) return;
-  mergeTree(src, targetDir);
-}
-
 // npm strips files named `.gitignore` / `.npmignore` from published tarballs,
 // even inside nested directories. Templates therefore ship an `_gitignore`
 // file that we rename to `.gitignore` when scaffolding the project.
@@ -212,10 +183,15 @@ async function main(): Promise<void> {
     features = selected as FeatureId[];
   }
 
-  // Enforce dependencies: enabling shadcn implies tailwind.
-  if (!features.includes("tailwind") && features.includes("shadcn")) {
-    features = ["tailwind", ...features.filter((f) => f !== "shadcn").sort()];
-    log.warn("shadcn/ui requires Tailwind — enabled Tailwind for you.");
+  // Enforce feature dependencies via the `requires` metadata (e.g. shadcn
+  // implies tailwind). Missing requirements are auto-enabled; the selected
+  // features themselves are always kept.
+  const { features: normalized, autoEnabled } = normalizeFeatures(features);
+  features = normalized;
+  for (const { added, because } of autoEnabled) {
+    log.warn(
+      `${featureLabel(because)} requires ${featureLabel(added)} — enabled ${featureLabel(added)} for you.`,
+    );
   }
 
   if (interactive && options.install) {
