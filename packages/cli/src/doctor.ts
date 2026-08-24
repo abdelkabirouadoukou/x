@@ -171,17 +171,8 @@ export async function runDoctor(projectDir: string): Promise<number> {
   } catch {
     // already reported as missing node_modules/@thexjs
   }
-  for (const [name, range] of Object.entries(declared)) {
-    if (!name.startsWith("@thexjs/")) continue;
-    // workspace:* is a monorepo link, not a version contract -- skip.
-    if (range === "workspace:*") continue;
-    const short = name.slice("@thexjs/".length);
-    const installed = installedVersions.get(short);
-    if (installed && range !== "*" && !range.startsWith("^") && !range.startsWith("~")) {
-      if (installed !== range) {
-        xWarn(`${name}: declared ${range}, installed ${installed}`);
-      }
-    }
+  for (const warning of findVersionDrift(declared, installedVersions)) {
+    xWarn(warning);
   }
 
   // 9. Rich: auth secret present in production
@@ -207,4 +198,22 @@ function isDir(path: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function findVersionDrift(
+  declared: Record<string, string>,
+  installedVersions: Map<string, string>,
+): string[] {
+  const warnings: string[] = [];
+  for (const [name, range] of Object.entries(declared)) {
+    if (!name.startsWith("@thexjs/")) continue;
+    // workspace:* is a monorepo link, not a version contract -- skip.
+    if (range === "workspace:*") continue;
+    const short = name.slice("@thexjs/".length);
+    const installed = installedVersions.get(short);
+    if (!installed) continue;
+    if (Bun.semver.satisfies(installed, range)) continue;
+    warnings.push(`${name}: declared ${range}, installed ${installed}`);
+  }
+  return warnings;
 }
