@@ -6,6 +6,7 @@ import {
   mkdirSync,
   readdirSync,
   renameSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -149,12 +150,26 @@ function finalizeGitignore(targetDir: string): void {
 
 // Same npm dotfile-stripping issue as .gitignore above — ship as `_mcp.json`
 // and rename to `.mcp.json` (the Claude Code project-scoped MCP config
-// convention) when scaffolding.
-function finalizeMcpConfig(targetDir: string): void {
-  const from = join(targetDir, "_mcp.json");
-  if (!existsSync(from)) return;
-  const to = join(targetDir, ".mcp.json");
-  renameSync(from, to);
+// convention) when scaffolding. `.cursor/` gets the same treatment: npm
+// strips dot-prefixed paths from tarballs, so the Cursor config ships under
+// `_cursor/` and the directory is renamed here.
+function finalizeAgentConfigs(targetDir: string): void {
+  const mcpFrom = join(targetDir, "_mcp.json");
+  if (existsSync(mcpFrom)) {
+    renameSync(mcpFrom, join(targetDir, ".mcp.json"));
+  }
+  const cursorFrom = join(targetDir, "_cursor");
+  if (existsSync(cursorFrom)) {
+    const cursorTo = join(targetDir, ".cursor");
+    if (!existsSync(cursorTo)) {
+      renameSync(cursorFrom, cursorTo);
+    } else {
+      for (const entry of readdirSync(cursorFrom)) {
+        cpSync(join(cursorFrom, entry), join(cursorTo, entry));
+      }
+      rmSync(cursorFrom, { recursive: true, force: true });
+    }
+  }
 }
 
 function buildXConfig(features: FeatureId[]): string {
@@ -245,7 +260,7 @@ async function main(): Promise<void> {
   ensureDir(targetDir);
   mergeTree(BASE_TEMPLATE, targetDir);
   finalizeGitignore(targetDir);
-  finalizeMcpConfig(targetDir);
+  finalizeAgentConfigs(targetDir);
 
   for (const feature of features) {
     copyAddon(feature, targetDir);

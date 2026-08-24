@@ -15,7 +15,7 @@ is the fallback for agents without MCP access.
 
 Files under `src/pages/` are routes:
 
-```
+```text
 pages/index.tsx         -> /
 pages/about.tsx         -> /about
 pages/blog/[slug].tsx   -> /blog/:slug
@@ -41,13 +41,15 @@ export default function Page({ loaderData }: RouteProps) {
 }
 ```
 
-Not `getServerSideProps`, not a `Response`-returning Remix loader, not a
-route-tree config object.
+Args are `{ params, request }` — not `{ context }`, and not a route-tree
+config object. Return a plain object (becomes `loaderData`) or a `Response`
+for redirects/status.
 
 ## Static rendering
 
 `export const mode = "static";` prerenders at build time. Default is SSR on
-every request. `export const revalidate = <seconds>;` for ISR.
+every request. `export const revalidate = <seconds>;` for ISR — only
+honored on static-mode pages (ignored on the default SSR path).
 
 ## API routes
 

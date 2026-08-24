@@ -19,7 +19,34 @@ function pascalCase(name: string): string {
     .join("");
 }
 
+/**
+ * Validates a scaffold name before it is interpolated into a filesystem
+ * path or a generated TypeScript identifier. Returns an error message, or
+ * null when the name is safe.
+ *
+ * Rejects path separators and traversal ("../x"), extensions/dots
+ * ("user.profile"), empty strings, leading digits ("123" would generate
+ * `function 123()`), and anything outside [A-Za-z0-9_$-] that could break
+ * either the path segment or the identifier.
+ */
+export function validateScaffoldName(name: string): string | null {
+  if (name.length === 0) return "name must not be empty";
+  if (name.length > 64) return "name must be at most 64 characters";
+  if (/[\\/\0]/.test(name)) {
+    return `name must not contain path separators or control characters (got "${name}")`;
+  }
+  if (name.includes(".")) {
+    return `name must be a single segment without dots or extensions (got "${name}")`;
+  }
+  if (!/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
+    return `name must start with a letter/underscore/$ and contain only letters, digits, -, _, or $ so it forms a valid identifier (got "${name}")`;
+  }
+  return null;
+}
+
 export function scaffold({ kind, name }: ScaffoldRequest): { path: string; code: string } {
+  const invalid = validateScaffoldName(name);
+  if (invalid) throw new Error(invalid);
   const component = pascalCase(name) || "Page";
 
   switch (kind) {
@@ -64,12 +91,12 @@ export default function ${component}({ loaderData }: RouteProps) {
     case "middleware":
       return {
         path: `src/pages/${name}/_middleware.ts`,
-        code: `import type { MiddlewareArgs } from "@thexjs/core";
+        code: `import type { MiddlewareContext, MiddlewareFn } from "@thexjs/core";
 
-export default async function middleware({ request, next }: MiddlewareArgs) {
+export const middleware: MiddlewareFn = async ({ request, params }: MiddlewareContext, next) => {
   // e.g. auth check / redirect / logging
   return next();
-}
+};
 `,
       };
 

@@ -65,12 +65,16 @@ export default function BlogPost({ loaderData }: RouteProps) {
 
 Common wrong guesses an agent makes here, and why they're wrong for x:
 - \`getServerSideProps\` / \`getStaticProps\` (Next.js Pages Router) — does not exist in x.
-- \`export const loader = ({ context }) => ...\` returning a raw \`Response\`
-  (Remix/React Router shape) — x's loader returns a plain value, not a Response,
-  and the arg is \`{ params, request }\`, not \`{ context }\`.
+- \`export const loader = ({ context }) => ...\` — x's loader args are
+  \`{ params, request }\`, not \`{ context }\`.
 - A route-tree \`loader\` config object passed to \`createFileRoute\` (TanStack
   Start/Router shape) — x has no route-tree builder; the loader is just an
   export from the page file itself.
+
+Return values: a plain object (passed to the component as \`loaderData\`) or
+a \`Response\` (short-circuits rendering — useful for redirects and status
+responses). What does NOT work: returning a raw string/number, or reading
+data from a route-tree config.
 `.trim(),
   },
 
@@ -85,9 +89,12 @@ prerender at build time instead:
 export const mode = "static";
 \`\`\`
 
-For ISR-style revalidation on an SSR page:
+ISR-style revalidation only applies to **static-mode** pages (on the
+default SSR path the handler streams per request and never consults the
+cache, so \`revalidate\` alone is a no-op):
 
 \`\`\`tsx
+export const mode = "static";
 export const revalidate = 3600; // seconds
 \`\`\`
 
@@ -122,17 +129,27 @@ route and will NOT be picked up as a layout.
 
   middleware: {
     title: "Middleware",
-    summary: "Folder-scoped middleware via _middleware.ts.",
+    summary: "Folder-scoped _middleware.ts with a NAMED `middleware` export.",
     content: `
 Drop \`_middleware.ts\` in any \`pages/\` folder; it runs (onion-style) for
 every route in that folder and its subfolders. Useful for auth checks,
 redirects, logging.
 
-Alternative: export \`middleware\` directly from a single page file for
-route-level (not folder-level) middleware.
+The file must export **\`middleware\` as a named export** typed
+\`MiddlewareFn\` — a default export is silently ignored by the router:
+
+\`\`\`ts
+import type { MiddlewareContext, MiddlewareFn } from "@thexjs/core";
+
+export const middleware: MiddlewareFn = async ({ request, params }, next) => {
+  // e.g. auth check / redirect / logging
+  return next();
+};
+\`\`\`
 
 There is no central \`middleware.ts\` at the project root like Next.js — x's
-middleware is always folder-scoped and file-colocated.
+middleware is always folder-scoped and file-colocated. For route-level
+(not folder-level) middleware, export \`middleware\` from the page file itself.
 `.trim(),
   },
 
@@ -289,8 +306,9 @@ Endpoint map (mounted under wherever the catch-all route lives, typically
 Passwords are hashed with Argon2 via \`Bun.password\` (not bcrypt). Session
 tokens are HMAC'd at rest and revocable. This is not next-auth/Auth.js — the
 config shape and endpoint names are different even though the concepts
-overlap. Use \`getSession()\` from \`@thexjs/auth\` to read the current session
-server-side.
+overlap. Read the current session server-side via the method on the object
+returned by \`defineAuth\`: \`await auth.getSession(req)\` (there is no named
+\`getSession\` export from \`@thexjs/auth\`).
 `.trim(),
   },
 
@@ -350,12 +368,18 @@ required. \`fill\` gives absolute-positioned \`object-fit: cover\`.
     summary: "Markdown + frontmatter -> pages, via scanContent()/renderMarkdown().",
     content: `
 \`\`\`ts
-import { scanContent, renderMarkdown } from "@thexjs/core";
+import { renderMarkdown, scanContent } from "@thexjs/core";
 
-const posts = scanContent("posts"); // scans contentDir/posts/*.md
-const html = renderMarkdown(post.body);
+// scanContent takes a directory (relative to the project root) and returns
+// one ContentEntry per .md/.mdx file found under it.
+const posts = scanContent("content/posts");
+for (const post of posts) {
+  console.log(post.slug, post.frontmatter.title);
+  const html = renderMarkdown(post.body);
+}
 \`\`\`
 
+Each entry has \`filePath\`, \`routePath\`, \`slug\`, \`frontmatter\`, and \`body\`.
 Frontmatter parsing is basic YAML, not a full remark/rehype pipeline. There
 is no MDX component execution — \`.mdx\` files are scanned like \`.md\`, not
 compiled as JSX. Don't assume remark plugins or MDX component imports work
@@ -410,9 +434,11 @@ split of concerns to replicate — one CLI, three subcommands.
 - Env prefix is \`THEXJS_PUBLIC_\`, not \`NEXT_PUBLIC_\`/\`VITE_\`/\`PUBLIC_\`.
 - Static opt-in is \`export const mode = "static"\`, not
   \`export const dynamic = "force-static"\` or \`export const prerender\`.
-- Loader signature is \`loader({ params, request })\` returning a plain
-  value read as \`loaderData\` — not a \`Response\`, not \`{ context }\`, not a
-  route-tree \`loader\` config passed to a route builder function.
+- Loader signature is \`loader({ params, request })\` — not \`{ context }\`,
+  and not a route-tree \`loader\` config passed to a route builder function.
+  Returns a plain object (becomes \`loaderData\`) or a \`Response\` for
+  redirects/status; the arg shape is what differs from Remix/Next, not the
+  return type.
 - API routes take/return the Fetch API \`Request\`/\`Response\` directly —
   no \`(req, res)\` Express shape.
 - Everything runs in ONE Bun process (dev server, API routes, actions,

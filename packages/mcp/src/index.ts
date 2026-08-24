@@ -45,7 +45,10 @@ server.registerTool(
     },
   },
   async ({ topic }) => {
-    const doc = DOCS[topic];
+    // Own-property check only: inherited keys like "constructor" or
+    // "__proto__" would otherwise resolve through the prototype chain and
+    // produce a broken "doc" instead of a clean not-found error.
+    const doc = Object.hasOwn(DOCS, topic) ? DOCS[topic] : undefined;
     if (!doc) {
       return {
         content: [
@@ -106,7 +109,15 @@ server.registerTool(
     },
   },
   async ({ kind, name }) => {
-    const result = scaffold({ kind, name });
+    let result: ReturnType<typeof scaffold>;
+    try {
+      result = scaffold({ kind, name });
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: err instanceof Error ? err.message : String(err) }],
+        isError: true,
+      };
+    }
     return {
       content: [
         {

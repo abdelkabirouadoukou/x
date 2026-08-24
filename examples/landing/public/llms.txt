@@ -10,7 +10,7 @@ x looks similar to Next.js / Remix / Astro / TanStack Start in places but is NOT
 - [Loaders & data fetching](https://thexjs.vercel.app/llms-full.txt#loaders): How pages fetch server-side data. NOT getServerSideProps, NOT TanStack's route loader shape.
 - [Static vs SSR rendering](https://thexjs.vercel.app/llms-full.txt#static-vs-ssr): Pages are SSR by default; opt into static prerendering per-page.
 - [Layouts](https://thexjs.vercel.app/llms-full.txt#layouts): Nested layouts via _layout.tsx.
-- [Middleware](https://thexjs.vercel.app/llms-full.txt#middleware): Folder-scoped middleware via _middleware.ts.
+- [Middleware](https://thexjs.vercel.app/llms-full.txt#middleware): Folder-scoped _middleware.ts with a NAMED `middleware` export.
 - [API routes](https://thexjs.vercel.app/llms-full.txt#api-routes): Files under src/api/ export GET/POST/etc handlers using the Fetch API.
 - [Server functions (actions)](https://thexjs.vercel.app/llms-full.txt#actions): Colocated server functions in src/actions — the big one agents get wrong.
 - [x.config.ts](https://thexjs.vercel.app/llms-full.txt#config): Central config file, all fields optional.

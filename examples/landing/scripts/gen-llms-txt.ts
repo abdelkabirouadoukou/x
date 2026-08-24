@@ -8,7 +8,7 @@
  * Run as part of the landing build (see package.json "build" script).
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { DOCS, listTopics } from "@thexjs/mcp/docs";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -76,24 +76,15 @@ function buildLlmsFullTxt(): string {
 }
 
 function main(): void {
-  const targets = [
-    join(ROOT, "public", "llms.txt"),
-    ...CLIENT_CANDIDATES.filter(existsSync).map((dir) => join(dir, "llms.txt")),
-  ];
-  for (const target of targets) {
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, buildLlmsTxt());
-  }
-  const fullTargets = [
-    join(ROOT, "public", "llms-full.txt"),
-    ...CLIENT_CANDIDATES.filter(existsSync).map((dir) => join(dir, "llms-full.txt")),
-  ];
-  for (const target of fullTargets) {
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, buildLlmsFullTxt());
+  const clientDirs = CLIENT_CANDIDATES.filter(existsSync);
+  const outDirs = [join(ROOT, "public"), ...clientDirs];
+  for (const dir of outDirs) {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "llms.txt"), buildLlmsTxt());
+    writeFileSync(join(dir, "llms-full.txt"), buildLlmsFullTxt());
   }
   console.log(
-    `[gen-llms-txt] wrote llms.txt + llms-full.txt to ${targets.length + fullTargets.length - 2} location(s) (public/ + built client dirs)`,
+    `[gen-llms-txt] wrote llms.txt + llms-full.txt to ${outDirs.length} location(s): public/${clientDirs.length > 0 ? " + built client dirs" : ""}`,
   );
 }
 

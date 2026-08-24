@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { DOCS, listTopics, searchDocs } from "./docs.js";
-import { type ScaffoldKind, scaffold } from "./scaffold.js";
+import { type ScaffoldKind, scaffold, validateScaffoldName } from "./scaffold.js";
 
 describe("DOCS", () => {
   test("every topic has non-empty title, summary, and content", () => {
@@ -74,5 +74,36 @@ describe("scaffold", () => {
     expect(result.code).toContain("export async function greetUser(/* args */)");
     // No directive STATEMENT (a comment mentioning it is fine).
     expect(/^\s*"use server"\s*;?/m.test(result.code)).toBe(false);
+  });
+});
+
+describe("validateScaffoldName", () => {
+  test("accepts plain words, kebab-case, snake_case, and $/_ prefixed ids", () => {
+    for (const name of ["about", "blog-post", "user_profile", "_private", "$item", "Users2"]) {
+      expect(validateScaffoldName(name), `accept ${name}`).toBeNull();
+    }
+  });
+
+  test("rejects path traversal and separators", () => {
+    for (const name of ["../x", "../../etc/passwd", "a/b", "a\\b", "..", "."]) {
+      expect(validateScaffoldName(name), `reject ${name}`).not.toBeNull();
+      expect(() => scaffold({ kind: "page", name }), `throw on ${name}`).toThrow(/name/);
+    }
+  });
+
+  test("rejects dots/extensions", () => {
+    for (const name of ["user.profile", "index.tsx", "x."]) {
+      expect(validateScaffoldName(name), `reject ${name}`).not.toBeNull();
+    }
+  });
+
+  test("rejects empty names and leading digits (invalid identifiers)", () => {
+    expect(validateScaffoldName("")).not.toBeNull();
+    expect(validateScaffoldName("123")).toMatch(/valid identifier/);
+  });
+
+  test("rejects control characters and overlong names", () => {
+    expect(validateScaffoldName("a\nb")).not.toBeNull();
+    expect(validateScaffoldName("a".repeat(65))).not.toBeNull();
   });
 });

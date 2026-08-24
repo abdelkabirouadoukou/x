@@ -37,7 +37,8 @@ it to an existing project by hand:
 
 x deliberately diverges from Next.js/Remix/TanStack Start in a few specific
 places (no `"use server"` directives, underscore-prefixed special files,
-`THEXJS_PUBLIC_` env prefix, a loader shape that isn't a Response). Those are
+`THEXJS_PUBLIC_` env prefix, loader args that are `{ params, request }`
+rather than `{ context }`). Those are
 exactly the details a general-purpose coding agent is likely to get wrong
 from training data alone, confidently. This server is the fix: ground the
 agent in the framework's actual conventions before it writes code, rather
