@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import { connectPostgres, connectSQLite } from "@thexjs/core/data";
 import type { AuthUser, Session } from "./types";
 import { createSQLiteSessionStore, createPostgresSessionStore } from "./session";
@@ -20,6 +20,8 @@ function baseSession(overrides: Partial<Session> = {}): Session {
 describe("SQLite session store — created_at preserved on upsert", () => {
   const db = connectSQLite({ path: ":memory:" });
   const store = createSQLiteSessionStore({ db });
+
+  afterAll(() => db.close());
 
   test("created_at is not overwritten when re-creating the same token", async () => {
     const session = baseSession();
@@ -61,6 +63,7 @@ describe("SQLite session store — created_at preserved on upsert", () => {
 
       const found2 = await s.find(session.token);
       expect(found2?.createdAt).toBe(session.createdAt);
+      expect(found2?.user?.email).toBe("b@c.com");
     });
   },
 );
