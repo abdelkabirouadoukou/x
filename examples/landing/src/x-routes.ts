@@ -49,10 +49,7 @@ export function href<T extends keyof RouteMap & string>(
   const isNamedToken = (key: string) => new RegExp(`(^|/):${key}(?=/|$)`).test(path);
   for (const [key, value] of Object.entries(params)) {
     if (!isNamedToken(key)) {
-      const encoded = String(value)
-        .split("/")
-        .map(encodeURIComponent)
-        .join("/");
+      const encoded = String(value).split("/").map(encodeURIComponent).join("/");
       result = result.replace(/\*/, encoded);
     }
   }
