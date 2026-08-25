@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { defineAuth, SESSION_COOKIE } from "./auth";
 import {
+  type AuthGuardResult,
   hasAllPermissions,
   hasAnyRole,
   hasPermission,
@@ -82,7 +83,7 @@ describe("guards", () => {
   test("requireRole fails closed on a signed-out session (401)", () => {
     const result = requireRole("admin")(null);
     expect(result.ok).toBe(false);
-    expect(result.status).toBe(401);
+    if (!result.ok) expect(result.status).toBe(401);
   });
 
   test("requireRole allows an authenticated user with the role", () => {
@@ -93,7 +94,7 @@ describe("guards", () => {
   test("requireRole rejects an authenticated user without the role (403)", () => {
     const result = requireRole("admin")(sessionWith(["editor"]));
     expect(result.ok).toBe(false);
-    expect(result.status).toBe(403);
+    if (!result.ok) expect(result.status).toBe(403);
   });
 
   test("requireRole accepts multiple roles (any-match)", () => {
@@ -107,16 +108,36 @@ describe("guards", () => {
   });
 
   test("requirePermission fails closed and requires every permission", () => {
-    expect(requirePermission("posts:write")(null).status).toBe(401);
+    const r1 = requirePermission("posts:write")(null);
+    expect(r1.ok).toBe(false);
+    if (!r1.ok) expect(r1.status).toBe(401);
     expect(requirePermission("posts:write")(sessionWith([], ["posts:write"])).ok).toBe(true);
-    expect(
-      requirePermission("posts:read", "posts:write")(sessionWith([], ["posts:read"])).status,
-    ).toBe(403);
+    const r2 = requirePermission("posts:read", "posts:write")(sessionWith([], ["posts:read"]));
+    expect(r2.ok).toBe(false);
+    if (!r2.ok) expect(r2.status).toBe(403);
   });
 
   test("requireAuth only checks authentication", () => {
     expect(requireAuth()(sessionWith()).ok).toBe(true);
-    expect(requireAuth()(null).status).toBe(401);
+    const result = requireAuth()(null);
+    if (!result.ok) expect(result.status).toBe(401);
+  });
+
+  test("AuthGuardResult is a discriminated union (type-level exhaustiveness)", () => {
+    function assertUnion(result: AuthGuardResult) {
+      switch (result.ok) {
+        case true:
+          break;
+        case false: {
+          const _: 401 | 403 = result.status;
+          break;
+        }
+      }
+    }
+    // Runtime no-op; the assertion is that tsc accepts the exhaustive switch
+    assertUnion(requireAuth()(sessionWith()));
+    assertUnion(requireAuth()(null));
+    expect(true).toBe(true);
   });
 });
 

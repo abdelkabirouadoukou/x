@@ -10,12 +10,14 @@ import type { MiddlewareFn } from "@thexjs/core";
 import { auditPermissionDenied, clientIpFromRequest, requestIdFromRequest } from "@thexjs/core";
 import type { Session } from "./types";
 
-export interface AuthGuardResult {
-  ok: boolean;
-  /** 401 when signed out, 403 when signed in but unauthorized. */
-  status: 401 | 403;
-  reason: string;
-}
+export type AuthGuardResult =
+  | { ok: true }
+  | {
+      ok: false;
+      /** 401 when signed out, 403 when signed in but unauthorized. */
+      status: 401 | 403;
+      reason: string;
+    };
 
 export type SessionGuard = (session: Session | null) => AuthGuardResult;
 
@@ -48,11 +50,11 @@ export function hasAllPermissions(session: Session | null, permissions: string[]
 export function requireRole(...roles: string[]): SessionGuard {
   return (session) => {
     if (!session) return { ok: false, status: 401, reason: "Unauthorized" };
-    if (roles.length === 0) return { ok: true, status: 401, reason: "" };
+    if (roles.length === 0) return { ok: true };
     if (!hasAnyRole(session, roles)) {
       return { ok: false, status: 403, reason: "Forbidden" };
     }
-    return { ok: true, status: 401, reason: "" };
+    return { ok: true };
   };
 }
 
@@ -64,11 +66,11 @@ export function requireRole(...roles: string[]): SessionGuard {
 export function requirePermission(...permissions: string[]): SessionGuard {
   return (session) => {
     if (!session) return { ok: false, status: 401, reason: "Unauthorized" };
-    if (permissions.length === 0) return { ok: true, status: 401, reason: "" };
+    if (permissions.length === 0) return { ok: true };
     if (!hasAllPermissions(session, permissions)) {
       return { ok: false, status: 403, reason: "Forbidden" };
     }
-    return { ok: true, status: 401, reason: "" };
+    return { ok: true };
   };
 }
 
@@ -76,7 +78,7 @@ export function requirePermission(...permissions: string[]): SessionGuard {
 export function requireAuth(): SessionGuard {
   return (session) => {
     if (!session) return { ok: false, status: 401, reason: "Unauthorized" };
-    return { ok: true, status: 401, reason: "" };
+    return { ok: true };
   };
 }
 
