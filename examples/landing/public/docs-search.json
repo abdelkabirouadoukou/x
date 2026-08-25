@@ -3458,7 +3458,7 @@
         },
         {
           "kind": "p",
-          "text": "Call server-side functions from the browser without writing REST endpoints. Server functions live in src/actions/ . Import one into a client component and call it like a normal function, or call it manually with fetch . Both compile down to the same request.",
+          "text": "Call server-side functions from the browser without writing REST endpoints. Server functions live in src/actions/ . Import one into an island and call it like a normal function, or call it manually with fetch . Both compile down to the same request.",
           "anchor": ""
         },
         {
@@ -3468,7 +3468,7 @@
         },
         {
           "kind": "p",
-          "text": "Create a file in src/actions/ and export named async functions. Each function receives a Request object and any arguments you pass.",
+          "text": "Create a file in src/actions/ and export named async functions. There is no \"use server\" directive; arguments passed from the client arrive as JSON, and the return value is serialized back as JSON.",
           "anchor": ""
         },
         {
@@ -3493,12 +3493,12 @@
         },
         {
           "kind": "p",
-          "text": "Import the function into a client component and call it like any other async function. When you run x build , the bundler swaps the import for a generated fetch client before it reaches the browser, so the real implementation, db calls and all, never gets bundled.",
+          "text": "Import the function into an island component and call it like any other async function. When you run x build , the bundler swaps the import for a generated fetch client before it reaches the browser, so the real implementation, db calls and all, never gets bundled.",
           "anchor": ""
         },
         {
           "kind": "p",
-          "text": "Only files under actionsDir get this treatment. Import a regular server-only helper into client code and it bundles as-is; if it leaks a secret, the build-time env isolation check catches it instead.",
+          "text": "x has no \"use client\" directive. To make the form interactive, register it on the page with export const islands = { SubscribeForm } and render it inside (see Islands ). Only files under actionsDir get the fetch-wrapper treatment: import a regular server-only helper into client code and it bundles as-is; if it leaks a secret, the build-time env isolation check catches it instead.",
           "anchor": ""
         },
         {
