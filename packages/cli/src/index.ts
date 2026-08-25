@@ -274,6 +274,14 @@ async function cmdStart(): Promise<void> {
     "exit",
     (code) => process.exit(code ?? 1),
   );
+  (proc as unknown as { on(event: "error", listener: (err: Error) => void): void }).on(
+    "error",
+    (err) => {
+      xError(`failed to start bun: ${err.message}`);
+      xError("ensure bun is installed — https://bun.sh");
+      process.exit(1);
+    },
+  );
 }
 
 async function serveStaticBuild(clientDir: string): Promise<void> {
@@ -375,6 +383,8 @@ async function main(): Promise<void> {
     case "-h":
     case undefined:
       printHelp();
+      // Bare `x` (no command) is a usage error → exit 1.
+      // `x --help` / `x -h` is an explicit request → exit 0.
       if (command === undefined) process.exitCode = 1;
       break;
     default:
