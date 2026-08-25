@@ -131,6 +131,10 @@ async function cmdDev(): Promise<void> {
         xInfo("recompiling Tailwind CSS...");
         compileTailwindAsync(twInput, twOutput, projectDir);
       }, 200);
+    }).on("error", (err: NodeJS.ErrnoException) => {
+      xWarn(
+        `Tailwind file watcher stopped (${err.code ?? err.message}) — restart dev server to resume CSS recompilation`,
+      );
     });
   }
 
