@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { connectPostgres, connectSQLite } from "@thexjs/core/data";
+import { createPostgresSessionStore, createSQLiteSessionStore } from "./session";
 import type { AuthUser, Session } from "./types";
-import { createSQLiteSessionStore, createPostgresSessionStore } from "./session";
 
 const now = Date.now();
 
