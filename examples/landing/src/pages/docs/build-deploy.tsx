@@ -12,7 +12,7 @@ export default function DocPage(_props: RouteProps) {
         Build &amp; deploy
       </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        x produces optimized production builds: prerendered HTML, island bundles, and a server entry
+        X produces optimized production builds: prerendered HTML, island bundles, and a server entry
         point, all in one command.
       </p>
 
@@ -88,7 +88,7 @@ export const revalidate = 3600; // re-render at most once per hour`}
       />
       <p className="mt-4 text-muted-foreground">
         Bust the cache programmatically with a <span className="text-foreground">POST</span> to{" "}
-        <span className="text-foreground">/__x/revalidate</span> — send{" "}
+        <span className="text-foreground">/__x/revalidate</span> and send{" "}
         <span className="text-foreground">{`{ "path": "/pricing" }`}</span> to revalidate one page
         or an empty body to clear the whole cache.
       </p>

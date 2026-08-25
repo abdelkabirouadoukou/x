@@ -7,7 +7,7 @@ const RELEASES = [
   {
     version: "v1.0.8",
     date: "Jul 2026",
-    notes: "Vercel adapter — static + server-mode islands in one deploy.",
+    notes: "Vercel adapter: static + server-mode islands in one deploy.",
   },
   {
     version: "v1.0.0",

@@ -10,7 +10,7 @@ export default function DocPage(_props: RouteProps) {
       <p className="label">Layouts</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Layouts</h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        Layouts wrap your pages with shared UI. x supports nested layouts via a dedicated layouts
+        Layouts wrap your pages with shared UI. X supports nested layouts via a dedicated layouts
         directory and the <span className="text-foreground">_layout.tsx</span> convention.
       </p>
 

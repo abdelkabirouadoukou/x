@@ -12,8 +12,9 @@ export default function SandboxPage() {
           Run a real X project, right here.
         </h1>
         <p className="mt-5 text-[1.05rem] leading-relaxed text-fg-muted">
-          No installs, no setup. The sandbox spins up a full X starter in your browser, with the
-          editor, terminal, and preview wired together. It lands soon — the slot below is reserved.
+          Nothing to install. The sandbox will run a full X starter in your browser with the editor,
+          terminal, and preview wired together. It isn't live yet; the slot below is reserved for
+          it.
         </p>
       </div>
 
@@ -35,7 +36,7 @@ export default function SandboxPage() {
           </a>
         </div>
         <TerminalBlock
-          label="~/my-app — zsh"
+          label="~/my-app · zsh"
           code={`$ bun create thexjs-app@latest my-app
   ✔ created my-app/
   ✔ 12 packages installed in 89ms

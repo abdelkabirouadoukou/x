@@ -71,7 +71,7 @@ const allFeatures: {
   {
     icon: BarChart3,
     title: "Observability",
-    desc: "Structured JSON logging, /healthz and /readyz probes for containers, and pluggable APM error tracing (Sentry + OpenTelemetry). Production-ready out of the box.",
+    desc: "Structured JSON logging, /healthz and /readyz probes for containers, and pluggable APM error tracing (Sentry + OpenTelemetry). Logs and probes work with no extra setup; tracing wires into whichever reporter you already run.",
     href: "/docs/observability",
   },
   {
@@ -83,7 +83,7 @@ const allFeatures: {
   {
     icon: Sparkles,
     title: "Live reload",
-    desc: "See changes instantly. The dev server watches pages, layouts, API routes, and actions. No manual restarts, no build step during development.",
+    desc: "Save a file and the dev server picks it up. It watches pages, layouts, API routes, and actions, so you never restart anything during development.",
     href: "/docs/getting-started",
   },
   {
@@ -95,7 +95,7 @@ const allFeatures: {
   {
     icon: Code2,
     title: "Islands architecture",
-    desc: "Interactive client components hydrate in place. The rest of the page is static HTML. Minimal JavaScript, maximum performance.",
+    desc: "Interactive client components hydrate in place while the rest of the page stays static HTML. Users download JavaScript only for the parts of the page that actually need it.",
     href: "/docs/islands",
   },
   {
@@ -125,13 +125,13 @@ const allFeatures: {
   {
     icon: Boxes,
     title: "Modular toolkit",
-    desc: "Small, focused packages — core, cli, auth, env, hooks, adapter-vercel — that compose together. Add only what you need, drop in a migration today.",
+    desc: "Core, CLI, auth, env, hooks, and the Vercel adapter ship as separate packages, so a project only installs what it uses. Each one works on its own.",
     href: "/docs/packages/core",
   },
   {
     icon: GitBranch,
     title: "Open source",
-    desc: "MIT licensed. Contributions welcome. Built for Bun with modern JavaScript in mind. No lock-in, no proprietary formats.",
+    desc: "MIT licensed and developed in the open on GitHub. Standard React and TypeScript throughout; nothing proprietary to migrate away from later.",
     href: "https://github.com/abdelkabirouadoukou/x",
   },
 ];
@@ -158,7 +158,7 @@ export default function FeaturesPage() {
             <a
               key={f.title}
               href={f.href}
-              aria-label={`${f.title} — learn more`}
+              aria-label={`${f.title}: learn more`}
               className="group relative bg-canvas p-7 transition-colors hover:bg-subtle"
             >
               <div className="flex items-center justify-between gap-3">
@@ -189,7 +189,7 @@ export default function FeaturesPage() {
             Ready to build with X?
           </h2>
           <p className="mt-4 text-[15px] text-canvas/70">
-            One command, one process, everything you need.
+            One command gets you a project with the whole stack already wired.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <a

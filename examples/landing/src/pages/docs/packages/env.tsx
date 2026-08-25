@@ -109,7 +109,7 @@ function json<T>(): EnvValidator<T> {
           <span className="text-foreground">optional()</span> to allow a missing variable (type{" "}
           <span className="text-foreground">T | undefined</span>) and{" "}
           <span className="text-foreground">default(value)</span> to substitute a fallback when it's
-          absent — missing optional variables no longer fail the whole validation.
+          absent, so missing optional variables no longer fail the whole validation.
         </li>
         <li>
           <span className="text-foreground">runtimeEnv</span> is passed explicitly so this works on

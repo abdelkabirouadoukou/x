@@ -105,7 +105,7 @@ A markdown file in src/content becomes a page with typed frontmatter.`,
     label: "Configuration",
     file: "x.config.ts",
     docs: "/docs/configuration",
-    blurb: "One typed config file — or none at all. Everything has a sensible default.",
+    blurb: "One typed config file, or none at all; every option has a sensible default.",
     language: "ts",
     code: `import { defineConfig } from "@thexjs/core";
 

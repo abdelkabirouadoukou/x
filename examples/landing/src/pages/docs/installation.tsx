@@ -10,7 +10,7 @@ export default function DocPage(_props: RouteProps) {
       <p className="label">Installation</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Install x</h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        x requires the Bun runtime. Scaffold a new project with the create command, or add the
+        X requires the Bun runtime. Scaffold a new project with the create command, or add the
         packages manually to an existing app.
       </p>
 
@@ -20,10 +20,10 @@ export default function DocPage(_props: RouteProps) {
         <a href="https://bun.sh" className="text-primary underline underline-offset-2">
           Bun
         </a>{" "}
-        first, since x uses <span className="text-foreground">Bun.serve</span>,{" "}
+        first, since X uses <span className="text-foreground">Bun.serve</span>,{" "}
         <span className="text-foreground">Bun.file</span>, and other Bun-only APIs. Verify with:
       </p>
-      <TerminalBlock label="terminal — bun" code="bun --version" />
+      <TerminalBlock label="terminal · bun" code="bun --version" />
 
       <h2 className="text-xl">Create a new project</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
@@ -34,7 +34,7 @@ export default function DocPage(_props: RouteProps) {
         <span className="text-foreground">bun install</span>.
       </p>
       <TerminalBlock
-        label="~/projects — zsh"
+        label="~/projects · zsh"
         code={`bun create thexjs-app@latest my-app
 cd my-app
 bun run dev`}
@@ -45,7 +45,7 @@ bun run dev`}
         <span className="text-foreground">auth</span>,{" "}
         <span className="text-foreground">content</span>,{" "}
         <span className="text-foreground">hooks</span>, and{" "}
-        <span className="text-foreground">shadcn</span> — pick nothing for a plain blank project.
+        <span className="text-foreground">shadcn</span>; pick nothing for a plain blank project.
         Ready-made example apps live under <span className="text-foreground">examples/</span> in the
         repo if you prefer a fuller starting point.
       </p>
@@ -59,7 +59,7 @@ bun run dev`}
         <span className="text-foreground">bun install</span>).
       </p>
       <TerminalBlock
-        label="~/projects — zsh"
+        label="~/projects · zsh"
         code="bun create thexjs-app@latest my-app --tailwind --auth"
       />
 

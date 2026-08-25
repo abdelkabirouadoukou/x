@@ -51,7 +51,8 @@ export default function TryItNow() {
             Run a real X app in seconds.
           </p>
           <p className="mt-4 max-w-[46ch] text-[15.5px] leading-relaxed text-on-slab/70">
-            One command scaffolds a full project — pages, API routes, auth, and the build pipeline.
+            One command scaffolds a complete project: pages, API routes, auth, and the build
+            pipeline.
           </p>
           <div className="cmd-slab mt-8 flex h-[54px] w-full max-w-[30rem] items-stretch [--cut:10px]">
             <code className="readout scroll-none flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap px-5 font-mono text-[15px] text-[#f2f2f0]">

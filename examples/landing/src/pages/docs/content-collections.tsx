@@ -12,8 +12,8 @@ export default function DocPage(_props: RouteProps) {
         Content collections
       </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        Write content in Markdown with frontmatter, and x automatically turns it into pages. Perfect
-        for blogs, documentation, and any content-driven site.
+        Write content in Markdown with frontmatter and X turns it into pages for blogs,
+        documentation, and most other content-driven sites.
       </p>
 
       <h2 className="text-xl">Configuration</h2>
@@ -88,7 +88,7 @@ export default function BlogPost({ loaderData }: RouteProps) {
     <article className="prose max-w-none">
       <h1 className="text-4xl font-bold">{post.frontmatter.title}</h1>
       <p className="text-sm text-muted-foreground">
-        {String(post.frontmatter.date)} — {String(post.frontmatter.author)}
+        {String(post.frontmatter.date)} · {String(post.frontmatter.author)}
       </p>
       <div
         className="mt-8 leading-relaxed"
@@ -105,8 +105,8 @@ export default function BlogPost({ loaderData }: RouteProps) {
         content folder and returns an array of content entries. Each entry includes{" "}
         <span className="text-foreground">slug</span>, <span className="text-foreground">body</span>{" "}
         (the raw markdown), and <span className="text-foreground">frontmatter</span> (parsed YAML).
-        Both this and <span className="text-foreground">renderMarkdown</span> are synchronous — no{" "}
-        <span className="text-foreground">await</span> needed.
+        Both this and <span className="text-foreground">renderMarkdown</span> are synchronous, so no{" "}
+        <span className="text-foreground">await</span> is needed.
       </p>
       <CodeBlock
         label="content entry"

@@ -10,7 +10,7 @@ export default function DocPage(_props: RouteProps) {
       <p className="label">Data Layer</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Data layer</h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        x provides built-in SQLite and PostgreSQL integrations via{" "}
+        X provides built-in SQLite and PostgreSQL integrations via{" "}
         <span className="text-foreground">@thexjs/core/data</span>. Connect to a database, run
         file-based migrations, and query data directly from loaders and server functions.
       </p>
@@ -103,8 +103,8 @@ export { db };`}
       />
       <p className="mt-4 text-muted-foreground">
         <span className="text-foreground">connectPostgres</span> requires Bun and will throw on
-        non-Bun runtimes (such as Vercel's Node functions) — for those, connect with your own
-        Postgres client and pass it around instead.
+        non-Bun runtimes such as Vercel's Node functions. There, connect with your own Postgres
+        client and pass it around instead.
       </p>
 
       <h2 className="text-xl">Migrations</h2>
@@ -139,18 +139,21 @@ export { db };`}
 
       <h2 className="text-xl">Backup &amp; disaster recovery</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        Back up the same data the app actually writes. That is the database plus — if you use{" "}
+        Back up the same data the app actually writes: the database, plus the{" "}
         <a href="/docs/packages/auth" className="text-primary underline underline-offset-2">
           @thexjs/auth
         </a>{" "}
-        — the <span className="text-foreground">x_sessions</span> table. Migrations are not data:
-        the <span className="text-foreground">_x_migrations</span> table records history, so restore
-        the database and let the migration runner verify it's in the state your code expects.
+        <span className="text-foreground">x_sessions</span> table if you use auth. If sessions live
+        in their own SQLite file (the default is{" "}
+        <span className="text-foreground">data/auth.db</span>), that file is part of the backup set
+        too. Migrations are not data: the <span className="text-foreground">_x_migrations</span>{" "}
+        table records history, so restore the database and let the migration runner verify it's in
+        the state your code expects.
       </p>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Two numbers to write down for any plan: <span className="text-foreground">RPO</span> (how
-        much data you can lose — dictates backup frequency) and{" "}
-        <span className="text-foreground">RTO</span> (how fast you must be back — dictates restore
+        much data you can lose; it dictates backup frequency) and{" "}
+        <span className="text-foreground">RTO</span> (how fast you must be back; dictates restore
         procedure). The recipes below give you the mechanics; pick schedule and retention to meet
         your own RPO/RTO.
       </p>
@@ -164,7 +167,7 @@ export { db };`}
           Never copy the <span className="text-foreground">.db</span> file with a plain{" "}
           <span className="text-foreground">cp</span> while the app is running
         </strong>{" "}
-        — you can catch the file mid-write. Three safe options, in order of preference:
+        because you can catch the file mid-write. Three safe options, in order of preference:
       </p>
       <CodeBlock
         label="backup.sqlite.ts (hot backup, no downtime)"
@@ -178,8 +181,8 @@ await db.backup("backups/app-$(date -u +%FT%TZ).db");
 db.close();`}
       />
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        Prefer <span className="text-foreground">db.backup()</span> — it is the only option that is
-        safe with zero coordination. Alternatively, from a separate shell you can use the SQLite
+        Prefer <span className="text-foreground">db.backup()</span>, the only option that is safe
+        with zero coordination. Alternatively, from a separate shell you can use the SQLite
         <span className="text-foreground"> .backup</span> command:
       </p>
       <CodeBlock
@@ -200,8 +203,8 @@ cp data/app.db data/app.db-wal data/app.db-shm backups/
         <span className="text-foreground"> -wal</span>/<span className="text-foreground">-shm</span>{" "}
         files first), then start the app. Because migrations are tracked in{" "}
         <span className="text-foreground">_x_migrations</span>, you can restore to an older snapshot
-        than your current code and the runner will simply apply the missing migrations — but only{" "}
-        <em>forward</em>. Restoring an older snapshot after newer migrations already ran requires
+        than your current code and the runner will simply apply the missing migrations. It only does
+        so <em>forward</em>. Restoring an older snapshot after newer migrations already ran requires
         either re-applying them or restoring a snapshot taken after they applied.
       </p>
 
@@ -245,7 +248,7 @@ pg_restore "$DATABASE_URL" -d "$DATABASE_URL" --clean --if-exists backup.dump`}
           <span className="text-foreground">x_sessions</span>, it is part of the database backup
           automatically. If you ever point auth at a separate session store, add it to the backup
           set. Restoring an older snapshot will log everyone out (sessions created after it don't
-          exist) — plan for a re-auth wave.
+          exist), so plan for a re-auth wave.
         </li>
         <li>
           <strong>Multi-instance deploys:</strong> SQLite is single-node. For two or more app
@@ -266,16 +269,16 @@ pg_restore "$DATABASE_URL" -d "$DATABASE_URL" --clean --if-exists backup.dump`}
           @thexjs/auth
         </a>{" "}
         provides prebuilt credentials and OAuth2 (GitHub) sign-in backed by an{" "}
-        <span className="text-foreground">x_sessions</span> table in SQLite or Postgres — HMAC'd,
-        revocable session tokens, Argon2 password hashing, and automatic CSRF on auth endpoints —
-        instead of hand-rolling your own session store.
+        <span className="text-foreground">x_sessions</span> table in SQLite or Postgres instead of
+        hand-rolling your own session store. Tokens are HMAC'd and revocable, passwords get Argon2
+        hashing, and auth endpoints get automatic CSRF protection.
       </p>
 
       <h2 className="text-xl">Per-request state contract</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        x serves every request in one persistent process, so a loader or action must not stash
-        anything in module-level (file-level) variables — a cache, a counter, a "current user"
-        singleton — because the next concurrent request can see it. Loaders receive their request
+        X serves every request in one persistent process. A loader or action must not stash anything
+        in module-level (file-level) variables, because a cache, a counter, or a "current user"
+        singleton would be visible to the next concurrent request. Loaders receive their request
         context through <span className="text-foreground">LoaderArgs</span> and returned{" "}
         <span className="text-foreground">loaderData</span>; actions receive their arguments; that
         is the whole contract.
@@ -284,11 +287,11 @@ pg_restore "$DATABASE_URL" -d "$DATABASE_URL" --clean --if-exists backup.dump`}
         <li>
           If you need request-scoped context that crosses writes (e.g. a tracing span, a tenant id,
           a user id), key it by the values already in scope or use{" "}
-          <span className="text-foreground">AsyncLocalStorage</span>, which Bun supports natively —
-          the framework itself keeps no shared mutable module state.
+          <span className="text-foreground">AsyncLocalStorage</span>, which Bun supports natively.
+          The framework itself keeps no shared mutable module state.
         </li>
         <li>
-          The internal registries that x does keep (island ids, server-function routes) are scoped
+          The internal registries that X does keep (island ids, server-function routes) are scoped
           per request/rebuild, and the framework ships a concurrency test that hammers N parallel
           requests with distinct identities to prove nothing leaks across requests.
         </li>

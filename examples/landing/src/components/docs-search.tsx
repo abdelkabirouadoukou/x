@@ -307,7 +307,7 @@ export default function DocsSearch() {
                             <span className="block truncate text-[14px] font-medium text-fg">
                               {highlight(h.title)}
                               {h.heading && h.heading !== h.title ? (
-                                <span className="text-fg-faint"> — {h.heading}</span>
+                                <span className="text-fg-faint"> › {h.heading}</span>
                               ) : null}
                             </span>
                             {h.snippet ? (

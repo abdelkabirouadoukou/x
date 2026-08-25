@@ -11,14 +11,14 @@ export default function DocPage(_props: RouteProps) {
         Migrate an existing app to X
       </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        Move a Next.js or TanStack app to x piece by piece. x shares the file-based, React-islands
-        model you already know, so most of your components, loaders, and API routes port over with
-        minimal churn.
+        Move a Next.js or TanStack app to X one step at a time. X shares the file-based,
+        React-islands model you already know, so most of your components, loaders, and API routes
+        port over with minimal churn.
       </p>
 
       <h2 className="text-xl">Conceptual mapping</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        x is built around the same ideas you already use, under slightly different names:
+        X is built around the same ideas you already use, under slightly different names:
       </p>
       <div className="mt-6 overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm">
@@ -94,7 +94,7 @@ cp old-project/x.config.ts . 2>/dev/null || true`}
 
       <h2 className="text-xl">2. Port your data layer</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        Move schemas into versioned SQL migration files and run them at boot. x ships migration
+        Move schemas into versioned SQL migration files and run them at boot. X ships migration
         runners for both SQLite and Postgres that track applied files in a{" "}
         <span className="text-foreground">_x_migrations</span> table:
       </p>
@@ -230,7 +230,7 @@ x build --adapter vercel   # -> .vercel/output Build Output API v3`}
       <h2 className="text-xl">What doesn't change</h2>
       <ul className="mt-3 list-disc space-y-2 pl-5 text-muted-foreground">
         <li>
-          React stays React -- x renders with <span className="text-foreground">react-dom</span>{" "}
+          React stays React. X renders with <span className="text-foreground">react-dom</span>{" "}
           server-side and hydrates islands client-side.
         </li>
         <li>

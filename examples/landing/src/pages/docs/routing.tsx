@@ -12,7 +12,7 @@ export default function DocPage(_props: RouteProps) {
         File-based routing
       </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        x uses the file system as your route table. Drop a file in{" "}
+        X uses the file system as your route table. Drop a file in{" "}
         <span className="text-foreground">src/pages/</span>, get a route.
       </p>
 

@@ -25,7 +25,7 @@ const startSections = [
   {
     icon: BookOpen,
     title: "Introduction",
-    desc: "What x is, how the packages fit together, and a minimal page.",
+    desc: "What X is, how the packages fit together, and a minimal page.",
     href: "/docs/introduction",
   },
   {

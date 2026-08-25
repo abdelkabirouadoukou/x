@@ -20,7 +20,7 @@ const ITEMS: GridItem[] = [
   },
   {
     title: "Islands hydration",
-    copy: "Static by default. Mark exactly what hydrates, ship kilobytes, ship fast.",
+    copy: "Pages ship as static HTML. Mark what hydrates and users download JavaScript only for those parts.",
     href: "/docs/islands",
     stamp: "02",
     cmd: "export const islands",

@@ -10,7 +10,7 @@ export default function DocPage(_props: RouteProps) {
       <p className="label">Security</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Security</h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        x ships with production-grade security guardrails enabled by default: build-time env
+        X ships with production-grade security guardrails enabled by default: build-time env
         isolation, CSRF protection on server actions, security headers on every response, and a
         per-IP rate limiter. All of it is configurable or disableable per environment.
       </p>
@@ -61,8 +61,8 @@ export default defineConfig({
         bundler scans every client-shipped bundle for references to{" "}
         <span className="text-foreground">process.env.*</span>,{" "}
         <span className="text-foreground">Bun.env.*</span>, or{" "}
-        <span className="text-foreground">import.meta.env.*</span> that are not public — and if it
-        finds any, the build halts with an <span className="text-foreground">EnvLeakageError</span>.
+        <span className="text-foreground">import.meta.env.*</span> that are not public. If it finds
+        any, the build halts with an <span className="text-foreground">EnvLeakageError</span>.
       </p>
       <CodeBlock
         label="build error"
@@ -80,8 +80,8 @@ export default defineConfig({
         The low-level pieces are exported too:{" "}
         <span className="text-foreground">findLeakedEnvKeys(code)</span>,{" "}
         <span className="text-foreground">assertNoEnvLeakage(code, file)</span>, and the{" "}
-        <span className="text-foreground">PUBLIC_ENV_PREFIX</span> constant — handy for custom build
-        tooling or CI checks.
+        <span className="text-foreground">PUBLIC_ENV_PREFIX</span> constant: all three are handy for
+        custom build tooling or CI checks.
       </p>
 
       <h2 className="text-xl">CSRF protection</h2>
@@ -96,7 +96,7 @@ export default defineConfig({
           unless CSRF is disabled entirely.
         </li>
         <li>
-          <span className="text-foreground">Double-submit token</span> — when{" "}
+          <span className="text-foreground">Double-submit token</span>: when{" "}
           <span className="text-foreground">requireToken: true</span> is set, a token must be echoed
           in the <span className="text-foreground">x-csrf-token</span> header on mutating requests.
         </li>
@@ -116,7 +116,7 @@ export default defineConfig({
       <p className="mt-2 text-muted-foreground">
         The token cookie is <span className="text-foreground">not</span> set automatically: your app
         sets it once, typically when a session starts (a login route), by wrapping the response with{" "}
-        <span className="text-foreground">withCsrfCookie</span> — or generate one yourself with{" "}
+        <span className="text-foreground">withCsrfCookie</span>, or by generating one yourself with{" "}
         <span className="text-foreground">generateCsrfToken</span>. From the browser, read the
         cookie and echo it on every POST to <span className="text-foreground">/__x/actions/*</span>:
       </p>
@@ -201,7 +201,7 @@ await fetch("/__x/actions/greet/greet", {
       <h2 className="text-xl">Rate limiting</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         A lightweight fixed-window rate limiter is applied ahead of all routing. Buckets are keyed
-        by the client's real IP — resolved from the underlying socket (Bun{" "}
+        by the client's real IP, resolved from the underlying socket (Bun{" "}
         <span className="text-foreground">server.requestIP</span>), falling back to{" "}
         <span className="text-foreground">x-forwarded-for</span> /{" "}
         <span className="text-foreground">x-real-ip</span>. When the limit is exceeded, the server
