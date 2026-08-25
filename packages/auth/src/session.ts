@@ -83,7 +83,13 @@ export function createSQLiteSessionStore(options: SQLiteSessionStoreOptions = {}
   return {
     async create(session) {
       db.run(
-        "INSERT OR REPLACE INTO x_sessions (token, user_id, provider, user_data, expires_at, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        `INSERT INTO x_sessions (token, user_id, provider, user_data, expires_at, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+         ON CONFLICT (token) DO UPDATE SET
+           user_id  = excluded.user_id,
+           provider = excluded.provider,
+           user_data = excluded.user_data,
+           expires_at = excluded.expires_at`,
         [
           session.token,
           session.userId,
