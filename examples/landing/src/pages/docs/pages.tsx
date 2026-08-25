@@ -12,7 +12,7 @@ export default function DocPage(_props: RouteProps) {
         Pages &amp; loaders
       </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        x supports two page modes, static prerendering and server-side rendering, both powered by
+        X supports two page modes, static prerendering and server-side rendering, both powered by
         loaders.
       </p>
 
@@ -113,7 +113,7 @@ export default function ProductDetail({ loaderData }: RouteProps) {
         <span className="text-foreground">params</span> (a{" "}
         <span className="text-foreground">Record&lt;string, string&gt;</span> of dynamic segments)
         and <span className="text-foreground">loaderData</span> (the loader's return value). It is a
-        plain non-generic type — cast loader data to its shape if you want inline types.
+        plain non-generic type, so cast loader data to its shape if you want inline types.
       </p>
       <CodeBlock
         label="type usage"
@@ -140,7 +140,7 @@ export default function ProductDetail({
 }`}
       />
 
-      <h2 className="text-xl">Streaming SSR — renderStreamingPage</h2>
+      <h2 className="text-xl">Streaming SSR with renderStreamingPage</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Server pages render fully before responding. When a page depends on slow data,{" "}
         <span className="text-foreground">renderStreamingPage(node, options)</span> flips that: it

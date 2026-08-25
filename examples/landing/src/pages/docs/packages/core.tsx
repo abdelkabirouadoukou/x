@@ -139,7 +139,7 @@ export default function Page() {
         In dev, <span className="text-foreground">createApp</span> writes{" "}
         <span className="text-foreground">src/x-routes.ts</span> with a{" "}
         <span className="text-foreground">RouteMap</span> type and a typed{" "}
-        <span className="text-foreground">href()</span> helper — routes can't drift from your file
+        <span className="text-foreground">href()</span> helper, so routes can't drift from your file
         tree, and dynamic segments are checked at compile time. Do not edit the file by hand.
       </p>
       <CodeBlock

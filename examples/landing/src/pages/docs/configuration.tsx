@@ -10,14 +10,14 @@ export default function DocPage(_props: RouteProps) {
       <p className="label">Configuration</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">Configuration</h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        Configure x via <span className="text-foreground">x.config.ts</span> at your project root.
+        Configure X via <span className="text-foreground">x.config.ts</span> at your project root.
         Use <span className="text-foreground">defineConfig</span> from{" "}
         <span className="text-foreground">@thexjs/core</span> for type-safe configuration.
       </p>
 
       <h2 className="text-xl">defineConfig</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        All configuration options are optional. x provides sensible defaults so you can start with
+        All configuration options are optional. X provides sensible defaults so you can start with
         zero configuration and add settings as needed.
       </p>
       <CodeBlock
@@ -115,7 +115,7 @@ images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The directory for server functions. Exported async functions can be called from the browser
         via <span className="text-foreground">fetch('/__x/actions/...')</span>. If you don't set
-        this, x auto-detects a <span className="text-foreground">src/actions</span> directory.
+        this, X auto-detects a <span className="text-foreground">src/actions</span> directory.
       </p>
 
       <h2 className="text-xl">contentDir</h2>

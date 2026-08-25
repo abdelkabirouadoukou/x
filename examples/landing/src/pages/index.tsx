@@ -32,7 +32,7 @@ export default function HomePage() {
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-subtle px-3 py-1 text-[12px] font-medium text-fg-muted">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              New — x 1.3 islands to disk, image proxy
+              New in X 1.3: islands to disk and an image proxy
             </span>
 
             <h1 className="display mt-5 text-[clamp(2.4rem,5.5vw,3.9rem)]">
@@ -40,8 +40,8 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-5 max-w-[46ch] text-[1.09rem] leading-relaxed text-fg-muted">
-              x is a fullstack React framework for Bun. Your folder structure is the router, your
-              API lives beside your pages, and everything — static, SSR, server functions — runs in{" "}
+              X is a fullstack React framework for Bun. Your folder structure is the router, your
+              API lives beside your pages, and static pages, SSR, and server functions all run in{" "}
               <span className="text-fg">one process</span>.
             </p>
 
@@ -97,8 +97,8 @@ export default function HomePage() {
             From zero to a running app in 60 seconds.
           </h2>
           <p className="mt-4 max-w-[42ch] text-[15.5px] leading-relaxed text-fg-muted">
-            Follow the tour through the five moments that matter — scaffold, routes, APIs, data,
-            deploy — in one living terminal.
+            The tour plays through the five steps where a framework either earns its keep or
+            doesn't: scaffolding, routes, APIs, data, and deploys. One terminal, no cuts.
           </p>
         </div>
         <div className="mt-12">
@@ -119,7 +119,7 @@ export default function HomePage() {
           <div>
             <p className="label">Speed</p>
             <h2 className="display mt-4 text-[clamp(2rem,4.5vw,3rem)]">
-              It's fast. The numbers are the point.
+              It's fast. Here's the evidence.
             </h2>
             <p className="mt-4 max-w-[38ch] text-[15.5px] leading-relaxed text-fg-muted">
               Every step below has been measured against the same page source on the same machine.
@@ -143,7 +143,7 @@ export default function HomePage() {
               Everything you need is already there.
             </h2>
             <p className="mt-4 text-[15.5px] leading-relaxed text-fg-muted">
-              Routes, data, auth, content, config — each one is a small, typed API that reads like
+              Routes, data, auth, content, and config each expose a small typed API that reads like
               the file it lives in.
             </p>
           </div>

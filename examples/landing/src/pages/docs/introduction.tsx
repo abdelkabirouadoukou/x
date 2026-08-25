@@ -8,9 +8,9 @@ export default function DocPage(_props: RouteProps) {
   return (
     <div>
       <p className="label">Introduction</p>
-      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">What is x?</h1>
+      <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">What is X?</h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        x is a full-stack React framework built on{" "}
+        X is a full-stack React framework built on{" "}
         <a href="https://bun.sh" className="text-primary underline underline-offset-2">
           Bun
         </a>
@@ -18,10 +18,10 @@ export default function DocPage(_props: RouteProps) {
         content layer all live in one process, with zero orchestration.
       </p>
 
-      <h2 className="text-xl">Why x exists</h2>
+      <h2 className="text-xl">Why X exists</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Most stacks split concerns across multiple tools: a bundler, a server, a static host, a
-        separate API layer. x keeps everything in one Bun process. Drop a file in{" "}
+        separate API layer. X keeps everything in one Bun process. Drop a file in{" "}
         <span className="text-foreground">src/pages</span>, get a route. Mark a page{" "}
         <span className="text-foreground">static</span> and it prerenders at build time. Leave it as
         server mode and it renders per request. API routes and server functions live alongside your
@@ -30,7 +30,7 @@ export default function DocPage(_props: RouteProps) {
 
       <h2 className="text-xl">The packages</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        x ships as a set of focused npm packages. You typically install{" "}
+        X ships as a set of focused npm packages. You typically install{" "}
         <span className="text-foreground">@thexjs/cli</span> and{" "}
         <span className="text-foreground">@thexjs/core</span> through the project scaffolder; add{" "}
         <span className="text-foreground">@thexjs/env</span> when you need validated environment
@@ -73,7 +73,7 @@ export default function DocPage(_props: RouteProps) {
 
       <h2 className="text-xl">A minimal page</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        Every x app starts with file-based routes. Here is the simplest possible page:
+        Every X app starts with file-based routes. Here is the simplest possible page:
       </p>
       <CodeBlock
         label="src/pages/index.tsx"
@@ -106,7 +106,7 @@ export default function HomePage({}: RouteProps) {
           href="/docs/installation"
           className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
         >
-          Install x <ArrowRight className="h-3.5 w-3.5" />
+          Install X <ArrowRight className="h-3.5 w-3.5" />
         </a>
         <a
           href="/docs"

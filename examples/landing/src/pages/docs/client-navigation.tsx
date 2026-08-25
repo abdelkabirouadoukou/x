@@ -12,7 +12,7 @@ export default function DocPage(_props: RouteProps) {
         Client Navigation &amp; Images
       </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        Every plain <span className="text-foreground">&lt;a&gt;</span> tag on an x site already
+        Every plain <span className="text-foreground">&lt;a&gt;</span> tag on an X site already
         navigates client-side, with no router setup required. This page covers that behavior, the{" "}
         <span className="text-foreground">&lt;Link&gt;</span> convenience component, the built-in
         remote image proxy, and the two error surfaces (dev overlay, 404 page).
@@ -123,8 +123,8 @@ const imageProxy = createImageProxyHandler({
         For a remote <span className="text-foreground">src</span> whose host is in{" "}
         <span className="text-foreground">images.remoteHosts</span>, the generated{" "}
         <span className="text-foreground">srcSet</span> re-serves the image through the proxy at
-        each breakpoint in <span className="text-foreground">SRCSET_WIDTHS</span> — a host that
-        isn't allow-listed 403s at request time, and warns in dev:
+        each breakpoint in <span className="text-foreground">SRCSET_WIDTHS</span>. A host that isn't
+        allow-listed 403s at request time, and warns in dev:
       </p>
       <CodeBlock
         label="SRCSET_WIDTHS"
@@ -142,7 +142,7 @@ const imageProxy = createImageProxyHandler({
         its parent (nice for hero/card layouts, exclusive with width/height), and{" "}
         <span className="text-foreground">placeholder="blur"</span> with{" "}
         <span className="text-foreground">blurDataURL</span> shows a tiny base64 blur that fades out
-        on load — CSS-only, no JavaScript island required.
+        on load. It is CSS-only; no JavaScript island is required.
       </p>
 
       <h2 className="text-xl">Dev error overlay</h2>
@@ -157,7 +157,7 @@ const imageProxy = createImageProxyHandler({
       <h2 className="text-xl">404 handling</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Drop a <span className="text-foreground">src/pages/_404.tsx</span> to customize the
-        site-wide not-found page. If you don't provide one, x falls back to{" "}
+        site-wide not-found page. If you don't provide one, X falls back to{" "}
         <span className="text-foreground">DefaultNotFound</span>, a minimal built-in page, so every
         project has a sane 404 without extra setup.
       </p>

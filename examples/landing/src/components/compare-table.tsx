@@ -24,7 +24,7 @@ const ROWS: Row[] = [
     x: 1,
     nextjs: 0,
     astro: 1,
-    note: "Next.js hydrates whole components via client boundaries; x and Astro hydrate islands in place.",
+    note: "Next.js hydrates whole components via client boundaries; X and Astro hydrate islands in place.",
   },
   { feature: "ISR / revalidate on a timer", link: "/docs/isr", x: 1, nextjs: 1, astro: 0 },
   {
@@ -90,7 +90,7 @@ const ROWS: Row[] = [
     astro: 1,
   },
   {
-    feature: "Layered — no server for static export",
+    feature: "Layered, no server for static export",
     link: "/docs/build-deploy",
     x: 1,
     nextjs: 1,

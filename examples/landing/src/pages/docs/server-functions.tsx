@@ -42,8 +42,8 @@ export async function sendEmail({ to, subject, body }: {
 
       <p className="mt-3 text-sm text-muted-foreground">
         Or register a map in one shot with{" "}
-        <span className="text-foreground">export const actions</span> — handy for grouping several
-        functions under one file. This also works in{" "}
+        <span className="text-foreground">export const actions</span>, which is handy for grouping
+        several functions under one file. This also works in{" "}
         <span className="text-foreground">src/api/</span> files and page files, so a{" "}
         <span className="text-foreground">greet.ts</span> with no page component still registers its
         actions.

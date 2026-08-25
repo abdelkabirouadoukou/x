@@ -10,8 +10,8 @@ export default function DocPage(_props: RouteProps) {
       <p className="label">Packages</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.6rem)] leading-[0.95]">@thexjs/auth</h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        Plug-and-play authentication for X apps. Add credentials (username/password) and OAuth2 —
-        including a preconfigured GitHub provider — with one{" "}
+        Plug-and-play authentication for X apps. Add credentials (username/password) and OAuth2,
+        including a preconfigured GitHub provider, with one{" "}
         <span className="text-foreground">defineAuth()</span> call, a sessions table in SQLite or
         Postgres via the framework's data layer, and a single catch-all API route.
       </p>
@@ -71,7 +71,7 @@ export async function GET(req: Request) {
       />
       <p className="mt-4 text-muted-foreground">
         Create users at sign-up with <span className="text-foreground">hashPassword</span>{" "}
-        (Argon2id) and store the hash — never plaintext:
+        (Argon2id) and store the hash, never the plaintext:
       </p>
       <CodeBlock
         label="signup"
@@ -125,31 +125,31 @@ session.user; // { id, name?, email? } snapshot from sign-in`}
       <h2 className="text-xl">Security</h2>
       <ul className="mt-3 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
-          <span className="text-foreground">Passwords</span> — Argon2id via{" "}
+          <span className="text-foreground">Passwords</span> are Argon2id via{" "}
           <span className="text-foreground">Bun.password</span> ({" "}
           <span className="text-foreground">hashPassword</span> /{" "}
           <span className="text-foreground">verifyPassword</span>).
         </li>
         <li>
-          <span className="text-foreground">Session tokens</span> — opaque random strings; only an
-          HMAC-SHA256 digest (keyed by <span className="text-foreground">secret</span>) is stored,
-          so a database leak doesn't expose usable session cookies. Tokens are random 128-bit
-          values, revocable, and expire after <span className="text-foreground">sessionMaxAge</span>{" "}
-          (default 7 days).
+          <span className="text-foreground">Session tokens</span> are opaque random stringss; only
+          an HMAC-SHA256 digest (keyed by <span className="text-foreground">secret</span>) is
+          stored, so a database leak doesn't expose usable session cookies. Tokens are random
+          128-bit values, revocable, and expire after{" "}
+          <span className="text-foreground">sessionMaxAge</span> (default 7 days).
         </li>
         <li>
-          <span className="text-foreground">OAuth state</span> — an{" "}
+          <span className="text-foreground">OAuth state</span> uses an{" "}
           <span className="text-foreground">x_oauth_state</span> cookie challenge must match the{" "}
           <span className="text-foreground">state</span> param on the callback (HMAC'd, 5-minute
           expiry), preventing login-CSRF and session-fixation via crafted callbacks.
         </li>
         <li>
-          <span className="text-foreground">CSRF</span> — POST endpoints ({" "}
+          <span className="text-foreground">CSRF</span>: POST endpoints ({" "}
           <span className="text-foreground">signin</span>,{" "}
           <span className="text-foreground">signout</span> ) run the core{" "}
-          <span className="text-foreground">checkCsrf</span> automatically — Origin/Referer
-          verification by default, or <span className="text-foreground">requireToken</span> for
-          double-submit defense in depth — and reject non-conforming requests with{" "}
+          <span className="text-foreground">checkCsrf</span> automatically: Origin/Referer
+          verification by default, or <span className="text-foreground">requireToken</span> for or
+          double-submit defense in depth, and it rejects non-conforming requests with{" "}
           <span className="text-foreground">403</span>. See{" "}
           <a href="/docs/security" className="text-primary underline underline-offset-2">
             Security
@@ -157,7 +157,7 @@ session.user; // { id, name?, email? } snapshot from sign-in`}
           for how the module is configured.
         </li>
         <li>
-          <span className="text-foreground">Cookies</span> —{" "}
+          <span className="text-foreground">Cookies</span> are{" "}
           <span className="text-foreground">HttpOnly</span>,{" "}
           <span className="text-foreground">SameSite=Lax</span>,{" "}
           <span className="text-foreground">Secure</span> in production.

@@ -55,7 +55,7 @@ const STEPS: TourStep[] = [
     title: "Add an API route",
     command: "$ touch src/api/hello.ts",
     description:
-      "REST endpoints live beside your pages. The same request lifecycle, the same process — no separate API server to stand up.",
+      "REST endpoints live beside your pages and share the request lifecycle and the process. There is no separate API server to stand up.",
     docs: "/docs/api-routes",
     lines: [
       { kind: "prompt", text: "code src/api/hello.ts" },
@@ -214,7 +214,7 @@ export default function Tour() {
             <span className="traffic" />
             <span className="traffic" />
             <span className="traffic" />
-            <span className="ml-3 font-mono text-[11.5px] text-white/40">~/my-app — bun</span>
+            <span className="ml-3 font-mono text-[11.5px] text-white/40">~/my-app · bun</span>
             <span className="ml-auto font-mono text-[11px] text-white/30">
               {String(active + 1).padStart(2, "0")} / 05
             </span>

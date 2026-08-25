@@ -103,7 +103,7 @@
         },
         {
           "kind": "p",
-          "text": "x produces optimized production builds: prerendered HTML, island bundles, and a server entry point, all in one command.",
+          "text": "X produces optimized production builds: prerendered HTML, island bundles, and a server entry point, all in one command.",
           "anchor": ""
         },
         {
@@ -168,7 +168,7 @@
         },
         {
           "kind": "p",
-          "text": "Bust the cache programmatically with a POST to /__x/revalidate — send { \"path\": \"/pricing\" } to revalidate one page or an empty body to clear the whole cache.",
+          "text": "Bust the cache programmatically with a POST to /__x/revalidate and send { \"path\": \"/pricing\" } to revalidate one page or an empty body to clear the whole cache.",
           "anchor": ""
         },
         {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "p",
-          "text": "Every plain tag on an x site already navigates client-side, with no router setup required. This page covers that behavior, the convenience component, the built-in remote image proxy, and the two error surfaces (dev overlay, 404 page).",
+          "text": "Every plain tag on an X site already navigates client-side, with no router setup required. This page covers that behavior, the convenience component, the built-in remote image proxy, and the two error surfaces (dev overlay, 404 page).",
           "anchor": ""
         },
         {
@@ -349,7 +349,7 @@
         },
         {
           "kind": "p",
-          "text": "For a remote src whose host is in images.remoteHosts , the generated srcSet re-serves the image through the proxy at each breakpoint in SRCSET_WIDTHS — a host that isn&#x27;t allow-listed 403s at request time, and warns in dev:",
+          "text": "For a remote src whose host is in images.remoteHosts , the generated srcSet re-serves the image through the proxy at each breakpoint in SRCSET_WIDTHS . A host that isn&#x27;t allow-listed 403s at request time, and warns in dev:",
           "anchor": ""
         },
         {
@@ -359,7 +359,7 @@
         },
         {
           "kind": "p",
-          "text": "Build that string manually with buildSrcSet(src, opts) when you need custom behavior. Beyond responsive sizing, priority sets fetchPriority=\"high\" on LCP images (everything else lazy-loads), fill absolutely positions the image in its parent (nice for hero/card layouts, exclusive with width/height), and placeholder=\"blur\" with blurDataURL shows a tiny base64 blur that fades out on load — CSS-only, no JavaScript island required.",
+          "text": "Build that string manually with buildSrcSet(src, opts) when you need custom behavior. Beyond responsive sizing, priority sets fetchPriority=\"high\" on LCP images (everything else lazy-loads), fill absolutely positions the image in its parent (nice for hero/card layouts, exclusive with width/height), and placeholder=\"blur\" with blurDataURL shows a tiny base64 blur that fades out on load. It is CSS-only; no JavaScript island is required.",
           "anchor": ""
         },
         {
@@ -379,7 +379,7 @@
         },
         {
           "kind": "p",
-          "text": "Drop a src/pages/_404.tsx to customize the site-wide not-found page. If you don&#x27;t provide one, x falls back to DefaultNotFound , a minimal built-in page, so every project has a sane 404 without extra setup.",
+          "text": "Drop a src/pages/_404.tsx to customize the site-wide not-found page. If you don&#x27;t provide one, X falls back to DefaultNotFound , a minimal built-in page, so every project has a sane 404 without extra setup.",
           "anchor": ""
         },
         {
@@ -405,7 +405,7 @@
         },
         {
           "kind": "p",
-          "text": "Configure x via x.config.ts at your project root. Use defineConfig from @thexjs/core for type-safe configuration.",
+          "text": "Configure X via x.config.ts at your project root. Use defineConfig from @thexjs/core for type-safe configuration.",
           "anchor": ""
         },
         {
@@ -415,7 +415,7 @@
         },
         {
           "kind": "p",
-          "text": "All configuration options are optional. x provides sensible defaults so you can start with zero configuration and add settings as needed.",
+          "text": "All configuration options are optional. X provides sensible defaults so you can start with zero configuration and add settings as needed.",
           "anchor": ""
         },
         {
@@ -460,7 +460,7 @@
         },
         {
           "kind": "p",
-          "text": "The directory for server functions. Exported async functions can be called from the browser via fetch(&#x27;/__x/actions/...&#x27;) . If you don&#x27;t set this, x auto-detects a src/actions directory.",
+          "text": "The directory for server functions. Exported async functions can be called from the browser via fetch(&#x27;/__x/actions/...&#x27;) . If you don&#x27;t set this, X auto-detects a src/actions directory.",
           "anchor": ""
         },
         {
@@ -541,7 +541,7 @@
         },
         {
           "kind": "p",
-          "text": "Write content in Markdown with frontmatter, and x automatically turns it into pages. Perfect for blogs, documentation, and any content-driven site.",
+          "text": "Write content in Markdown with frontmatter and X turns it into pages, which covers blogs, documentation, and most other content-driven sites.",
           "anchor": ""
         },
         {
@@ -591,7 +591,7 @@
         },
         {
           "kind": "p",
-          "text": "scanContent(directory) scans a subdirectory of your content folder and returns an array of content entries. Each entry includes slug , body (the raw markdown), and frontmatter (parsed YAML). Both this and renderMarkdown are synchronous — no await needed.",
+          "text": "scanContent(directory) scans a subdirectory of your content folder and returns an array of content entries. Each entry includes slug , body (the raw markdown), and frontmatter (parsed YAML). Both this and renderMarkdown are synchronous, so no await is needed.",
           "anchor": ""
         },
         {
@@ -637,7 +637,7 @@
         },
         {
           "kind": "p",
-          "text": "x provides built-in SQLite and PostgreSQL integrations via @thexjs/core/data . Connect to a database, run file-based migrations, and query data directly from loaders and server functions.",
+          "text": "X provides built-in SQLite and PostgreSQL integrations via @thexjs/core/data . Connect to a database, run file-based migrations, and query data directly from loaders and server functions.",
           "anchor": ""
         },
         {
@@ -682,7 +682,7 @@
         },
         {
           "kind": "p",
-          "text": "connectPostgres requires Bun and will throw on non-Bun runtimes (such as Vercel&#x27;s Node functions) — for those, connect with your own Postgres client and pass it around instead.",
+          "text": "connectPostgres requires Bun and will throw on non-Bun runtimes such as Vercel&#x27;s Node functions. There, connect with your own Postgres client and pass it around instead.",
           "anchor": ""
         },
         {
@@ -717,12 +717,12 @@
         },
         {
           "kind": "p",
-          "text": "Back up the same data the app actually writes. That is the database plus — if you use @thexjs/auth — the x_sessions table. Migrations are not data: the _x_migrations table records history, so restore the database and let the migration runner verify it&#x27;s in the state your code expects.",
+          "text": "Back up the same data the app actually writes: the database, plus the @thexjs/auth x_sessions table if you use auth. Migrations are not data: the _x_migrations table records history, so restore the database and let the migration runner verify it&#x27;s in the state your code expects.",
           "anchor": ""
         },
         {
           "kind": "p",
-          "text": "Two numbers to write down for any plan: RPO (how much data you can lose — dictates backup frequency) and RTO (how fast you must be back — dictates restore procedure). The recipes below give you the mechanics; pick schedule and retention to meet your own RPO/RTO.",
+          "text": "Two numbers to write down for any plan: RPO (how much data you can lose; it dictates backup frequency) and RTO (how fast you must be back; dictates restore procedure). The recipes below give you the mechanics; pick schedule and retention to meet your own RPO/RTO.",
           "anchor": ""
         },
         {
@@ -732,7 +732,7 @@
         },
         {
           "kind": "p",
-          "text": "connectSQLite enables WAL mode, which is exactly what you want for backups: it allows a safe, consistent file snapshot while the app keeps writing. Never copy the .db file with a plain cp while the app is running — you can catch the file mid-write. Three safe options, in order of preference:",
+          "text": "connectSQLite enables WAL mode, which is exactly what you want for backups: it allows a safe, consistent file snapshot while the app keeps writing. Never copy the .db file with a plain cp while the app is running because you can catch the file mid-write. Three safe options, in order of preference:",
           "anchor": ""
         },
         {
@@ -742,7 +742,7 @@
         },
         {
           "kind": "p",
-          "text": "Prefer db.backup() — it is the only option that is safe with zero coordination. Alternatively, from a separate shell you can use the SQLite .backup command:",
+          "text": "Prefer db.backup() , the only option that is safe with zero coordination. Alternatively, from a separate shell you can use the SQLite .backup command:",
           "anchor": ""
         },
         {
@@ -752,7 +752,7 @@
         },
         {
           "kind": "p",
-          "text": "Restore is the reverse: stop the app, copy the snapshot back (removing any stale -wal / -shm files first), then start the app. Because migrations are tracked in _x_migrations , you can restore to an older snapshot than your current code and the runner will simply apply the missing migrations — but only forward . Restoring an older snapshot after newer migrations already ran requires either re-applying them or restoring a snapshot taken after they applied.",
+          "text": "Restore is the reverse: stop the app, copy the snapshot back (removing any stale -wal / -shm files first), then start the app. Because migrations are tracked in _x_migrations , you can restore to an older snapshot than your current code and the runner will simply apply the missing migrations. It only forward . Restoring an older snapshot after newer migrations already ran requires either re-applying them or restoring a snapshot taken after they applied.",
           "anchor": ""
         },
         {
@@ -792,7 +792,7 @@
         },
         {
           "kind": "li",
-          "text": "Back up sessions too. If @thexjs/auth backs sessions with x_sessions , it is part of the database backup automatically. If you ever point auth at a separate session store, add it to the backup set. Restoring an older snapshot will log everyone out (sessions created after it don&#x27;t exist) — plan for a re-auth wave.",
+          "text": "Back up sessions too. If @thexjs/auth backs sessions with x_sessions , it is part of the database backup automatically. If you ever point auth at a separate session store, add it to the backup set. Restoring an older snapshot will log everyone out (sessions created after it don&#x27;t exist), so plan for a re-auth wave.",
           "anchor": ""
         },
         {
@@ -812,7 +812,7 @@
         },
         {
           "kind": "p",
-          "text": "If you need sessions on top of this, @thexjs/auth provides prebuilt credentials and OAuth2 (GitHub) sign-in backed by an x_sessions table in SQLite or Postgres — HMAC&#x27;d, revocable session tokens, Argon2 password hashing, and automatic CSRF on auth endpoints — instead of hand-rolling your own session store.",
+          "text": "If you need sessions on top of this, @thexjs/auth provides prebuilt credentials and OAuth2 (GitHub) sign-in backed by an x_sessions table in SQLite or Postgres instead of hand-rolling your own session store. Tokens are HMAC&#x27;d and revocable, passwords get Argon2 hashing, and auth endpoints get automatic CSRF protection.",
           "anchor": ""
         },
         {
@@ -822,17 +822,17 @@
         },
         {
           "kind": "p",
-          "text": "x serves every request in one persistent process, so a loader or action must not stash anything in module-level (file-level) variables — a cache, a counter, a \"current user\" singleton — because the next concurrent request can see it. Loaders receive their request context through LoaderArgs and returned loaderData ; actions receive their arguments; that is the whole contract.",
+          "text": "X serves every request in one persistent process. A loader or action must not stash anything in module-level (file-level) variables, because a cache, a counter, or a \"current user\" singleton would be visible to the next concurrent request. Loaders receive their request context through LoaderArgs and returned loaderData ; actions receive their arguments; that is the whole contract.",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "If you need request-scoped context that crosses writes (e.g. a tracing span, a tenant id, a user id), key it by the values already in scope or use AsyncLocalStorage , which Bun supports natively — the framework itself keeps no shared mutable module state.",
+          "text": "If you need request-scoped context that crosses writes (e.g. a tracing span, a tenant id, a user id), key it by the values already in scope or use AsyncLocalStorage , which Bun supports natively. The framework itself keeps no shared mutable module state.",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "The internal registries that x does keep (island ids, server-function routes) are scoped per request/rebuild, and the framework ships a concurrency test that hammers N parallel requests with distinct identities to prove nothing leaks across requests.",
+          "text": "The internal registries that X does keep (island ids, server-function routes) are scoped per request/rebuild, and the framework ships a concurrency test that hammers N parallel requests with distinct identities to prove nothing leaks across requests.",
           "anchor": ""
         }
       ]
@@ -974,7 +974,7 @@
         },
         {
           "kind": "p",
-          "text": "What x is, how the packages fit together, and a minimal page.",
+          "text": "What X is, how the packages fit together, and a minimal page.",
           "anchor": ""
         },
         {
@@ -1255,7 +1255,7 @@
         },
         {
           "kind": "p",
-          "text": "x requires the Bun runtime. Scaffold a new project with the create command, or add the packages manually to an existing app.",
+          "text": "X requires the Bun runtime. Scaffold a new project with the create command, or add the packages manually to an existing app.",
           "anchor": ""
         },
         {
@@ -1265,7 +1265,7 @@
         },
         {
           "kind": "p",
-          "text": "Install Bun first, since x uses Bun.serve , Bun.file , and other Bun-only APIs. Verify with:",
+          "text": "Install Bun first, since X uses Bun.serve , Bun.file , and other Bun-only APIs. Verify with:",
           "anchor": ""
         },
         {
@@ -1290,7 +1290,7 @@
         },
         {
           "kind": "p",
-          "text": "The scaffolder is feature-based: it prompts with a multi-select of tailwind , auth , content , hooks , and shadcn — pick nothing for a plain blank project. Ready-made example apps live under examples/ in the repo if you prefer a fuller starting point.",
+          "text": "The scaffolder is feature-based: it prompts with a multi-select of tailwind , auth , content , hooks , and shadcn ; pick nothing for a plain blank project. Ready-made example apps live under examples/ in the repo if you prefer a fuller starting point.",
           "anchor": ""
         },
         {
@@ -1372,7 +1372,7 @@
     },
     {
       "route": "/docs/introduction",
-      "title": "What is x?",
+      "title": "What is X?",
       "blocks": [
         {
           "kind": "p",
@@ -1381,22 +1381,22 @@
         },
         {
           "kind": "h1",
-          "text": "What is x?",
+          "text": "What is X?",
           "anchor": ""
         },
         {
           "kind": "p",
-          "text": "x is a full-stack React framework built on Bun . File-based routing, SSR, static generation, API routes, server functions, islands, and a content layer all live in one process, with zero orchestration.",
+          "text": "X is a full-stack React framework built on Bun . File-based routing, SSR, static generation, API routes, server functions, islands, and a content layer all live in one process, with zero orchestration.",
           "anchor": ""
         },
         {
           "kind": "h2",
-          "text": "Why x exists",
+          "text": "Why X exists",
           "anchor": "#sec-0"
         },
         {
           "kind": "p",
-          "text": "Most stacks split concerns across multiple tools: a bundler, a server, a static host, a separate API layer. x keeps everything in one Bun process. Drop a file in src/pages , get a route. Mark a page static and it prerenders at build time. Leave it as server mode and it renders per request. API routes and server functions live alongside your pages, with the same types and the same runtime.",
+          "text": "Most stacks split concerns across multiple tools: a bundler, a server, a static host, a separate API layer. X keeps everything in one Bun process. Drop a file in src/pages , get a route. Mark a page static and it prerenders at build time. Leave it as server mode and it renders per request. API routes and server functions live alongside your pages, with the same types and the same runtime.",
           "anchor": ""
         },
         {
@@ -1406,7 +1406,7 @@
         },
         {
           "kind": "p",
-          "text": "x ships as a set of focused npm packages. You typically install @thexjs/cli and @thexjs/core through the project scaffolder; add @thexjs/env when you need validated environment variables, @thexjs/hooks for SSR-safe React hooks, and @thexjs/adapter-vercel to deploy to Vercel.",
+          "text": "X ships as a set of focused npm packages. You typically install @thexjs/cli and @thexjs/core through the project scaffolder; add @thexjs/env when you need validated environment variables, @thexjs/hooks for SSR-safe React hooks, and @thexjs/adapter-vercel to deploy to Vercel.",
           "anchor": ""
         },
         {
@@ -1456,7 +1456,7 @@
         },
         {
           "kind": "p",
-          "text": "Every x app starts with file-based routes. Here is the simplest possible page:",
+          "text": "Every X app starts with file-based routes. Here is the simplest possible page:",
           "anchor": ""
         },
         {
@@ -1552,17 +1552,17 @@
         },
         {
           "kind": "li",
-          "text": "client=\"visible\" — hydrate when the island scrolls into view. Good for content below the fold.",
+          "text": "client=\"visible\" hydrates when the island scrolls into view. Good for content below the fold.",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "client=\"idle\" — hydrate when the browser goes idle. Good for widgets the user isn&#x27;t waiting on.",
+          "text": "client=\"idle\" hydrates when the browser goes idle. Good for widgets the user isn&#x27;t waiting on.",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "client=\"load\" — hydrate immediately on page load. Use for the first thing the user interacts with.",
+          "text": "client=\"load\" hydrates immediately on page load. Use for the first thing the user interacts with.",
           "anchor": ""
         },
         {
@@ -1572,7 +1572,7 @@
         },
         {
           "kind": "p",
-          "text": "At build time x bundles each island separately, server-renders the page to static HTML with the island&#x27;s markup inline, and drops in a small loader script. In the browser the loader fetches the island&#x27;s chunk on demand and hydrates only that subtree. Islands can be nested and reused across routes; each registered component gets exactly one entry per route.",
+          "text": "At build time X bundles each island separately, server-renders the page to static HTML with the island&#x27;s markup inline, and drops in a small loader script. In the browser the loader fetches the island&#x27;s chunk on demand and hydrates only that subtree. Islands can be nested and reused across routes; each registered component gets exactly one entry per route.",
           "anchor": ""
         }
       ]
@@ -1669,7 +1669,7 @@
         },
         {
           "kind": "p",
-          "text": "Layouts wrap your pages with shared UI. x supports nested layouts via a dedicated layouts directory and the _layout.tsx convention.",
+          "text": "Layouts wrap your pages with shared UI. X supports nested layouts via a dedicated layouts directory and the _layout.tsx convention.",
           "anchor": ""
         },
         {
@@ -1871,7 +1871,7 @@
         },
         {
           "kind": "p",
-          "text": "Move a Next.js or TanStack app to x piece by piece. x shares the file-based, React-islands model you already know, so most of your components, loaders, and API routes port over with minimal churn.",
+          "text": "Move a Next.js or TanStack app to X one step at a time. X shares the file-based, React-islands model you already know, so most of your components, loaders, and API routes port over with minimal churn.",
           "anchor": ""
         },
         {
@@ -1881,7 +1881,7 @@
         },
         {
           "kind": "p",
-          "text": "x is built around the same ideas you already use, under slightly different names:",
+          "text": "X is built around the same ideas you already use, under slightly different names:",
           "anchor": ""
         },
         {
@@ -1906,7 +1906,7 @@
         },
         {
           "kind": "p",
-          "text": "Move schemas into versioned SQL migration files and run them at boot. x ships migration runners for both SQLite and Postgres that track applied files in a _x_migrations table:",
+          "text": "Move schemas into versioned SQL migration files and run them at boot. X ships migration runners for both SQLite and Postgres that track applied files in a _x_migrations table:",
           "anchor": ""
         },
         {
@@ -2001,7 +2001,7 @@
         },
         {
           "kind": "li",
-          "text": "React stays React -- x renders with react-dom server-side and hydrates islands client-side.",
+          "text": "React stays React. X renders with react-dom server-side and hydrates islands client-side.",
           "anchor": ""
         },
         {
@@ -2042,7 +2042,7 @@
         },
         {
           "kind": "p",
-          "text": "x includes production-ready observability out of the box: structured JSON logging, container health/readiness probes, request metrics (Prometheus or OpenTelemetry), and pluggable APM error tracing. All of it is optional and configurable via the observability key in x.config.ts .",
+          "text": "X ships with production observability built in: structured JSON logging, container health/readiness probes, request metrics (Prometheus or OpenTelemetry), and pluggable APM error tracing. All of it is optional and configurable via the observability key in x.config.ts .",
           "anchor": ""
         },
         {
@@ -2127,17 +2127,17 @@
         },
         {
           "kind": "p",
-          "text": "x can record production metrics for every request — counts, latency histograms, and error and rate-limit-rejection counters. Two built-in reporters cover the two standard destinations:",
+          "text": "For every request, X can record counts, latency histograms, and error and rate-limit-rejection counters. Two built-in reporters cover the two standard destinations:",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "createInMemoryMetrics() — an in-process registry that serves a /metrics endpoint in Prometheus text format, ready to be scraped by Prometheus/Grafana.",
+          "text": "createInMemoryMetrics() is an in-process registry that serves a /metrics endpoint in Prometheus text format, ready to be scraped by Prometheus/Grafana.",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "createOtlpMetricsReporter(meter) — forwards counters and histograms to an OpenTelemetry meter from your own OTel SDK setup (e.g. an OTLP exporter to Grafana Tempo/Cloud, Datadog, or Honeycomb).",
+          "text": "createOtlpMetricsReporter(meter) forwards counters counters and histograms to an OpenTelemetry meter from your own OTel SDK setup (e.g. an OTLP exporter to Grafana Tempo/Cloud, Datadog, or Honeycomb).",
           "anchor": ""
         },
         {
@@ -2157,7 +2157,7 @@
         },
         {
           "kind": "p",
-          "text": "The same pieces are exported for custom wiring: withRequestMetrics(reporter, handler) wraps any fetch handler, and any object implementing the MetricsReporter interface works — including your own exporter that posts to a statsd/Prometheus push gateway.",
+          "text": "The same pieces are exported for custom wiring: withRequestMetrics(reporter, handler) wraps any fetch handler, and any object implementing the MetricsReporter interface works, including your own exporter that posts to a statsd/Prometheus push gateway.",
           "anchor": ""
         },
         {
@@ -2167,7 +2167,7 @@
         },
         {
           "kind": "p",
-          "text": "When an uncaught exception occurs during SSR, a server action, or an API handler, x reports it to the configured error reporter. Two reporters are built in:",
+          "text": "When an uncaught exception occurs during SSR, a server action, or an API handler, X reports it to the configured error reporter. Two reporters are built in:",
           "anchor": ""
         },
         {
@@ -2283,7 +2283,7 @@
         },
         {
           "kind": "li",
-          "text": "Separately resolves every server-mode page, API route, layout, middleware file, and server-action file at build time (reusing @thexjs/core &#x27;s own scanners), so nothing at request time depends on walking the filesystem or on a dynamic import(path) of a .tsx file — both of those only work under Bun.",
+          "text": "Separately resolves every server-mode page, API route, layout, middleware file, and server-action file at build time (reusing @thexjs/core &#x27;s own scanners), so nothing at request time depends on walking the filesystem or on a dynamic import(path) of a .tsx file; both of those only work under Bun.",
           "anchor": ""
         },
         {
@@ -2359,7 +2359,7 @@
         },
         {
           "kind": "p",
-          "text": "Plug-and-play authentication for X apps. Add credentials (username/password) and OAuth2 — including a preconfigured GitHub provider — with one defineAuth() call, a sessions table in SQLite or Postgres via the framework&#x27;s data layer, and a single catch-all API route.",
+          "text": "Plug-and-play authentication for X apps. Add credentials (username/password) and OAuth2, including a preconfigured GitHub provider, with one defineAuth() call, a sessions table in SQLite or Postgres via the framework&#x27;s data layer, and a single catch-all API route.",
           "anchor": ""
         },
         {
@@ -2394,7 +2394,7 @@
         },
         {
           "kind": "p",
-          "text": "Create users at sign-up with hashPassword (Argon2id) and store the hash — never plaintext:",
+          "text": "Create users at sign-up with hashPassword (Argon2id) and store the hash, never the plaintext:",
           "anchor": ""
         },
         {
@@ -2439,27 +2439,27 @@
         },
         {
           "kind": "li",
-          "text": "Passwords — Argon2id via Bun.password ( hashPassword / verifyPassword ).",
+          "text": "Passwords are Argon2id via Bun.password ( hashPassword / verifyPassword ).",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "Session tokens — opaque random strings; only an HMAC-SHA256 digest (keyed by secret ) is stored, so a database leak doesn&#x27;t expose usable session cookies. Tokens are random 128-bit values, revocable, and expire after sessionMaxAge (default 7 days).",
+          "text": "Session tokens are opaque random stringss; only an HMAC-SHA256 digest (keyed by secret ) is stored, so a database leak doesn&#x27;t expose usable session cookies. Tokens are random 128-bit values, revocable, and expire after sessionMaxAge (default 7 days).",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "OAuth state — an x_oauth_state cookie challenge must match the state param on the callback (HMAC&#x27;d, 5-minute expiry), preventing login-CSRF and session-fixation via crafted callbacks.",
+          "text": "OAuth state uses an x_oauth_state cookie challenge must match the state param on the callback (HMAC&#x27;d, 5-minute expiry), preventing login-CSRF and session-fixation via crafted callbacks.",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "CSRF — POST endpoints ( signin , signout ) run the core checkCsrf automatically — Origin/Referer verification by default, or requireToken for double-submit defense in depth — and reject non-conforming requests with 403 . See Security for how the module is configured.",
+          "text": "CSRF : POST endpoints ( signin , signout ) run the core checkCsrf automatically: Origin/Referer verification by default, or requireToken for or double-submit defense in depth, and it rejects non-conforming requests with 403 . See Security for how the module is configured.",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "Cookies — HttpOnly , SameSite=Lax , Secure in production.",
+          "text": "Cookies are HttpOnly , SameSite=Lax , Secure in production.",
           "anchor": ""
         },
         {
@@ -2741,7 +2741,7 @@
         },
         {
           "kind": "p",
-          "text": "In dev, createApp writes src/x-routes.ts with a RouteMap type and a typed href() helper — routes can&#x27;t drift from your file tree, and dynamic segments are checked at compile time. Do not edit the file by hand.",
+          "text": "In dev, createApp writes src/x-routes.ts with a RouteMap type and a typed href() helper, so routes can&#x27;t drift from your file tree, and dynamic segments are checked at compile time. Do not edit the file by hand.",
           "anchor": ""
         },
         {
@@ -2897,7 +2897,7 @@
         },
         {
           "kind": "li",
-          "text": "Every field is required by default. Use optional() to allow a missing variable (type T | undefined ) and default(value) to substitute a fallback when it&#x27;s absent — missing optional variables no longer fail the whole validation.",
+          "text": "Every field is required by default. Use optional() to allow a missing variable (type T | undefined ) and default(value) to substitute a fallback when it&#x27;s absent, so missing optional variables no longer fail the whole validation.",
           "anchor": ""
         },
         {
@@ -2923,7 +2923,7 @@
         },
         {
           "kind": "p",
-          "text": "SSR-safe React hooks for X apps. Every hook is safe inside renderToString / renderToReadableStream — none of them touch window , document , localStorage , or navigator during the server render pass. DOM access only happens in effects, after hydration.",
+          "text": "SSR-safe React hooks for X apps. Every hook is safe inside renderToString / renderToReadableStream ; none of them touch window , document , localStorage , or navigator during the server render pass. DOM access only happens in effects, after hydration.",
           "anchor": ""
         },
         {
@@ -2958,7 +2958,7 @@
         },
         {
           "kind": "p",
-          "text": "useServerAction expects an async function that talks to your server function endpoint — usually one from the client generated by @thexjs/core &#x27;s build step ( generateServerFunctionClient output). It adds the mutation-hook ergonomics: { data, error, isPending } plus a run(...args) trigger.",
+          "text": "useServerAction expects an async function that talks to your server function endpoint, usually one from the client generated by @thexjs/core &#x27;s build step ( generateServerFunctionClient output). It adds the mutation-hook ergonomics: { data, error, isPending } plus a run(...args) trigger.",
           "anchor": ""
         }
       ]
@@ -3025,7 +3025,7 @@
         },
         {
           "kind": "p",
-          "text": "x supports two page modes, static prerendering and server-side rendering, both powered by loaders.",
+          "text": "X supports two page modes, static prerendering and server-side rendering, both powered by loaders.",
           "anchor": ""
         },
         {
@@ -3080,7 +3080,7 @@
         },
         {
           "kind": "p",
-          "text": "Page components receive RouteProps with params (a Record of dynamic segments) and loaderData (the loader&#x27;s return value). It is a plain non-generic type — cast loader data to its shape if you want inline types.",
+          "text": "Page components receive RouteProps with params (a Record of dynamic segments) and loaderData (the loader&#x27;s return value). It is a plain non-generic type, so cast loader data to its shape if you want inline types.",
           "anchor": ""
         },
         {
@@ -3090,7 +3090,7 @@
         },
         {
           "kind": "h2",
-          "text": "Streaming SSR — renderStreamingPage",
+          "text": "Streaming SSR with renderStreamingPage",
           "anchor": "#sec-5"
         },
         {
@@ -3126,7 +3126,7 @@
         },
         {
           "kind": "p",
-          "text": "x uses the file system as your route table. Drop a file in src/pages/ , get a route.",
+          "text": "X uses the file system as your route table. Drop a file in src/pages/ , get a route.",
           "anchor": ""
         },
         {
@@ -3247,7 +3247,7 @@
         },
         {
           "kind": "p",
-          "text": "x ships with production-grade security guardrails enabled by default: build-time env isolation, CSRF protection on server actions, security headers on every response, and a per-IP rate limiter. All of it is configurable or disableable per environment.",
+          "text": "X ships with production-grade security guardrails enabled by default: build-time env isolation, CSRF protection on server actions, security headers on every response, and a per-IP rate limiter. All of it is configurable or disableable per environment.",
           "anchor": ""
         },
         {
@@ -3282,7 +3282,7 @@
         },
         {
           "kind": "p",
-          "text": "Only variables prefixed with THEXJS_PUBLIC_ may ever reach browser code. During x build , the bundler scans every client-shipped bundle for references to process.env.* , Bun.env.* , or import.meta.env.* that are not public — and if it finds any, the build halts with an EnvLeakageError .",
+          "text": "Only variables prefixed with THEXJS_PUBLIC_ may ever reach browser code. During x build , the bundler scans every client-shipped bundle for references to process.env.* , Bun.env.* , or import.meta.env.* that are not public. If it finds any, the build halts with an EnvLeakageError .",
           "anchor": ""
         },
         {
@@ -3297,7 +3297,7 @@
         },
         {
           "kind": "p",
-          "text": "The low-level pieces are exported too: findLeakedEnvKeys(code) , assertNoEnvLeakage(code, file) , and the PUBLIC_ENV_PREFIX constant — handy for custom build tooling or CI checks.",
+          "text": "The low-level pieces are exported too: findLeakedEnvKeys(code) , assertNoEnvLeakage(code, file) , and the PUBLIC_ENV_PREFIX constant, both handy for custom build tooling or CI checks.",
           "anchor": ""
         },
         {
@@ -3317,7 +3317,7 @@
         },
         {
           "kind": "li",
-          "text": "Double-submit token — when requireToken: true is set, a token must be echoed in the x-csrf-token header on mutating requests.",
+          "text": "Double-submit token : when requireToken: true is set, a token must be echoed in the x-csrf-token header on mutating requests.",
           "anchor": ""
         },
         {
@@ -3337,7 +3337,7 @@
         },
         {
           "kind": "p",
-          "text": "The token cookie is not set automatically: your app sets it once, typically when a session starts (a login route), by wrapping the response with withCsrfCookie — or generate one yourself with generateCsrfToken . From the browser, read the cookie and echo it on every POST to /__x/actions/* :",
+          "text": "The token cookie is not set automatically: your app sets it once, typically when a session starts (a login route), by wrapping the response with withCsrfCookie , or generate one yourself with generateCsrfToken . From the browser, read the cookie and echo it on every POST to /__x/actions/* :",
           "anchor": ""
         },
         {
@@ -3397,7 +3397,7 @@
         },
         {
           "kind": "p",
-          "text": "A lightweight fixed-window rate limiter is applied ahead of all routing. Buckets are keyed by the client&#x27;s real IP — resolved from the underlying socket (Bun server.requestIP ), falling back to x-forwarded-for / x-real-ip . When the limit is exceeded, the server returns a 429 Too Many Requests with a Retry-After header.",
+          "text": "A lightweight fixed-window rate limiter is applied ahead of all routing. Buckets are keyed by the client&#x27;s real IP, resolved from the underlying socket (Bun server.requestIP ), falling back to x-forwarded-for / x-real-ip . When the limit is exceeded, the server returns a 429 Too Many Requests with a Retry-After header.",
           "anchor": ""
         },
         {
@@ -3478,7 +3478,7 @@
         },
         {
           "kind": "p",
-          "text": "Or register a map in one shot with export const actions — handy for grouping several functions under one file. This also works in src/api/ files and page files, so a greet.ts with no page component still registers its actions.",
+          "text": "Or register a map in one shot with export const actions , which is handy for grouping several functions under one file. This also works in src/api/ files and page files, so a greet.ts with no page component still registers its actions.",
           "anchor": ""
         },
         {

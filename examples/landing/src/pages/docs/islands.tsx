@@ -70,22 +70,22 @@ export default function BlogPost({ post }) {
       </p>
       <ul className="mt-4 list-inside list-disc space-y-2 text-muted-foreground">
         <li>
-          <span className="text-foreground">client="visible"</span> — hydrate when the island
-          scrolls into view. Good for content below the fold.
+          <span className="text-foreground">client="visible"</span> hydrates when the island scrolls
+          into view. Good for content below the fold.
         </li>
         <li>
-          <span className="text-foreground">client="idle"</span> — hydrate when the browser goes
+          <span className="text-foreground">client="idle"</span> hydrates when the browser goes
           idle. Good for widgets the user isn't waiting on.
         </li>
         <li>
-          <span className="text-foreground">client="load"</span> — hydrate immediately on page load.
+          <span className="text-foreground">client="load"</span> hydrates immediately on page load.
           Use for the first thing the user interacts with.
         </li>
       </ul>
 
       <h2 className="text-xl">How hydration works</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        At build time x bundles each island separately, server-renders the page to static HTML with
+        At build time X bundles each island separately, server-renders the page to static HTML with
         the island's markup inline, and drops in a small loader script. In the browser the loader
         fetches the island's chunk on demand and hydrates only that subtree. Islands can be nested
         and reused across routes; each registered component gets exactly one entry per route.

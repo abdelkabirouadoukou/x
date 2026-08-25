@@ -69,7 +69,7 @@ vercel deploy --prebuilt`}
           <span className="text-foreground">@thexjs/core</span>'s own scanners), so nothing at
           request time depends on walking the filesystem or on a dynamic{" "}
           <span className="text-foreground">import(path)</span> of a{" "}
-          <span className="text-foreground">.tsx</span> file — both of those only work under Bun.
+          <span className="text-foreground">.tsx</span> file; both of those only work under Bun.
         </li>
         <li>
           Transpiles each of those files from Bun-flavored TSX/TS into plain Node ESM, then bundles

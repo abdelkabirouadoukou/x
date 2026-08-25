@@ -122,7 +122,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <span className="rounded-sm bg-accent px-1.5 py-[1px] text-[10px] font-bold uppercase leading-none text-white">
             new
           </span>
-          <span>X 1.3 — islands to disk, server-mode islands, image proxy</span>
+          <span>X 1.3: islands to disk, server-mode islands, and an image proxy</span>
           <span className="transition-transform group-hover/banner:translate-x-0.5">→</span>
         </div>
       </a>
