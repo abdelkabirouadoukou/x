@@ -148,7 +148,23 @@ describe("generateEntrySource", () => {
     // are rejected and fall back instead of being blindly trusted.
     expect(src).toContain(`forwardedHeader(req, "x-forwarded-proto")`);
     expect(src).toContain(`forwardedHeader(req, "x-forwarded-host")`);
-    expect(src).toContain("/^[a-zA-Z0-9.\\-:]+$/.test(single)");
+    // Underscores are accepted (internal-DNS hostnames like api_team.corp.local);
+    // everything outside the class still fails closed. See issue #179.
+    expect(src).toContain("/^[a-zA-Z0-9._\\-:]+$/.test(single)");
+  });
+
+  test("forwarded-header regex accepts underscore hostnames end to end", () => {
+    // Exercise the generated validator logic directly: the regex embedded in
+    // the entry must accept single underscore hostnames and reject
+    // comma-joined or malformed values.
+    const src = generateEntrySource(unitManifest(), "/tmp/e");
+    const match = src.match(/return \/\^([^\n]+)\/\.test\(single\)/);
+    expect(match).not.toBeNull();
+    const re = new RegExp(`^${match?.[1]}`);
+    expect(re.test("api_team.corp.local")).toBe(true);
+    expect(re.test("example.com:8080")).toBe(true);
+    expect(re.test("evil.com, evil2.com")).toBe(false);
+    expect(re.test("with space.com")).toBe(false);
   });
 
   test("honors write backpressure and cancels the reader on disconnect", () => {

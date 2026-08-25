@@ -18,16 +18,22 @@ export function generateEntrySource(manifest: BuildManifest, entryDir: string): 
 // when they are single, clean values (multiple/duplicated values could be
 // client-controlled on non-Vercel hosts and hijack redirects or CSRF origin
 // checks); anything suspicious falls back to the connection metadata.
+//
+// Underscores ARE accepted: internal/corporate DNS zones commonly use them in
+// hostnames (e.g. api_team.corp.local) even though public RFC 952/1123 names
+// never do. This is a deliberate widening, not an oversight - the character
+// class still fails closed on everything else (spaces, commas, control
+// characters), so multiple/duplicated or malformed values never pass.
 function forwardedHeader(req, name) {
   const value = req.headers[name];
   if (value === undefined) return undefined;
   if (Array.isArray(value)) {
     if (value.length !== 1) return undefined;
     const single = String(value[0]).trim();
-    return /^[a-zA-Z0-9.\\-:]+$/.test(single) ? single : undefined;
+    return /^[a-zA-Z0-9._\\-:]+$/.test(single) ? single : undefined;
   }
   const single = String(value).split(",")[0].trim();
-  return /^[a-zA-Z0-9.\\-:]+$/.test(single) ? single : undefined;
+  return /^[a-zA-Z0-9._\\-:]+$/.test(single) ? single : undefined;
 }
 
 function nodeRequestToWebRequest(req) {
