@@ -68,12 +68,8 @@ export function getAuditSink(): AuditSink {
   return activeSink;
 }
 
-/** Best-effort client IP from proxy headers; null when the request has none. */
-export function clientIpFromRequest(req: Request): string | null {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || null;
-  return req.headers.get("x-real-ip");
-}
+/** Re-export: canonical implementation lives in security/ip.ts. */
+export { clientIpFromRequest } from "../security/ip";
 
 /** Correlation id already assigned to the request by `withRequestLogging`, if any. */
 export function requestIdFromRequest(req: Request): string | undefined {
