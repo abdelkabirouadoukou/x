@@ -109,9 +109,11 @@ describe("guards", () => {
 
   test("requirePermission fails closed and requires every permission", () => {
     const r1 = requirePermission("posts:write")(null);
+    expect(r1.ok).toBe(false);
     if (!r1.ok) expect(r1.status).toBe(401);
     expect(requirePermission("posts:write")(sessionWith([], ["posts:write"])).ok).toBe(true);
     const r2 = requirePermission("posts:read", "posts:write")(sessionWith([], ["posts:read"]));
+    expect(r2.ok).toBe(false);
     if (!r2.ok) expect(r2.status).toBe(403);
   });
 
@@ -123,10 +125,16 @@ describe("guards", () => {
 
   test("AuthGuardResult is a discriminated union (type-level exhaustiveness)", () => {
     function assertUnion(result: AuthGuardResult) {
-      if (result.ok) return;
-      const _: 401 | 403 = result.status;
+      switch (result.ok) {
+        case true:
+          break;
+        case false: {
+          const _: 401 | 403 = result.status;
+          break;
+        }
+      }
     }
-    // Runtime no-op; the assertion is that tsc accepts the narrow
+    // Runtime no-op; the assertion is that tsc accepts the exhaustive switch
     assertUnion(requireAuth()(sessionWith()));
     assertUnion(requireAuth()(null));
     expect(true).toBe(true);
