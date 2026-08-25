@@ -12,16 +12,16 @@ export default function DocPage(_props: RouteProps) {
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         An MCP (Model Context Protocol) server that gives AI coding agents grounded, accurate
         knowledge of X. Instead of letting an agent pattern-match to Next.js, Remix, Astro, or
-        TanStack Start syntax that looks similar but behaves differently, the agent asks this
-        server and gets the framework's actual conventions.
+        TanStack Start syntax that looks similar but behaves differently, the agent asks this server
+        and gets the framework's actual conventions.
       </p>
 
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Every app created with <span className="text-foreground">create-thexjs-app</span> already
         ships wired up: <span className="text-foreground">.mcp.json</span> for Claude Code and{" "}
         <span className="text-foreground">.cursor/mcp.json</span> for Cursor point at{" "}
-        <span className="text-foreground">bunx @thexjs/mcp</span>. To add it to an existing
-        project by hand, drop this file at the project root:
+        <span className="text-foreground">bunx @thexjs/mcp</span>. To add it to an existing project
+        by hand, drop this file at the project root:
       </p>
 
       <CodeBlock
@@ -58,9 +58,9 @@ export default function DocPage(_props: RouteProps) {
               <td className="py-2 pr-4 whitespace-nowrap text-foreground">get_docs(topic)</td>
               <td className="py-2 pr-4">
                 Returns grounded reference docs for one topic (routing, loaders, static-vs-ssr,
-                layouts, middleware, api-routes, actions, config, env, auth, data, images,
-                content, navigation, cli, gotchas). Includes explicit corrections for the
-                conventions agents most often get wrong.
+                layouts, middleware, api-routes, actions, config, env, auth, data, images, content,
+                navigation, cli, gotchas). Includes explicit corrections for the conventions agents
+                most often get wrong.
               </td>
             </tr>
             <tr className="border-b border-border">
