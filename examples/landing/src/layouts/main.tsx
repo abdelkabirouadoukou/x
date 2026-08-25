@@ -30,6 +30,7 @@ const FOOTER_COLS: { title: string; links: { href: string; label: string }[] }[]
       { href: "/docs/packages/env", label: "@thexjs/env" },
       { href: "/docs/packages/hooks", label: "@thexjs/hooks" },
       { href: "/docs/packages/adapter-vercel", label: "@thexjs/adapter-vercel" },
+      { href: "/docs/packages/mcp", label: "@thexjs/mcp" },
     ],
   },
   {
