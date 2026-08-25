@@ -98,14 +98,14 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
       <aside
         id="sidebar-panel"
-        className="fixed left-0 top-header z-50 hidden h-[calc(100vh-var(--header-h))] w-[min(20rem,85vw)] overflow-y-auto border-r border-line bg-canvas lg:hidden"
+        className="fixed left-0 top-[var(--header-h)] z-50 hidden h-[calc(100vh-var(--header-h))] w-[min(20rem,85vw)] overflow-y-auto border-r border-line bg-canvas lg:hidden"
       >
         <nav className="px-2 pb-8 pt-4">
           <SidebarNav />
         </nav>
       </aside>
 
-      <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-line scroll-none lg:sticky lg:top-header lg:block lg:max-h-[calc(100vh-var(--header-h))]">
+      <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-line scroll-none lg:sticky lg:top-[var(--header-h)] lg:block lg:max-h-[calc(100vh-var(--header-h))]">
         <nav className="px-2 pb-10 pt-4">
           <SidebarNav />
         </nav>
