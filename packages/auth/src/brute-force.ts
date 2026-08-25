@@ -22,6 +22,8 @@
  * so sustained guessing is pushed out rather than just rate-sampled.
  */
 
+import { clientIpFromRequest } from "@thexjs/core";
+
 export interface BruteForceOptions {
   /** Consecutive failed attempts per account before it locks. Default: 5. */
   maxAttempts?: number;
@@ -47,9 +49,7 @@ export function createBruteForceGuard(options: BruteForceOptions = {}) {
 
   /** Client IP, or null when neither proxy header is present. */
   function clientIp(req: Request): string | null {
-    const forwarded = req.headers.get("x-forwarded-for");
-    if (forwarded) return forwarded.split(",")[0]?.trim() || null;
-    return req.headers.get("x-real-ip") || null;
+    return clientIpFromRequest(req);
   }
 
   /**
