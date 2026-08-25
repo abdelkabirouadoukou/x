@@ -54,8 +54,8 @@ export default function TryItNow() {
             One command scaffolds a complete project: pages, API routes, auth, and the build
             pipeline.
           </p>
-          <div className="cmd-slab mt-8 flex h-[54px] w-full max-w-[30rem] items-stretch [--cut:10px]">
-            <code className="readout scroll-none flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap px-5 font-mono text-[15px] text-[#f2f2f0]">
+          <div className="cmd-slab mt-8 flex h-12 w-full max-w-[30rem] items-stretch [--cut:8px] sm:h-[54px] sm:[--cut:10px]">
+            <code className="readout scroll-none flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap px-3 font-mono text-[13px] text-[#f2f2f0] sm:px-5 sm:text-[15px]">
               <span className="mr-2 select-none text-[#70d6a3]">$</span>
               {COMMAND.slice(0, typed)}
               {!done && (
@@ -66,7 +66,7 @@ export default function TryItNow() {
               type="button"
               onClick={copy}
               aria-label="Copy command"
-              className="inline-flex w-14 shrink-0 items-center justify-center border-l border-white/15 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex w-11 shrink-0 items-center justify-center border-l border-white/15 text-white/60 transition-colors hover:bg-white/10 hover:text-white sm:w-14"
             >
               {copied ? (
                 <span className="text-[#28dc82]">✓</span>

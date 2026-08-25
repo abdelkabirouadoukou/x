@@ -56,18 +56,18 @@ export default function InstallCommand() {
 
   return (
     <div className="w-full max-w-[36rem]">
-      <div className="group/cmd cut cmd-slab relative flex h-[56px] items-stretch [--cut:10px]">
-        <span className="readout flex select-none items-center pl-5 pr-3 text-[#70d6a3]">
+      <div className="group/cmd cut cmd-slab relative flex h-12 items-stretch [--cut:8px] sm:h-[56px] sm:[--cut:10px]">
+        <span className="readout flex select-none items-center pl-3 pr-2 text-[#70d6a3] sm:pl-5 sm:pr-3">
           {current.prompt}
         </span>
-        <code className="readout scroll-none flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap text-[15px] text-[#f2f2f0]">
+        <code className="readout scroll-none flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap text-[13px] text-[#f2f2f0] sm:text-[15px]">
           {current.command}
         </code>
         <button
           type="button"
           onClick={copy}
           aria-label="Copy command to clipboard"
-          className="group/copy inline-flex w-14 shrink-0 items-center justify-center border-l border-canvas/20 text-canvas/70 transition-colors hover:bg-white/10 hover:text-canvas"
+          className="group/copy inline-flex w-11 shrink-0 items-center justify-center border-l border-canvas/20 text-canvas/70 transition-colors hover:bg-white/10 hover:text-canvas sm:w-14"
         >
           {copied ? <Check className="h-4 w-4 text-[#28dc82]" /> : <Copy className="h-4 w-4" />}
         </button>
