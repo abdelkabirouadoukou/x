@@ -13,16 +13,17 @@ export default function DocPage(_props: RouteProps) {
       </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
         Call server-side functions from the browser without writing REST endpoints. Server functions
-        live in <span className="text-foreground">src/actions/</span>. Import one into a client
-        component and call it like a normal function, or call it manually with{" "}
+        live in <span className="text-foreground">src/actions/</span>. Import one into an island and
+        call it like a normal function, or call it manually with{" "}
         <span className="text-foreground">fetch</span>. Both compile down to the same request.
       </p>
 
       <h2 className="text-xl">Defining server functions</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Create a file in <span className="text-foreground">src/actions/</span> and export named
-        async functions. Each function receives a <span className="text-foreground">Request</span>{" "}
-        object and any arguments you pass.
+        async functions. There is no <span className="text-foreground">"use server"</span>{" "}
+        directive; arguments passed from the client arrive as JSON, and the return value is
+        serialized back as JSON.
       </p>
       <CodeBlock
         label="src/actions/greet.ts"
@@ -58,16 +59,14 @@ export async function sendEmail({ to, subject, body }: {
 
       <h2 className="text-xl">Calling actions directly</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        Import the function into a client component and call it like any other async function. When
+        Import the function into an island component and call it like any other async function. When
         you run <span className="text-foreground">x build</span>, the bundler swaps the import for a
         generated fetch client before it reaches the browser, so the real implementation, db calls
         and all, never gets bundled.
       </p>
       <CodeBlock
-        label="client component"
-        code={`"use client";
-
-import { useState } from "react";
+        label="src/components/subscribe-form.tsx"
+        code={`import { useState } from "react";
 import { subscribeUser } from "../actions/subscribe";
 
 export default function SubscribeForm() {
@@ -99,9 +98,18 @@ export default function SubscribeForm() {
 }`}
       />
       <p className="mt-3 text-sm text-muted-foreground">
-        Only files under <span className="text-foreground">actionsDir</span> get this treatment.
-        Import a regular server-only helper into client code and it bundles as-is; if it leaks a
-        secret, the build-time env isolation check catches it instead.
+        x has no <span className="text-foreground">"use client"</span> directive. To make the form
+        interactive, register it on the page with{" "}
+        <span className="text-foreground">export const islands = {"{ SubscribeForm }"}</span> and
+        render it inside{" "}
+        <span className="text-foreground">&lt;Island name="SubscribeForm" client="load"&gt;</span>{" "}
+        (see{" "}
+        <a href="/docs/islands" className="text-primary underline underline-offset-2">
+          Islands
+        </a>
+        ). Only files under <span className="text-foreground">actionsDir</span> get the
+        fetch-wrapper treatment: import a regular server-only helper into client code and it bundles
+        as-is; if it leaks a secret, the build-time env isolation check catches it instead.
       </p>
 
       <h2 className="text-xl">Calling manually with fetch</h2>
@@ -112,10 +120,8 @@ export default function SubscribeForm() {
         The arguments are sent as JSON in the request body.
       </p>
       <CodeBlock
-        label="client component"
-        code={`"use client";
-
-import { useState } from "react";
+        label="island component"
+        code={`import { useState } from "react";
 
 export default function GreetForm() {
   const [message, setMessage] = useState("");
