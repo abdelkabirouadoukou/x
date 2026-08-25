@@ -313,4 +313,34 @@ export const islands = { Like: Like };
       rmSync(dev, { recursive: true, force: true });
     }
   });
+
+  test("x start shows a friendly error when bun is not on PATH (#180)", async () => {
+    const noBun = join(FIXTURE_DIR, "no-bun-start");
+    mkdirSync(join(noBun, ".x", "server"), { recursive: true });
+    writeFileSync(
+      join(noBun, "x.config.ts"),
+      'export default { pagesDir: "src/pages", port: 4320 };\n',
+    );
+    // Minimal server entry so cmdStart doesn't bail with "no built server"
+    writeFileSync(
+      join(noBun, ".x", "server", "index.ts"),
+      "Bun.serve({ port: 4320, fetch: () => new Response('ok') });\n",
+    );
+
+    const res = spawnSync(process.execPath, [CLI_ENTRY, "start", "--cwd", noBun], {
+      cwd: noBun,
+      encoding: "utf-8",
+      timeout: 10_000,
+      env: {
+        ...process.env,
+        // Strip bun from PATH so spawn("bun", ...) hits the error handler
+        PATH: "/usr/bin:/bin",
+      },
+    });
+    const output = res.stdout + res.stderr;
+    expect(res.status).not.toBe(0);
+    expect(output).toContain("ensure bun is installed");
+    expect(output).toContain("bun.sh");
+    rmSync(noBun, { recursive: true, force: true });
+  });
 });
