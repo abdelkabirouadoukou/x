@@ -62,6 +62,9 @@ export default defineConfig({
     remoteHosts: ["cdn.example.com"],
   },
 
+  // Reject request bodies larger than 1 MB (default: 1 MB)
+  maxBodySize: 1024 * 1024,
+
   // Legacy routes directory
   routesDir: "src/routes",
 });`}

@@ -154,6 +154,22 @@ return new Response(null, {
 });`}
       />
 
+      <h2 className="text-xl">Composing middleware</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Multiple folder middleware files run onion-style in directory order. To chain middleware
+        inside a single file, use <span className="text-foreground">composeMiddleware</span> from{" "}
+        <span className="text-foreground">@thexjs/core</span>:
+      </p>
+      <CodeBlock
+        label="composing"
+        code={`import { composeMiddleware } from "@thexjs/core";
+
+export const middleware = composeMiddleware(
+  [withLogging, withAuth],
+  async (ctx) => renderPage(ctx),
+);`}
+      />
+
       <div className="mt-16 border-t border-border pt-8">
         <a
           href="/docs"

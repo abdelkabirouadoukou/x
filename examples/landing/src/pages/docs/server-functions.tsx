@@ -57,6 +57,13 @@ export async function sendEmail({ to, subject, body }: {
 };`}
       />
 
+      <p className="mt-3 text-sm text-muted-foreground">
+        Action paths can carry <span className="text-foreground">[param]</span> segments like page
+        routes: <span className="text-foreground">src/actions/posts/[id].ts</span> matches{" "}
+        <span className="text-foreground">/__x/actions/posts/&lt;any-id&gt;/&lt;fn&gt;</span>. The
+        segment selects the route only — arguments always travel in the request body.
+      </p>
+
       <h2 className="text-xl">Calling actions directly</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Import the function into an island component and call it like any other async function. When
@@ -117,7 +124,13 @@ export default function SubscribeForm() {
         This is what the direct-import style compiles down to, and it works the same way in dev and
         in production: a POST request to{" "}
         <span className="text-foreground">/__x/actions/&lt;filename&gt;/&lt;functionName&gt;</span>.
-        The arguments are sent as JSON in the request body.
+        The arguments are sent as JSON in the request body: an array maps positionally onto the
+        function's parameters, and a single non-array value is wrapped as{" "}
+        <span className="text-foreground">[value]</span>. Error statuses are part of the contract:
+        403 for a CSRF origin mismatch, 404 for an unknown function, 400/413 for a bad or oversized
+        body. A thrown action never leaks its error text in production — the response carries an
+        opaque incident id (also set on the <span className="text-foreground">x-x-error-id</span>{" "}
+        header) you can correlate with server logs.
       </p>
       <CodeBlock
         label="island component"
