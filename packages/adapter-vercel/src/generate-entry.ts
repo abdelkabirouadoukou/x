@@ -32,7 +32,11 @@ function forwardedHeader(req, name) {
     const single = String(value[0]).trim();
     return /^[a-zA-Z0-9._\\-:]+$/.test(single) ? single : undefined;
   }
-  const single = String(value).split(",")[0].trim();
+  // A comma inside a scalar header means a joined proxy chain. Truncating at
+  // the first comma would validate and trust only the leftmost entry; the
+  // policy here is fail-closed, so any comma-joined value falls back instead.
+  const single = String(value).trim();
+  if (single.includes(",")) return undefined;
   return /^[a-zA-Z0-9._\\-:]+$/.test(single) ? single : undefined;
 }
 
