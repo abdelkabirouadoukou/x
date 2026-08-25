@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { clientIpFromRequest as auditReExport } from "../observability/audit";
 import { clientIpFromRequest } from "./ip";
 
 function req(headers: Record<string, string> = {}): Request {
@@ -24,5 +25,18 @@ describe("clientIpFromRequest", () => {
 
   test("returns null for an empty/whitespace-only forwarded value", () => {
     expect(clientIpFromRequest(req({ "x-forwarded-for": " , " }))).toBeNull();
+  });
+});
+
+describe("audit.ts re-export", () => {
+  test("re-export behaves identically to the direct import", () => {
+    const r1 = req({ "x-forwarded-for": "10.0.0.1" });
+    expect(auditReExport(r1)).toBe(clientIpFromRequest(r1));
+
+    const r2 = req({ "x-real-ip": "10.0.0.2" });
+    expect(auditReExport(r2)).toBe(clientIpFromRequest(r2));
+
+    const r3 = req();
+    expect(auditReExport(r3)).toBe(clientIpFromRequest(r3));
   });
 });
