@@ -1,5 +1,12 @@
 # @thexjs/adapter-vercel
 
+## 1.0.10
+
+### Patch Changes
+
+- 309ccb0: Reject comma-joined forwarded headers instead of truncating them. A scalar `x-forwarded-host` like `a.com, b.com` was previously cut at the first comma and the leftmost value validated and trusted; the fail-closed policy now falls back to connection metadata for any comma-containing value. Follow-up to Copilot review on #212.
+- e4288af: Accept underscores in forwarded Host/proto header validation. Internal/corporate DNS zones commonly use underscore hostnames (e.g. `api_team.corp.local`); the generated Vercel entry's forwarded-header validator previously rejected them, silently falling back to connection metadata. The character class still fails closed on everything else (spaces, commas, control characters). Fixes #179.
+
 ## 1.0.9
 
 ### Patch Changes
