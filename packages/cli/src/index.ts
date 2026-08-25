@@ -375,6 +375,8 @@ async function main(): Promise<void> {
     case "-h":
     case undefined:
       printHelp();
+      // Bare `x` (no command) is a usage error → exit 1.
+      // `x --help` / `x -h` is an explicit request → exit 0.
       if (command === undefined) process.exitCode = 1;
       break;
     default:
