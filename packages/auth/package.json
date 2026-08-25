@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/auth",
-  "version": "3.0.7",
+  "version": "3.0.8",
   "description": "Plug-and-play authentication for x framework apps: credentials (Argon2 via Bun.password), OAuth2 and GitHub providers, session stores on the x data layer, and a catch-all API handler wired to the core CSRF module.",
   "keywords": [
     "auth",
@@ -40,10 +40,10 @@
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
-    "@thexjs/core": "^1.3.6"
+    "@thexjs/core": "^1.7.1"
   },
   "devDependencies": {
-    "@thexjs/core": "^1.3.6",
+    "@thexjs/core": "^1.7.1",
     "tsup": "^8.3.0"
   }
 }

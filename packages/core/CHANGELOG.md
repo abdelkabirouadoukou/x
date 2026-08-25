@@ -1,5 +1,11 @@
 # @thexjs/core
 
+## 1.7.1
+
+### Patch Changes
+
+- d9da82e: Consolidate duplicated `X-Forwarded-For` / `x-real-ip` parsing into a single shared `clientIpFromRequest` helper in `packages/core/src/security/ip.ts`. The canonical implementation is exported from `@thexjs/core`; auth's brute-force guard now delegates to it instead of maintaining its own copy, so proxy-header fixes can't be applied to one call site and forgotten. Fixes #176.
+
 ## 1.7.0
 
 ### Minor Changes
