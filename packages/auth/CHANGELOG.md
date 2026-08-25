@@ -1,5 +1,15 @@
 # @thexjs/auth
 
+## 3.0.8
+
+### Patch Changes
+
+- d9da82e: Consolidate duplicated `X-Forwarded-For` / `x-real-ip` parsing into a single shared `clientIpFromRequest` helper in `packages/core/src/security/ip.ts`. The canonical implementation is exported from `@thexjs/core`; auth's brute-force guard now delegates to it instead of maintaining its own copy, so proxy-header fixes can't be applied to one call site and forgotten. Fixes #176.
+- 3c105e7: Align the SQLite session store's upsert to match the Postgres store: `INSERT OR REPLACE` overwrites `created_at` on token conflict; the explicit `ON CONFLICT (token) DO UPDATE` form now leaves it untouched, matching Postgres's contract. Fixes #175.
+- 198588b: Change `AuthGuardResult` from a flat `{ ok, status, reason }` interface to a discriminated union: `{ ok: true } | { ok: false; status: 401 | 403; reason: string }`. Guard success results no longer carry misleading `status`/`reason` fields. Existing consumers checking `result.ok` first (the only supported pattern) are unaffected; callers that access `.status` without narrowing will get a compile-time error.
+- Updated dependencies [d9da82e]
+  - @thexjs/core@1.7.1
+
 ## 3.0.7
 
 ### Patch Changes
