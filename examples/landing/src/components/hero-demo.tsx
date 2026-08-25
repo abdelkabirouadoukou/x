@@ -9,6 +9,7 @@ interface ScriptLine {
 interface Script {
   id: string;
   title: string;
+  tab: string;
   caption: string;
   lines: ScriptLine[];
   result: string;
@@ -18,6 +19,7 @@ const SCRIPTS: Script[] = [
   {
     id: "quickstart",
     title: "Scaffold a project",
+    tab: "Scaffold",
     caption: "bun create thexjs-app downloads the template and resolves deps in one command.",
     result: "bun create thexjs-app@latest",
     lines: [
@@ -35,6 +37,7 @@ const SCRIPTS: Script[] = [
   {
     id: "dev",
     title: "Run the dev server",
+    tab: "Dev server",
     caption: "Pages, API routes, and server functions all boot in a single Bun process.",
     result: "bun x dev",
     lines: [
@@ -51,6 +54,7 @@ const SCRIPTS: Script[] = [
   {
     id: "build",
     title: "Build & deploy",
+    tab: "Build & deploy",
     caption: "One command produces static HTML, a server bundle, and a build manifest.",
     result: "bun x build",
     lines: [
@@ -125,7 +129,7 @@ export default function HeroDemo() {
                   : "text-fg-muted hover:bg-subtle hover:text-fg"
               }`}
             >
-              {s.title}
+              {s.tab}
             </button>
           ))}
         </div>
@@ -148,8 +152,7 @@ export default function HeroDemo() {
                 className="group/race inline-flex shrink-0 items-center gap-1.5 text-[12.5px] text-fg-muted hover:text-fg"
               >
                 <Play className="h-2.5 w-2.5 text-accent transition-transform group-hover/race:scale-110" />
-                <span className="sm:hidden">replay</span>
-                <span className="hidden sm:inline">replay</span>
+                <span>replay</span>
               </button>
             </div>
           </div>
