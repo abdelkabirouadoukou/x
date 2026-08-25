@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   BookOpen,
+  Bot,
   Box,
   Code2,
   Cog,
@@ -83,6 +84,12 @@ const packageSections = [
     title: "@thexjs/hooks",
     desc: "SSR-safe React hooks: debounce, media query, localStorage, server actions, forms.",
     href: "/docs/packages/hooks",
+  },
+  {
+    icon: Bot,
+    title: "@thexjs/mcp",
+    desc: "MCP server that grounds AI coding agents in real X framework conventions.",
+    href: "/docs/packages/mcp",
   },
 ];
 
