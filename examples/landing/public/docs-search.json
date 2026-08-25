@@ -1852,6 +1852,21 @@
           "kind": "pre",
           "text": "// Redirect to loginreturn new Response(null, { status: 302, headers: { Location: \"/login?redirect=\" + ctx.request.url },});// Redirect back after successful authconst url = new URL(ctx.request.url);const redirectTo = url.searchParams.get(\"redirect\") || \"/\";return new Response(null, { status: 302, headers: { Location: redirectTo },});",
           "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Composing middleware",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "Multiple folder middleware files run onion-style in directory order. To chain middleware inside a single file, use composeMiddleware from @thexjs/core :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { composeMiddleware } from \"@thexjs/core\";export const middleware = composeMiddleware( [withLogging, withAuth], async (ctx) => renderPage(ctx),);",
+          "anchor": ""
         }
       ]
     },
@@ -2485,6 +2500,41 @@
         {
           "kind": "p",
           "text": "The Postgres store ensures the table lazily on first use and takes a client returned by connectPostgres from @thexjs/core/data , so it inherits the connection pool, TLS policy, and retry behavior of the framework. See Data Layer for the underlying stores.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Route guards",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "The auth object turns session checks into framework middleware. auth.requireAuth() , auth.requireRole() , and auth.requirePermission() each return a MiddlewareFn : failing checks short-circuit with a 401/403, or a 302 when you pass redirectTo . Drop them in a _middleware.ts to guard everything in a folder:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { auth } from \"../../lib/auth\";export const middleware = auth.requireRole(\"admin\", { redirectTo: \"/signin\",});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Denied-but-signed-in attempts are written to the audit trail automatically, so permission failures are reviewable after the fact.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Brute-force protection",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "p",
+          "text": "createBruteForceGuard tracks failed sign-ins in two separate buckets: one per account identifier, one per client IP (so one IP spraying many accounts locks out fast). Defaults: 5 attempts per 15-minute window.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { createBruteForceGuard } from \"@thexjs/auth\";const guard = createBruteForceGuard({ maxAttempts: 5, windowMs: 15 * 60_000 });// before verifying a password — check the account bucket and the IP bucket:const account = guard.accountKey(email);if (!guard.status(account).ok || !guard.status(guard.ipKey(req)).ok) { return Response.json({ error: \"Too many attempts\" }, { status: 429 });}// after a failed verification:guard.recordFailure(account);",
           "anchor": ""
         }
       ]
@@ -3487,6 +3537,11 @@
           "anchor": ""
         },
         {
+          "kind": "p",
+          "text": "Action paths can carry [param] segments like page routes: src/actions/posts/[id].ts matches /__x/actions/posts/ / . The segment selects the route only — arguments always travel in the request body.",
+          "anchor": ""
+        },
+        {
           "kind": "h2",
           "text": "Calling actions directly",
           "anchor": "#sec-1"
@@ -3508,7 +3563,7 @@
         },
         {
           "kind": "p",
-          "text": "This is what the direct-import style compiles down to, and it works the same way in dev and in production: a POST request to /__x/actions/ / . The arguments are sent as JSON in the request body.",
+          "text": "This is what the direct-import style compiles down to, and it works the same way in dev and in production: a POST request to /__x/actions/ / . The arguments are sent as JSON in the request body: an array maps positionally onto the function&#x27;s parameters, and a single non-array value is wrapped as [value] . Error statuses are part of the contract: 403 for a CSRF origin mismatch, 404 for an unknown function, 400/413 for a bad or oversized body. A thrown action never leaks its error text in production — the response carries an opaque incident id (also set on the x-x-error-id header) you can correlate with server logs.",
           "anchor": ""
         },
         {

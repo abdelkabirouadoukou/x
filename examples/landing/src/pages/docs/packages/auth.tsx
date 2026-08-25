@@ -193,6 +193,52 @@ createPostgresSessionStore(connectPostgres({ url: process.env.DATABASE_URL }));`
         for the underlying stores.
       </p>
 
+      <h2 className="text-xl">Route guards</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        The auth object turns session checks into framework middleware.{" "}
+        <span className="text-foreground">auth.requireAuth()</span>,{" "}
+        <span className="text-foreground">auth.requireRole()</span>, and{" "}
+        <span className="text-foreground">auth.requirePermission()</span> each return a{" "}
+        <span className="text-foreground">MiddlewareFn</span>: failing checks short-circuit with a
+        401/403, or a 302 when you pass <span className="text-foreground">redirectTo</span>. Drop
+        them in a <span className="text-foreground">_middleware.ts</span> to guard everything in a
+        folder:
+      </p>
+      <CodeBlock
+        label="src/pages/dashboard/_middleware.ts"
+        code={`import { auth } from "../../lib/auth";
+
+export const middleware = auth.requireRole("admin", {
+  redirectTo: "/signin",
+});`}
+      />
+      <p className="mt-3 text-sm text-muted-foreground">
+        Denied-but-signed-in attempts are written to the audit trail automatically, so permission
+        failures are reviewable after the fact.
+      </p>
+
+      <h2 className="text-xl">Brute-force protection</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        <span className="text-foreground">createBruteForceGuard</span> tracks failed sign-ins in two
+        separate buckets: one per account identifier, one per client IP (so one IP spraying many
+        accounts locks out fast). Defaults: 5 attempts per 15-minute window.
+      </p>
+      <CodeBlock
+        label="guarding the credentials flow"
+        code={`import { createBruteForceGuard } from "@thexjs/auth";
+
+const guard = createBruteForceGuard({ maxAttempts: 5, windowMs: 15 * 60_000 });
+
+// before verifying a password — check the account bucket and the IP bucket:
+const account = guard.accountKey(email);
+if (!guard.status(account).ok || !guard.status(guard.ipKey(req)).ok) {
+  return Response.json({ error: "Too many attempts" }, { status: 429 });
+}
+
+// after a failed verification:
+guard.recordFailure(account);`}
+      />
+
       <div className="mt-16 flex flex-wrap gap-6 border-t border-border pt-8">
         <a
           href="/docs/packages/core"
