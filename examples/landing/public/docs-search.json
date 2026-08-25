@@ -541,7 +541,7 @@
         },
         {
           "kind": "p",
-          "text": "Write content in Markdown with frontmatter and X turns it into pages, which covers blogs, documentation, and most other content-driven sites.",
+          "text": "Write content in Markdown with frontmatter and X turns it into pages for blogs, documentation, and most other content-driven sites.",
           "anchor": ""
         },
         {
@@ -717,7 +717,7 @@
         },
         {
           "kind": "p",
-          "text": "Back up the same data the app actually writes: the database, plus the @thexjs/auth x_sessions table if you use auth. Migrations are not data: the _x_migrations table records history, so restore the database and let the migration runner verify it&#x27;s in the state your code expects.",
+          "text": "Back up the same data the app actually writes: the database, plus the @thexjs/auth x_sessions table if you use auth. If sessions live in their own SQLite file (the default is data/auth.db ), that file is part of the backup set too. Migrations are not data: the _x_migrations table records history, so restore the database and let the migration runner verify it&#x27;s in the state your code expects.",
           "anchor": ""
         },
         {
@@ -752,7 +752,7 @@
         },
         {
           "kind": "p",
-          "text": "Restore is the reverse: stop the app, copy the snapshot back (removing any stale -wal / -shm files first), then start the app. Because migrations are tracked in _x_migrations , you can restore to an older snapshot than your current code and the runner will simply apply the missing migrations. It only forward . Restoring an older snapshot after newer migrations already ran requires either re-applying them or restoring a snapshot taken after they applied.",
+          "text": "Restore is the reverse: stop the app, copy the snapshot back (removing any stale -wal / -shm files first), then start the app. Because migrations are tracked in _x_migrations , you can restore to an older snapshot than your current code and the runner will simply apply the missing migrations. It only does so forward . Restoring an older snapshot after newer migrations already ran requires either re-applying them or restoring a snapshot taken after they applied.",
           "anchor": ""
         },
         {
@@ -2137,7 +2137,7 @@
         },
         {
           "kind": "li",
-          "text": "createOtlpMetricsReporter(meter) forwards counters counters and histograms to an OpenTelemetry meter from your own OTel SDK setup (e.g. an OTLP exporter to Grafana Tempo/Cloud, Datadog, or Honeycomb).",
+          "text": "createOtlpMetricsReporter(meter) forwards counters and histograms to an OpenTelemetry meter from your own OTel SDK setup (e.g. an OTLP exporter to Grafana Tempo/Cloud, Datadog, or Honeycomb).",
           "anchor": ""
         },
         {
@@ -2444,17 +2444,17 @@
         },
         {
           "kind": "li",
-          "text": "Session tokens are opaque random stringss; only an HMAC-SHA256 digest (keyed by secret ) is stored, so a database leak doesn&#x27;t expose usable session cookies. Tokens are random 128-bit values, revocable, and expire after sessionMaxAge (default 7 days).",
+          "text": "Session tokens are opaque random strings; only an HMAC-SHA256 digest (keyed by secret ) is stored, so a database leak doesn&#x27;t expose usable session cookies. Tokens are random 128-bit values, revocable, and expire after sessionMaxAge (default 7 days).",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "OAuth state uses an x_oauth_state cookie challenge must match the state param on the callback (HMAC&#x27;d, 5-minute expiry), preventing login-CSRF and session-fixation via crafted callbacks.",
+          "text": "OAuth state : an x_oauth_state cookie challenge must match the state param on the callback (HMAC&#x27;d, 5-minute expiry), preventing login-CSRF and session-fixation via crafted callbacks.",
           "anchor": ""
         },
         {
           "kind": "li",
-          "text": "CSRF : POST endpoints ( signin , signout ) run the core checkCsrf automatically: Origin/Referer verification by default, or requireToken for or double-submit defense in depth, and it rejects non-conforming requests with 403 . See Security for how the module is configured.",
+          "text": "CSRF : POST endpoints ( signin , signout ) run the core checkCsrf automatically: Origin/Referer verification by default, or requireToken for double-submit defense in depth, and it rejects non-conforming requests with 403 . See Security for how the module is configured.",
           "anchor": ""
         },
         {
@@ -3297,7 +3297,7 @@
         },
         {
           "kind": "p",
-          "text": "The low-level pieces are exported too: findLeakedEnvKeys(code) , assertNoEnvLeakage(code, file) , and the PUBLIC_ENV_PREFIX constant, both handy for custom build tooling or CI checks.",
+          "text": "The low-level pieces are exported too: findLeakedEnvKeys(code) , assertNoEnvLeakage(code, file) , and the PUBLIC_ENV_PREFIX constant: all three are handy for custom build tooling or CI checks.",
           "anchor": ""
         },
         {
@@ -3337,7 +3337,7 @@
         },
         {
           "kind": "p",
-          "text": "The token cookie is not set automatically: your app sets it once, typically when a session starts (a login route), by wrapping the response with withCsrfCookie , or generate one yourself with generateCsrfToken . From the browser, read the cookie and echo it on every POST to /__x/actions/* :",
+          "text": "The token cookie is not set automatically: your app sets it once, typically when a session starts (a login route), by wrapping the response with withCsrfCookie , or by generating one yourself with generateCsrfToken . From the browser, read the cookie and echo it on every POST to /__x/actions/* :",
           "anchor": ""
         },
         {

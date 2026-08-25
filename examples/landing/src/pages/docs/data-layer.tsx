@@ -143,10 +143,12 @@ export { db };`}
         <a href="/docs/packages/auth" className="text-primary underline underline-offset-2">
           @thexjs/auth
         </a>{" "}
-        <span className="text-foreground">x_sessions</span> table if you use auth. Migrations are
-        not data: the <span className="text-foreground">_x_migrations</span> table records history,
-        so restore the database and let the migration runner verify it's in the state your code
-        expects.
+        <span className="text-foreground">x_sessions</span> table if you use auth. If sessions live
+        in their own SQLite file (the default is{" "}
+        <span className="text-foreground">data/auth.db</span>), that file is part of the backup set
+        too. Migrations are not data: the <span className="text-foreground">_x_migrations</span>{" "}
+        table records history, so restore the database and let the migration runner verify it's in
+        the state your code expects.
       </p>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Two numbers to write down for any plan: <span className="text-foreground">RPO</span> (how
@@ -201,8 +203,8 @@ cp data/app.db data/app.db-wal data/app.db-shm backups/
         <span className="text-foreground"> -wal</span>/<span className="text-foreground">-shm</span>{" "}
         files first), then start the app. Because migrations are tracked in{" "}
         <span className="text-foreground">_x_migrations</span>, you can restore to an older snapshot
-        than your current code and the runner will simply apply the missing migrations. It only{" "}
-        <em>forward</em>. Restoring an older snapshot after newer migrations already ran requires
+        than your current code and the runner will simply apply the missing migrations. It only does
+        so <em>forward</em>. Restoring an older snapshot after newer migrations already ran requires
         either re-applying them or restoring a snapshot taken after they applied.
       </p>
 

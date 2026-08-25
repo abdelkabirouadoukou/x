@@ -135,8 +135,8 @@ export async function loader() {
         </li>
         <li>
           <span className="text-foreground">createOtlpMetricsReporter(meter)</span> forwards
-          counters counters and histograms to an OpenTelemetry meter from your own OTel SDK setup
-          (e.g. an OTLP exporter to Grafana Tempo/Cloud, Datadog, or Honeycomb).
+          counters and histograms to an OpenTelemetry meter from your own OTel SDK setup (e.g. an
+          OTLP exporter to Grafana Tempo/Cloud, Datadog, or Honeycomb).
         </li>
       </ul>
       <CodeBlock

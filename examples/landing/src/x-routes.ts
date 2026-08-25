@@ -16,9 +16,11 @@ export type RouteMap = {
   "/docs/installation": Record<string, never>;
   "/docs/islands": Record<string, never>;
   "/docs/packages/auth": Record<string, never>;
+  "/docs/packages/hooks": Record<string, never>;
   "/docs/packages/cli": Record<string, never>;
   "/docs/packages/env": Record<string, never>;
   "/docs/packages/adapter-vercel": Record<string, never>;
+  "/docs/packages/mcp": Record<string, never>;
   "/docs/packages/core": Record<string, never>;
   "/docs/migration": Record<string, never>;
   "/docs/client-navigation": Record<string, never>;
@@ -38,6 +40,21 @@ export function href<T extends keyof RouteMap & string>(
   let result: string = path;
   for (const [key, value] of Object.entries(params)) {
     result = result.replace(new RegExp(`:${key}(?=/|$)`), encodeURIComponent(String(value)));
+  }
+  // Catch-all params have no `:name` token in the path — they render as an
+  // anonymous `*` segment. Substitute them in segment order, keeping `/`
+  // between encoded fragments so multi-segment values stay readable. An exact
+  // segment-token check (prefixed by `/`) is required: a prefix scan of
+  // `:key` would also match a longer `:id2` param and skip the wildcard.
+  const isNamedToken = (key: string) => new RegExp(`(^|/):${key}(?=/|$)`).test(path);
+  for (const [key, value] of Object.entries(params)) {
+    if (!isNamedToken(key)) {
+      const encoded = String(value)
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+      result = result.replace(/\*/, encoded);
+    }
   }
   result = result.replace(/\*+$/, "");
   return result;

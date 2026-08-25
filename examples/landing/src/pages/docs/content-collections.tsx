@@ -12,7 +12,7 @@ export default function DocPage(_props: RouteProps) {
         Content collections
       </h1>
       <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted">
-        Write content in Markdown with frontmatter and X turns it into pages, which covers blogs,
+        Write content in Markdown with frontmatter and X turns it into pages for blogs,
         documentation, and most other content-driven sites.
       </p>
 

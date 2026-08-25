@@ -80,8 +80,8 @@ export default defineConfig({
         The low-level pieces are exported too:{" "}
         <span className="text-foreground">findLeakedEnvKeys(code)</span>,{" "}
         <span className="text-foreground">assertNoEnvLeakage(code, file)</span>, and the{" "}
-        <span className="text-foreground">PUBLIC_ENV_PREFIX</span> constant, both handy for custom
-        build tooling or CI checks.
+        <span className="text-foreground">PUBLIC_ENV_PREFIX</span> constant: all three are handy for
+        custom build tooling or CI checks.
       </p>
 
       <h2 className="text-xl">CSRF protection</h2>
@@ -116,7 +116,7 @@ export default defineConfig({
       <p className="mt-2 text-muted-foreground">
         The token cookie is <span className="text-foreground">not</span> set automatically: your app
         sets it once, typically when a session starts (a login route), by wrapping the response with{" "}
-        <span className="text-foreground">withCsrfCookie</span>, or generate one yourself with{" "}
+        <span className="text-foreground">withCsrfCookie</span>, or by generating one yourself with{" "}
         <span className="text-foreground">generateCsrfToken</span>. From the browser, read the
         cookie and echo it on every POST to <span className="text-foreground">/__x/actions/*</span>:
       </p>

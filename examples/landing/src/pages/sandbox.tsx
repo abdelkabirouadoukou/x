@@ -12,7 +12,7 @@ export default function SandboxPage() {
           Run a real X project, right here.
         </h1>
         <p className="mt-5 text-[1.05rem] leading-relaxed text-fg-muted">
-          Nothing to install. The sandbox runs a full X starter in your browser with the editor,
+          Nothing to install. The sandbox will run a full X starter in your browser with the editor,
           terminal, and preview wired together. It isn't live yet; the slot below is reserved for
           it.
         </p>
