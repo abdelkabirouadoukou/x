@@ -165,6 +165,9 @@ describe("generateEntrySource", () => {
     expect(re.test("example.com:8080")).toBe(true);
     expect(re.test("evil.com, evil2.com")).toBe(false);
     expect(re.test("with space.com")).toBe(false);
+    // Copilot follow-up to #212: comma-joined scalar values must be rejected
+    // outright, not truncated at the first comma and partially trusted.
+    expect(src).toContain('single.includes(",")');
   });
 
   test("honors write backpressure and cancels the reader on disconnect", () => {
