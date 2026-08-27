@@ -1,5 +1,15 @@
 # @thexjs/auth
 
+## 3.0.9
+
+### Patch Changes
+
+- d0b74a3: Add `configureTrustedProxy({ trustForwardedHeaders })` API to gate `X-Forwarded-For` / `X-Real-IP` header trust. Default is `false` (headers ignored), defeating IP-spoofing attacks against brute-force guards and audit trails. Adapters (e.g. Vercel) opt in explicitly. Validate inbound `x-request-id` against `/^[A-Za-z0-9_-]{1,128}$/` in `tracing.ts` and `audit.ts` — malformed values are replaced with a fresh UUID. Closes #167.
+- Updated dependencies [13d5e42]
+- Updated dependencies [a046ede]
+- Updated dependencies [d0b74a3]
+  - @thexjs/core@1.8.0
+
 ## 3.0.8
 
 ### Patch Changes

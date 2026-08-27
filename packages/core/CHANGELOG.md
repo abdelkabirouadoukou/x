@@ -1,5 +1,16 @@
 # @thexjs/core
 
+## 1.8.0
+
+### Minor Changes
+
+- d0b74a3: Add `configureTrustedProxy({ trustForwardedHeaders })` API to gate `X-Forwarded-For` / `X-Real-IP` header trust. Default is `false` (headers ignored), defeating IP-spoofing attacks against brute-force guards and audit trails. Adapters (e.g. Vercel) opt in explicitly. Validate inbound `x-request-id` against `/^[A-Za-z0-9_-]{1,128}$/` in `tracing.ts` and `audit.ts` — malformed values are replaced with a fresh UUID. Closes #167.
+
+### Patch Changes
+
+- 13d5e42: Bound the island-bundle caches (`islandBundleCache` and `islandFileCache`) in `createApp` with an LRU eviction strategy via a new generic `BoundedCache<K,V>` class. Previously these plain `Map`s grew unbounded for the lifetime of the process, accumulating full bundled JS strings. They now cap at 500 entries by default (configurable via `CreateAppOptions.islandCacheMaxEntries`). Closes #159.
+- a046ede: Fix critical memory leak where client-side navigation orphaned hydrated islands without calling `.unmount()`, causing leaked event listeners, timers, and fiber trees. Islands now register their React roots in `window.__xIslandRoots`, and `navigate()` unmounts all outgoing roots before swapping `innerHTML`. Closes #158, Closes #155.
+
 ## 1.7.1
 
 ### Patch Changes
