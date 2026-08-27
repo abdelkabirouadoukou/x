@@ -1,6 +1,7 @@
 import { existsSync, watch } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { type ComponentType, createElement, type ReactNode } from "react";
+import { BoundedCache } from "./bounded-cache";
 import type { RouteMode } from "./build";
 import { type ContentEntry, renderMarkdown, scanContent } from "./content";
 import { renderErrorOverlay } from "./error-overlay";
@@ -114,6 +115,12 @@ export interface CreateAppOptions {
    * crossed. Default: 1 MiB.
    */
   maxBodySize?: number;
+  /**
+   * Maximum entries in the per-route island bundle caches (both the
+   * route→script-list mapping and the URL→bundled-JS file cache). Entries are
+   * evicted LRU (oldest-first) once the cap is exceeded. Default: 500.
+   */
+  islandCacheMaxEntries?: number;
   /**
    * Pre-resolved routes/actions for runtimes that can't scan the filesystem
    * or dynamically `import()` a `.tsx` file at request time (e.g. Vercel's
@@ -318,8 +325,10 @@ export async function createApp(options: CreateAppOptions): Promise<AppServeOpti
   const serverFnHandler = getServerFunctionHandler(options.security?.csrf);
   const staticCache = new IsrCache(500);
   let actionModules = new Map<string, ActionModuleInfo>();
-  const islandBundleCache = new Map<string, string[]>();
-  const islandFileCache = new Map<string, string>();
+  const islandBundleCache = new BoundedCache<string, string[]>(
+    options.islandCacheMaxEntries ?? 500,
+  );
+  const islandFileCache = new BoundedCache<string, string>(options.islandCacheMaxEntries ?? 500);
 
   /**
    * Bundles (or reuses a cached bundle of) the islands actually used by a
