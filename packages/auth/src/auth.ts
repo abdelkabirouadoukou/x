@@ -445,29 +445,56 @@ export function defineAuth(config: AuthConfig): Auth {
       });
     }
 
-    const user = await provider.authorize(params, { request: req });
-    if (!user?.id) {
-      // Convert the reservations into real failures (the synchronous bump is
-      // what closes the race), then release the reservation slots.
-      if (accountKey !== null) bruteForce.recordFailure(accountKey);
-      if (ipKey !== null) bruteForce.recordFailure(ipKey);
-      if (accountKey !== null) bruteForce.release(accountKey);
-      if (ipKey !== null) bruteForce.release(ipKey);
+    // `authorize` is wrapped in try/catch/finally so both reservations are
+    // released no matter how it exits — resolve, return falsy, or throw. If the
+    // reservation leak went unreleased (the `inflight` counter in brute-force.ts
+    // has no expiry), a single throwing provider would permanently cap the
+    // account/IP at `maxAttempts` for the life of the process once the counter
+    // reached it.
+    let user: AuthUser | null = null;
+    try {
+      user = await provider.authorize(params, { request: req });
+      if (!user?.id) {
+        // Convert the reservations into real failures (the synchronous bump is
+        // what closes the race).
+        if (accountKey !== null) bruteForce.recordFailure(accountKey);
+        if (ipKey !== null) bruteForce.recordFailure(ipKey);
+        auditLoginFailure({
+          userId: null,
+          provider: provider.id,
+          ...requestAuditContext(req),
+          reason: "invalid credentials",
+        });
+        return new Response("Invalid credentials", { status: 401 });
+      }
+    } catch {
+      // The provider failed internally (misconfigured/upstream outage). This is
+      // a server-side fault, not a wrong credential, so it must NOT be counted
+      // as a brute-force failure — recording one here would let an attacker lock
+      // an account by tripping a throwing provider. Return 5xx; the finally
+      // block still releases the reserved slots so a healthy attempt can follow.
       auditLoginFailure({
         userId: null,
         provider: provider.id,
         ...requestAuditContext(req),
-        reason: "invalid credentials",
+        reason: "provider error",
       });
-      return new Response("Invalid credentials", { status: 401 });
+      return new Response("Sign-in failed", { status: 500 });
+    } finally {
+      // Roll back both reservations on every exit path — success rolls them
+      // back, failures release the slot after it became a recorded failure, and
+      // a throw must still release them so capacity is never leaked.
+      if (accountKey !== null) bruteForce.release(accountKey);
+      if (ipKey !== null) bruteForce.release(ipKey);
     }
-    // Success: roll back both reservations (a successful login is not a failure).
-    if (accountKey !== null) bruteForce.release(accountKey);
-    if (ipKey !== null) bruteForce.release(ipKey);
-    // Reset only the account bucket. The IP bucket must keep counting until its
-    // window naturally expires: it aggregates attempts across *all* accounts
-    // from that IP, and clearing it on any successful login would let an
-    // attacker who owns one account keep resetting the spray counter.
+    // Reaching here means `authorize` resolved a user with an id (anything else
+    // returned above). TS can't narrow `user` across the try/finally boundary,
+    // so assert it — a resolved-null user already returned in the try block.
+    if (user === null) throw new Error("unreachable: authorize resolved falsy");
+    // Success: reset only the account bucket. The IP bucket must keep counting
+    // until its window naturally expires: it aggregates attempts across *all*
+    // accounts from that IP, and clearing it on any successful login would let
+    // an attacker who owns one account keep resetting the spray counter.
     if (accountKey !== null) bruteForce.reset(accountKey);
     return establishSession(user, provider.id, undefined, req);
   };
