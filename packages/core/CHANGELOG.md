@@ -162,7 +162,7 @@
 
 ## 1.3.6
 
-### Patch Changes
+### Minor Changes
 
 - d628d5e: Auth hardening (closes #75 and #112):
   
