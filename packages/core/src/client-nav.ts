@@ -121,6 +121,12 @@ export const CLIENT_NAV_SCRIPT = `
         }
         if (push) history.pushState({ xNav: true }, "", payload.finalUrl);
         if (doc.title) document.title = doc.title;
+        if (window.__xIslandRoots) {
+          for (var i = 0; i < window.__xIslandRoots.length; i++) {
+            try { window.__xIslandRoots[i].unmount(); } catch (_) {}
+          }
+          window.__xIslandRoots.length = 0;
+        }
         root.innerHTML = next.innerHTML;
         reexecuteScripts(root);
         if (url.hash) {

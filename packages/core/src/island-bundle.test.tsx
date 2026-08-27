@@ -19,6 +19,25 @@ export function Counter() {
 export const islands = { Counter };
 `;
 
+const CLEANUP_ROUTE_PATH = join(FIXTURE_DIR, "route-cleanup.tsx");
+
+const CLEANUP_ROUTE_SOURCE = `import { useEffect, useState } from "react";
+
+export function CleanupTracker() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      (window as any).__xTestCleanupCount =
+        ((window as any).__xTestCleanupCount || 0) + 1;
+    };
+  }, []);
+  return <div>{mounted ? "alive" : "init"}</div>;
+}
+
+export const islands = { CleanupTracker };
+`;
+
 // SSR an island exactly as the request pipeline does (IslandProvider + Island),
 // so the markup that reaches the browser carries the data-island wrapper.
 async function ssrIsland(): Promise<string> {
@@ -49,6 +68,7 @@ async function hydrate(): Promise<void> {
 beforeAll(() => {
   mkdirSync(FIXTURE_DIR, { recursive: true });
   writeFileSync(ROUTE_PATH, ROUTE_SOURCE);
+  writeFileSync(CLEANUP_ROUTE_PATH, CLEANUP_ROUTE_SOURCE);
   GlobalRegistrator.register();
 });
 
@@ -83,5 +103,67 @@ describe("island hydration runtime", () => {
     document.querySelector("button")?.click();
     await tick();
     expect(document.querySelector("button")?.textContent).toBe("Like 2");
+  });
+});
+
+describe("island root unmount on client-nav (#158)", () => {
+  test("useEffect cleanup fires when island root is unmounted via __xIslandRoots", async () => {
+    (window as any).__xTestCleanupCount = 0;
+
+    const registry = createIslandRegistry();
+    const { CleanupTracker } = await import(CLEANUP_ROUTE_PATH);
+    document.body.innerHTML = renderToString(
+      <IslandProvider registry={registry}>
+        <Island name="CleanupTracker">
+          <CleanupTracker />
+        </Island>
+      </IslandProvider>,
+    );
+
+    const entryPath = join(FIXTURE_DIR, `entry-cleanup-${entryIndex++}.tsx`);
+    writeFileSync(entryPath, generateHydrateEntry(CLEANUP_ROUTE_PATH));
+    await import(entryPath);
+    await tick();
+
+    expect(document.querySelector("div")?.textContent).toBe("alive");
+    expect((window as any).__xTestCleanupCount).toBe(0);
+    expect((window as any).__xIslandRoots).toBeDefined();
+    expect((window as any).__xIslandRoots.length).toBe(1);
+
+    const roots = (window as any).__xIslandRoots;
+    for (let i = 0; i < roots.length; i++) {
+      roots[i].unmount();
+    }
+    roots.length = 0;
+    await tick();
+
+    expect((window as any).__xTestCleanupCount).toBe(1);
+  });
+
+  test("two sequential hydrate cycles do not leak island roots", async () => {
+    document.body.innerHTML = await ssrIsland();
+    await hydrate();
+
+    expect((window as any).__xIslandRoots).toBeDefined();
+    expect((window as any).__xIslandRoots.length).toBe(1);
+
+    const roots1 = (window as any).__xIslandRoots;
+    for (let i = 0; i < roots1.length; i++) {
+      roots1[i].unmount();
+    }
+    roots1.length = 0;
+
+    document.body.innerHTML = await ssrIsland();
+    await hydrate();
+
+    expect((window as any).__xIslandRoots.length).toBe(1);
+
+    const roots2 = (window as any).__xIslandRoots;
+    for (let i = 0; i < roots2.length; i++) {
+      roots2[i].unmount();
+    }
+    roots2.length = 0;
+
+    expect((window as any).__xIslandRoots.length).toBe(0);
   });
 });

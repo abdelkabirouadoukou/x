@@ -84,16 +84,19 @@ function reportHydrationMismatch(error, name) {
   }
 }
 
+window.__xIslandRoots = [];
+
 document.querySelectorAll("[data-island]").forEach((el) => {
   const name = el.getAttribute("data-island");
   if (!name) return;
   const Component = resolveIsland(name);
   if (!Component) return;
-  hydrateRoot(el, React.createElement(Component), {
+  const root = hydrateRoot(el, React.createElement(Component), {
     onRecoverableError(error) {
       reportHydrationMismatch(error, name);
     },
   });
+  window.__xIslandRoots.push(root);
 });
 `;
 }
