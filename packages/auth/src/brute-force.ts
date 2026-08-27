@@ -47,6 +47,15 @@ export function createBruteForceGuard(options: BruteForceOptions = {}) {
   const windowMs = options.windowMs ?? 15 * 60_000;
   const buckets = new Map<string, Bucket>();
 
+  /**
+   * In-flight reservations. `reserve` bumps this counter synchronously before
+   * `await authorize(...)`, so N concurrent requests can't all pass the lockout
+   * check before any commits a failure (the TOCTOU in #168). Each reserved
+   * slot is released either on success (rollback) or after being converted to a
+   * real failure.
+   */
+  const inflight = new Map<string, number>();
+
   /** Client IP, or null when neither proxy header is present. */
   function clientIp(req: Request): string | null {
     return clientIpFromRequest(req);
@@ -102,6 +111,31 @@ export function createBruteForceGuard(options: BruteForceOptions = {}) {
     return { ok: maxAttempts > 1, remaining: maxAttempts - 1, resetAt };
   }
 
+  /**
+   * Synchronously reserves an attempt slot for `key` (no `await` between the
+   * capacity check and the bump). Parallel callers that all clear the persisted
+   * lockout are still gated: the in-flight counter caps how many may proceed
+   * before any of them commits a failure. Returns `ok: false` immediately when
+   * at capacity so the caller can respond 429 with no authorization work.
+   */
+  function reserve(key: string, now = Date.now()): AttemptResult {
+    const s = status(key, now);
+    if (!s.ok) return s;
+    const count = inflight.get(key) ?? 0;
+    if (count >= maxAttempts) {
+      return { ok: false, remaining: maxAttempts - count, resetAt: s.resetAt };
+    }
+    inflight.set(key, count + 1);
+    return { ok: true, remaining: maxAttempts - (count + 1), resetAt: s.resetAt };
+  }
+
+  /** Releases a reservation (rollback on success, or after it became a failure). */
+  function release(key: string): void {
+    const count = inflight.get(key) ?? 0;
+    if (count <= 1) inflight.delete(key);
+    else inflight.set(key, count - 1);
+  }
+
   /** Clears the bucket for `key` after a successful sign-in. */
   function reset(key: string): void {
     buckets.delete(key);
@@ -122,6 +156,8 @@ export function createBruteForceGuard(options: BruteForceOptions = {}) {
     accountKey,
     ipKey,
     status,
+    reserve,
+    release,
     recordFailure,
     reset,
     buckets,

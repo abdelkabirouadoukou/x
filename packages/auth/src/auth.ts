@@ -403,15 +403,29 @@ export function defineAuth(config: AuthConfig): Auth {
     const identifier = params.username ?? params.email ?? params.user ?? params.identifier ?? "";
     const accountKey = identifier !== "" ? bruteForce.accountKey(identifier) : null;
     const ipKey = bruteForce.ipKey(req);
-    const accountStatus = accountKey === null ? null : bruteForce.status(accountKey);
-    const ipStatus = ipKey === null ? null : bruteForce.status(ipKey);
+
+    // Reserve attempt slots synchronously BEFORE authorizing (no await between
+    // the capacity check and the bump). Reserving prevents the TOCTOU race
+    // where N parallel bad-password requests all pass the read-only status
+    // check before any commits a failure, which would let a credential-stuffing
+    // burst sail past `maxAttempts`. The reservation is released on success or
+    // converted into a real failure below.
+    const accountReserve =
+      accountKey === null ? null : { key: accountKey, result: bruteForce.reserve(accountKey) };
+    const ipReserve = ipKey === null ? null : { key: ipKey, result: bruteForce.reserve(ipKey) };
     const status = {
       // A missing axis is skipped (treated as allowed), not as a lockout.
-      ok: (accountStatus === null || accountStatus.ok) && (ipStatus === null || ipStatus.ok),
+      ok:
+        (accountReserve === null || accountReserve.result.ok) &&
+        (ipReserve === null || ipReserve.result.ok),
       // Retry-After must reflect the longer of the two windows.
-      resetAt: Math.max(accountStatus?.resetAt ?? 0, ipStatus?.resetAt ?? 0),
+      resetAt: Math.max(accountReserve?.result.resetAt ?? 0, ipReserve?.result.resetAt ?? 0),
     };
     if (!status.ok) {
+      // Roll back any reservation we did make so a rejected axis doesn't leak
+      // an in-flight slot for the other.
+      if (accountReserve?.result.ok) bruteForce.release(accountReserve.key);
+      if (ipReserve?.result.ok) bruteForce.release(ipReserve.key);
       auditLoginFailure({
         userId: null,
         provider: provider.id,
@@ -428,8 +442,12 @@ export function defineAuth(config: AuthConfig): Auth {
 
     const user = await provider.authorize(params, { request: req });
     if (!user?.id) {
+      // Convert the reservations into real failures (the synchronous bump is
+      // what closes the race), then release the reservation slots.
       if (accountKey !== null) bruteForce.recordFailure(accountKey);
       if (ipKey !== null) bruteForce.recordFailure(ipKey);
+      if (accountKey !== null) bruteForce.release(accountKey);
+      if (ipKey !== null) bruteForce.release(ipKey);
       auditLoginFailure({
         userId: null,
         provider: provider.id,
@@ -438,6 +456,9 @@ export function defineAuth(config: AuthConfig): Auth {
       });
       return new Response("Invalid credentials", { status: 401 });
     }
+    // Success: roll back both reservations (a successful login is not a failure).
+    if (accountKey !== null) bruteForce.release(accountKey);
+    if (ipKey !== null) bruteForce.release(ipKey);
     // Reset only the account bucket. The IP bucket must keep counting until its
     // window naturally expires: it aggregates attempts across *all* accounts
     // from that IP, and clearing it on any successful login would let an

@@ -124,6 +124,26 @@ describe("auth hardening: brute-force lockout on credentials", () => {
     expect(locked.headers.get("Retry-After")).toBeTruthy();
   });
 
+  test("parallel bad-password requests admit at most maxAttempts to authorize (#168)", async () => {
+    const ip = "203.0.113.25";
+    // With a persisted lockout of 3, a burst of N parallel requests must not
+    // all pass the pre-authorize gate. The synchronous reserve caps admission.
+    const responses = await Promise.all(
+      Array.from({ length: 12 }, () =>
+        auth.handleRequest(
+          signInRequest("burst-lock@example.com", "wrong", { "x-forwarded-for": ip }),
+        ),
+      ),
+    );
+    const authorized = responses.filter((r) => r.status === 401).length;
+    const throttled = responses.filter((r) => r.status === 429).length;
+
+    // At most maxAttempts (3) proceeded to the (failing) provider; the rest 429.
+    expect(authorized).toBeLessThanOrEqual(3);
+    expect(throttled + authorized).toBe(12);
+    expect(throttled).toBeGreaterThanOrEqual(9);
+  });
+
   test("a successful sign-in clears the lockout bucket", async () => {
     const ip = "203.0.113.21";
     for (let i = 0; i < 2; i++) {
@@ -380,6 +400,50 @@ describe("auth hardening: brute-force guard internals", () => {
       guard.recordFailure(keyA);
       expect(guard.status(keyA).ok).toBe(false);
       expect(guard.status(keyB).ok).toBe(false); // same bucket
+      guard.dispose();
+    } finally {
+      resetTrustedProxy();
+    }
+  });
+
+  test("reserve is synchronous and caps in-flight attempts at maxAttempts (#168)", () => {
+    const guard = createBruteForceGuard({ maxAttempts: 3, windowMs: 60_000 });
+    guard.dispose();
+    const key = guard.accountKey("burst@example.com");
+
+    // Three reservations are allowed (one per attempt slot)...
+    expect(guard.reserve(key).ok).toBe(true);
+    expect(guard.reserve(key).ok).toBe(true);
+    expect(guard.reserve(key).ok).toBe(true);
+    // ...a fourth is refused immediately with no authorize work.
+    expect(guard.reserve(key).ok).toBe(false);
+
+    // Releasing a slot (rollback on success) restores capacity.
+    guard.release(key);
+    expect(guard.reserve(key).ok).toBe(true);
+
+    // A reservation does not itself count as a persisted failure.
+    expect(guard.status(key).ok).toBe(true);
+    guard.dispose();
+  });
+
+  test("parallel reservers close the TOCTOU — at most maxAttempts proceed (#168)", async () => {
+    configureTrustedProxy({ trustForwardedHeaders: true });
+    try {
+      const guard = createBruteForceGuard({ maxAttempts: 3, windowMs: 60_000 });
+      guard.dispose();
+      const key = guard.accountKey("parallel@example.com");
+
+      // Simulate the sign-in gate: N concurrent requests all attempt to reserve
+      // before authorizing. The synchronous in-flight cap must admit <= 3.
+      const results = await Promise.all(
+        Array.from({ length: 10 }, () => Promise.resolve().then(() => guard.reserve(key))),
+      );
+      const admitted = results.filter((r) => r.ok).length;
+
+      expect(admitted).toBeLessThanOrEqual(3);
+      // The refused ones returned ok:false so the caller responds 429.
+      expect(results.filter((r) => !r.ok).length).toBeGreaterThanOrEqual(7);
       guard.dispose();
     } finally {
       resetTrustedProxy();
