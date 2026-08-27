@@ -1,5 +1,14 @@
 # @thexjs/auth
 
+## 3.0.10
+
+### Patch Changes
+
+- 05140e1: Thread the origin `Request` through `setSessionCookie(res, user, provider, req?)` and `revokeAllForUser(userId, req?)` so login-success and session-revoked audit entries capture the real origin IP + request-id instead of `null`. The optional third/fourth argument keeps programmatic/offline flows backward-compatible. Closes #169.
+- c1e2c62: Close the TOCTOU race in the brute-force guard: `reserve()` now bumps an in-flight attempt counter synchronously before the async `authorize` call, so N parallel bad-password requests can no longer all pass the lockout check before any commits a failure. At most `maxAttempts` proceed to the provider; the rest get an immediate 429. Reservations are rolled back on success and converted to real failures on failure. Closes #168.
+- Updated dependencies [a2f974c]
+  - @thexjs/core@1.8.1
+
 ## 3.0.9
 
 ### Patch Changes

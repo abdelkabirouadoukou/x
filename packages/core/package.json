@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/core",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Full-stack React framework core (router, SSR/SSG renderer, islands, server functions) for the x framework, built on Bun.",
   "keywords": [
     "react",
