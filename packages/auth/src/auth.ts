@@ -118,7 +118,12 @@ export interface Auth {
   /** Reads the current session from a `Request`. Server-side helper. */
   getSession(req: Request): Promise<Session | null>;
   /** Creates a session for `user` and attaches the session cookie to `res`. */
-  setSessionCookie(res: Response, user: AuthUser, provider: string): Promise<Response>;
+  setSessionCookie(
+    res: Response,
+    user: AuthUser,
+    provider: string,
+    req?: Request,
+  ): Promise<Response>;
   /** Clears the session cookie from `res` and revokes the session, if any. */
   clearSessionCookie(res: Response, req?: Request): Promise<Response>;
   /**
