@@ -207,6 +207,49 @@ describe("withRequestTracing", () => {
     expect(tracer.spans[0]?.attributes["x.requestId"]).toBe("inbound-7");
   });
 
+  test("rejects inbound x-request-id that fails format validation (too long)", async () => {
+    let seen = "";
+    const handler = withRequestTracing<never>(async (req) => {
+      seen = traceRequestId(req);
+      return new Response("ok");
+    });
+
+    const longId = "a".repeat(129);
+    await handler(new Request("http://x.test/foo", { headers: { "x-request-id": longId } }));
+
+    // The malformed ID should be replaced with a freshly generated UUID
+    expect(seen).not.toBe(longId);
+    expect(seen).toMatch(/^[0-9a-f-]{36}$/);
+    expect(tracer.spans[0]?.attributes["x.requestId"]).toBe(seen);
+  });
+
+  test("rejects inbound x-request-id with spaces or special characters", async () => {
+    let seen = "";
+    const handler = withRequestTracing<never>(async (req) => {
+      seen = traceRequestId(req);
+      return new Response("ok");
+    });
+
+    await handler(new Request("http://x.test/foo", { headers: { "x-request-id": "has spaces" } }));
+
+    expect(seen).not.toBe("has spaces");
+    expect(seen).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  test("accepts a valid 128-char alphanumeric x-request-id", async () => {
+    let seen = "";
+    const handler = withRequestTracing<never>(async (req) => {
+      seen = traceRequestId(req);
+      return new Response("ok");
+    });
+
+    const validId = "a".repeat(128);
+    await handler(new Request("http://x.test/foo", { headers: { "x-request-id": validId } }));
+
+    expect(seen).toBe(validId);
+    expect(tracer.spans[0]?.attributes["x.requestId"]).toBe(validId);
+  });
+
   test("a streamed-body request still aborts oversize bodies (no clone hang)", async () => {
     const source = new ReadableStream<Uint8Array>({
       start(controller) {

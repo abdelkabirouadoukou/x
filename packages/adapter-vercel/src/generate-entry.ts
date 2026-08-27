@@ -10,6 +10,12 @@ import { generateAdapterEntry } from "@thexjs/core/adapter";
  */
 export function generateEntrySource(manifest: BuildManifest, entryDir: string): string {
   const bridge = `
+// -- Vercel trusted-proxy opt-in -----------------------------------------------
+// Vercel's edge always sets X-Forwarded-For correctly; trust it for IP resolution
+// (brute-force guards, audit trails). See @thexjs/core security/trusted-proxy.ts.
+import { configureTrustedProxy } from "@thexjs/core";
+configureTrustedProxy({ trustForwardedHeaders: true });
+
 // -- Node <-> Web Request/Response bridge (Vercel \`nodejs*.x\` runtime
 //    functions are invoked Node-style: \`(req, res) => void\`).
 //

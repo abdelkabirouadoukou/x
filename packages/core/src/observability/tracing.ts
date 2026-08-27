@@ -61,6 +61,7 @@ export const OTEL_ERROR_STATUS_CODE = 2;
  * require only executes on a server runtime, and any platform without
  * async_hooks degrades to "no request context" instead of crashing.
  */
+import { SAFE_REQUEST_ID_RE } from "../security/validation";
 import { redactString } from "./redact";
 
 interface AsyncLocalStorageLike {
@@ -218,8 +219,15 @@ export function dbTraceAttributes(system: string, statement: string): Record<str
  */
 const requestIds = new WeakMap<Request, string>();
 
+function safeRequestId(raw: string | null): string | null {
+  if (raw === null) return null;
+  return SAFE_REQUEST_ID_RE.test(raw) ? raw : null;
+}
+
 export function traceRequestId(req: Request): string {
-  return requestIds.get(req) ?? req.headers.get("x-request-id") ?? crypto.randomUUID();
+  return (
+    requestIds.get(req) ?? safeRequestId(req.headers.get("x-request-id")) ?? crypto.randomUUID()
+  );
 }
 
 /**
@@ -233,7 +241,7 @@ export function withRequestTracing<Server = unknown>(
   handler: (req: Request, server?: Server) => Response | Promise<Response>,
 ): (req: Request, server?: Server) => Promise<Response> {
   return async (req: Request, server?: Server) => {
-    const existing = req.headers.get("x-request-id");
+    const existing = safeRequestId(req.headers.get("x-request-id"));
     const requestId = existing ?? crypto.randomUUID();
     if (!existing) requestIds.set(req, requestId);
     const url = new URL(req.url);

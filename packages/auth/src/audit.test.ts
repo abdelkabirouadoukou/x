@@ -1,6 +1,13 @@
 import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { type AuditEntry, type AuditSink, noopAuditSink, setAuditSink } from "@thexjs/core";
+import {
+  type AuditEntry,
+  type AuditSink,
+  configureTrustedProxy,
+  noopAuditSink,
+  resetTrustedProxy,
+  setAuditSink,
+} from "@thexjs/core";
 import { defineAuth, SESSION_COOKIE } from "./auth";
 import type { CredentialsProvider } from "./providers";
 import { createSQLiteSessionStore } from "./session";
@@ -64,11 +71,13 @@ function extractCookie(res: Response, name: string): string | null {
 }
 
 beforeAll(() => {
+  configureTrustedProxy({ trustForwardedHeaders: true });
   setAuditSink(capturingSink);
 });
 
 afterAll(() => {
   setAuditSink(noopAuditSink);
+  resetTrustedProxy();
 });
 
 describe("audit: credentials sign-in", () => {
@@ -189,5 +198,26 @@ describe("audit: RBAC permission denied", () => {
     expect(entry.event).toBe("auth.permission_denied");
     expect(entry.userId).toBe("u_42");
     expect(entry.reason).toBe("Forbidden");
+  });
+});
+
+describe("audit: untrusted proxy path", () => {
+  test("auth.login.failure records ip as null when trustForwardedHeaders is false", async () => {
+    resetTrustedProxy();
+    entries = [];
+    const auth = defineAuth({
+      secret: "test-secret",
+      store: createSQLiteSessionStore({ db: new Database(":memory:") }),
+      providers: [dummyProvider],
+    });
+    const res = await auth.handleRequest(
+      post("/api/auth/signin/local", "email=nobody@example.com&password=wrong"),
+    );
+    expect(res.status).toBe(401);
+    const entry = entries.at(-1) as Entry;
+    expect(entry.event).toBe("auth.login.failure");
+    expect(entry.ip).toBeNull();
+    // Restore trusted state for other tests.
+    configureTrustedProxy({ trustForwardedHeaders: true });
   });
 });

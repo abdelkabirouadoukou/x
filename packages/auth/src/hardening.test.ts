@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
+import { configureTrustedProxy, resetTrustedProxy } from "@thexjs/core";
 import { defineAuth, OAUTH_PKCE_COOKIE, OAUTH_STATE_COOKIE, SESSION_COOKIE } from "./auth";
 import { createBruteForceGuard } from "./brute-force";
 import { createSQLiteSessionStore } from "./session";
@@ -93,6 +94,7 @@ describe("auth hardening: brute-force lockout on credentials", () => {
   let auth: ReturnType<typeof defineAuth>;
 
   beforeAll(() => {
+    configureTrustedProxy({ trustForwardedHeaders: true });
     db = new Database(":memory:");
     auth = defineAuth({
       secret: "test-secret",
@@ -102,7 +104,10 @@ describe("auth hardening: brute-force lockout on credentials", () => {
     });
   });
 
-  afterAll(() => db.close());
+  afterAll(() => {
+    db.close();
+    resetTrustedProxy();
+  });
 
   test("locks an account after maxAttempts consecutive failures and returns 429", async () => {
     const ip = "203.0.113.20";
@@ -290,25 +295,95 @@ describe("auth hardening: brute-force lockout on credentials", () => {
 // PG_TEST_URL above); CI provides one through a postgres service container.
 describe("auth hardening: brute-force guard internals", () => {
   test("account and IP buckets are namespaced apart (#133)", () => {
-    const guard = createBruteForceGuard({ maxAttempts: 3, windowMs: 60_000 });
-    guard.dispose();
-    // An identifier that looks like an IP must not key the same bucket as the
-    // actual client IP — a collision would share failures/resets between the
-    // account and IP axes and break independent throttling.
-    const identifier = "198.51.100.42";
-    const req = new Request("http://x/", {
-      headers: { "x-forwarded-for": identifier },
-    });
-    expect(guard.accountKey(identifier)).not.toBe(guard.ipKey(req));
+    configureTrustedProxy({ trustForwardedHeaders: true });
+    try {
+      const guard = createBruteForceGuard({ maxAttempts: 3, windowMs: 60_000 });
+      guard.dispose();
+      // An identifier that looks like an IP must not key the same bucket as the
+      // actual client IP — a collision would share failures/resets between the
+      // account and IP axes and break independent throttling.
+      const identifier = "198.51.100.42";
+      const req = new Request("http://x/", {
+        headers: { "x-forwarded-for": identifier },
+      });
+      expect(guard.accountKey(identifier)).not.toBe(guard.ipKey(req));
+    } finally {
+      resetTrustedProxy();
+    }
   });
 
   test("ipKey is null when no client IP is knowable (#133)", () => {
     const guard = createBruteForceGuard();
     guard.dispose();
+    // With trustForwardedHeaders = false (default), even x-real-ip is ignored.
     const bare = new Request("http://x/");
     expect(guard.ipKey(bare)).toBeNull();
     const withIp = new Request("http://x/", { headers: { "x-real-ip": "203.0.113.7" } });
-    expect(guard.ipKey(withIp)).toBe("login:ip:203.0.113.7");
+    expect(guard.ipKey(withIp)).toBeNull();
+  });
+
+  test("ipKey resolves when trustForwardedHeaders is true", () => {
+    configureTrustedProxy({ trustForwardedHeaders: true });
+    try {
+      const guard = createBruteForceGuard();
+      guard.dispose();
+      const withIp = new Request("http://x/", { headers: { "x-real-ip": "203.0.113.7" } });
+      expect(guard.ipKey(withIp)).toBe("login:ip:203.0.113.7");
+    } finally {
+      resetTrustedProxy();
+    }
+  });
+
+  test("attacker-set X-Forwarded-For does not create separate IP buckets when untrusted", () => {
+    // Default: trustForwardedHeaders = false. Two requests with different
+    // x-forwarded-for headers both resolve to null IP → same (null) bucket key.
+    // The IP axis is simply skipped; the account axis still locks.
+    const guard = createBruteForceGuard({ maxAttempts: 2, windowMs: 60_000 });
+    guard.dispose();
+
+    const reqA = new Request("http://x/", { headers: { "x-forwarded-for": "attacker-A" } });
+    const reqB = new Request("http://x/", { headers: { "x-forwarded-for": "attacker-B" } });
+
+    // Both resolve to null when untrusted → no IP bucket at all.
+    expect(guard.ipKey(reqA)).toBeNull();
+    expect(guard.ipKey(reqB)).toBeNull();
+
+    // Both land in the same account bucket.
+    const key = guard.accountKey("victim@example.com");
+    guard.recordFailure(key);
+    guard.recordFailure(key);
+    expect(guard.status(key).ok).toBe(false); // locked after 2 failures
+
+    // A fresh attempt from "attacker-B" is still locked — the account bucket
+    // is shared regardless of spoofed IP headers.
+    expect(guard.status(key).ok).toBe(false);
+    guard.dispose();
+  });
+
+  test("genuinely trusted and consistent X-Forwarded-For lands in the same IP bucket", () => {
+    configureTrustedProxy({ trustForwardedHeaders: true });
+    try {
+      const guard = createBruteForceGuard({ maxAttempts: 2, windowMs: 60_000 });
+      guard.dispose();
+
+      const reqA = new Request("http://x/", { headers: { "x-forwarded-for": "203.0.113.99" } });
+      const reqB = new Request("http://x/", { headers: { "x-forwarded-for": "203.0.113.99" } });
+
+      expect(guard.ipKey(reqA)).toBe("login:ip:203.0.113.99");
+      expect(guard.ipKey(reqB)).toBe("login:ip:203.0.113.99");
+
+      const keyA = guard.ipKey(reqA) as string;
+      const keyB = guard.ipKey(reqB) as string;
+      expect(keyA).toBe(keyB);
+
+      guard.recordFailure(keyA);
+      guard.recordFailure(keyA);
+      expect(guard.status(keyA).ok).toBe(false);
+      expect(guard.status(keyB).ok).toBe(false); // same bucket
+      guard.dispose();
+    } finally {
+      resetTrustedProxy();
+    }
   });
 });
 

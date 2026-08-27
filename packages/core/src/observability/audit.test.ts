@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { configureTrustedProxy, resetTrustedProxy } from "../security/trusted-proxy";
 import {
   type AuditEntry,
   type AuditSink,
@@ -178,21 +179,87 @@ describe("audit secret redaction", () => {
 });
 
 describe("request metadata helpers", () => {
-  test("clientIpFromRequest prefers x-forwarded-for, then x-real-ip, else null", () => {
+  test("clientIpFromRequest returns null for all headers when trustForwardedHeaders is false (default)", () => {
     const forwarded = new Request("http://localhost/x", {
       headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.2" },
     });
-    expect(clientIpFromRequest(forwarded)).toBe("203.0.113.9");
+    expect(clientIpFromRequest(forwarded)).toBeNull();
 
     const real = new Request("http://localhost/x", { headers: { "x-real-ip": "198.51.100.1" } });
-    expect(clientIpFromRequest(real)).toBe("198.51.100.1");
+    expect(clientIpFromRequest(real)).toBeNull();
 
     expect(clientIpFromRequest(new Request("http://localhost/x"))).toBeNull();
+  });
+
+  test("clientIpFromRequest trusts headers when trustForwardedHeaders is true", () => {
+    configureTrustedProxy({ trustForwardedHeaders: true });
+    try {
+      const forwarded = new Request("http://localhost/x", {
+        headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.2" },
+      });
+      expect(clientIpFromRequest(forwarded)).toBe("203.0.113.9");
+
+      const real = new Request("http://localhost/x", { headers: { "x-real-ip": "198.51.100.1" } });
+      expect(clientIpFromRequest(real)).toBe("198.51.100.1");
+
+      expect(clientIpFromRequest(new Request("http://localhost/x"))).toBeNull();
+    } finally {
+      resetTrustedProxy();
+    }
   });
 
   test("requestIdFromRequest reads the correlation header if present", () => {
     const withId = new Request("http://localhost/x", { headers: { "x-request-id": "abc" } });
     expect(requestIdFromRequest(withId)).toBe("abc");
     expect(requestIdFromRequest(new Request("http://localhost/x"))).toBeUndefined();
+  });
+
+  test("requestIdFromRequest rejects IDs that fail the format check", () => {
+    // Too long (>128 chars)
+    const longId = "a".repeat(129);
+    expect(
+      requestIdFromRequest(
+        new Request("http://localhost/x", { headers: { "x-request-id": longId } }),
+      ),
+    ).toBeUndefined();
+
+    // Contains spaces
+    expect(
+      requestIdFromRequest(
+        new Request("http://localhost/x", { headers: { "x-request-id": "has spaces" } }),
+      ),
+    ).toBeUndefined();
+
+    // Contains angle brackets (potential injection)
+    expect(
+      requestIdFromRequest(
+        new Request("http://localhost/x", { headers: { "x-request-id": "<script>" } }),
+      ),
+    ).toBeUndefined();
+  });
+
+  test("requestIdFromRequest accepts valid IDs", () => {
+    // UUID-style
+    expect(
+      requestIdFromRequest(
+        new Request("http://localhost/x", {
+          headers: { "x-request-id": "550e8400-e29b-41d4-a716-446655440000" },
+        }),
+      ),
+    ).toBe("550e8400-e29b-41d4-a716-446655440000");
+
+    // Alphanumeric with hyphens and underscores, up to 128 chars
+    const validId = "a".repeat(128);
+    expect(
+      requestIdFromRequest(
+        new Request("http://localhost/x", { headers: { "x-request-id": validId } }),
+      ),
+    ).toBe(validId);
+
+    expect(
+      requestIdFromRequest(
+        new Request("http://localhost/x", { headers: { "x-request-id": "req-123_abc" } }),
+      ),
+    ).toBe("req-123_abc");
   });
 });

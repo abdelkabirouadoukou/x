@@ -15,6 +15,7 @@
  * value cannot slip into an entry.
  */
 
+import { SAFE_REQUEST_ID_RE } from "../security/validation";
 import { redactString, redactValue } from "./redact";
 
 export type AuditEvent =
@@ -73,7 +74,10 @@ export { clientIpFromRequest } from "../security/ip";
 
 /** Correlation id already assigned to the request by `withRequestLogging`, if any. */
 export function requestIdFromRequest(req: Request): string | undefined {
-  return req.headers.get("x-request-id") ?? undefined;
+  const raw = req.headers.get("x-request-id");
+  if (raw === null) return undefined;
+  if (!SAFE_REQUEST_ID_RE.test(raw)) return undefined;
+  return raw;
 }
 
 /**

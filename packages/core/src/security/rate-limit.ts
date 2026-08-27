@@ -1,3 +1,5 @@
+import { isTrustedProxy } from "./trusted-proxy";
+
 /**
  * Lightweight fixed-window rate limiter. In-memory by default, keyed by client
  * IP — good enough for a single-process Bun deployment or as a first line of
@@ -64,9 +66,17 @@ function defaultKeyFn(req: Request, server?: RateLimitServer): string {
     const ip = server.requestIP(req);
     if (ip) return ip.address;
   }
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() ?? "unknown";
-  return req.headers.get("x-real-ip") ?? "unknown";
+  // Only read forwarded headers when the application has explicitly opted in
+  // to trusting them (see security/trusted-proxy.ts). Without this gate a
+  // client can set X-Forwarded-For to any value, defeating IP-based rate
+  // limiting by spinning a fresh bucket on every request.
+  if (isTrustedProxy()) {
+    const forwarded = req.headers.get("x-forwarded-for");
+    if (forwarded) return forwarded.split(",")[0]?.trim() ?? "unknown";
+    const realIp = req.headers.get("x-real-ip");
+    if (realIp) return realIp;
+  }
+  return "unknown";
 }
 
 /** Creates an independent rate limiter with its own bucket store. */
