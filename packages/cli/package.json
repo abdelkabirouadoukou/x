@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/cli",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Dev/build/start CLI for x framework apps. Requires Bun to run (https://bun.sh).",
   "keywords": [
     "cli",

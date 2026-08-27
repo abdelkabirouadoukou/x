@@ -1,5 +1,11 @@
 # @thexjs/cli
 
+## 1.1.5
+
+### Patch Changes
+
+- 553f7bc: Fix a flaky `tailwind.test.ts` serialization test that intermittently failed CI (`Test / ubuntu-latest`) due to a missing-file race in `readFileSync` and a start-timing race after process close. The compile-serialization contract is preserved.
+
 ## 1.1.4
 
 ### Patch Changes
