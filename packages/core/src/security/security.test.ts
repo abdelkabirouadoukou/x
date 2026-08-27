@@ -194,6 +194,39 @@ describe("rate limiting", () => {
     limiter.dispose();
   });
 
+  test("flood on the shared 'unknown' bucket blocks unrelated requests as a side effect", async () => {
+    // Demonstrates the self-inflicted-DoS consequence: a single heavy client
+    // overwhelms the shared "unknown" fallback bucket and, because every
+    // no-socket-IP / no-trusted-proxy request lands on that same key, innocent
+    // requests that just happen to share the fallback path are collateral.
+    const limit = 5;
+    const limiter = createRateLimiter({ limit, windowMs: 60_000 });
+
+    // A flooder blasts requests. None carry a socket IP (no `server` is passed)
+    // and trusted-proxy is off, so every one of them keys to "unknown".
+    for (let i = 0; i < limit; i++) {
+      expect(
+        await rateLimitMiddleware(
+          limiter,
+          new Request(i % 2 === 0 ? "https://a.example/x" : "https://b.example/x"),
+        ),
+      ).toBeNull();
+    }
+
+    // The flooder is now over the limit...
+    const flooder = await rateLimitMiddleware(limiter, new Request("https://a.example/x"));
+    expect(flooder?.status).toBe(429);
+
+    // ...and so is an unrelated request that never sent a request before. It
+    // shares the fallback bucket, so the flood has effectively 429'd it too.
+    const innocent = await rateLimitMiddleware(
+      limiter,
+      new Request("https://innocent.example/", { headers: { "user-agent": "legit-browser" } }),
+    );
+    expect(innocent?.status).toBe(429);
+    limiter.dispose();
+  });
+
   test("x-real-ip differentiates keys when trusted-proxy is enabled", async () => {
     configureTrustedProxy({ trustForwardedHeaders: true });
     try {
