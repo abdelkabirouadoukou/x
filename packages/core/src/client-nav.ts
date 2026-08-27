@@ -148,8 +148,10 @@ export const CLIENT_NAV_SCRIPT = `
         if (push) history.pushState({ xNav: true }, "", payload.finalUrl);
         if (doc.title) document.title = doc.title;
         if (window.__xIslandRoots) {
+          // Must stay in sync with unmountIslandRoots() — same logic, different
+          // execution context (this is an inline script, not a module import).
           for (var i = 0; i < window.__xIslandRoots.length; i++) {
-            try { window.__xIslandRoots[i].unmount(); } catch (_) {}
+            try { window.__xIslandRoots[i]?.unmount(); } catch (_) {}
           }
           window.__xIslandRoots.length = 0;
         }

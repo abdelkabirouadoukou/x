@@ -84,7 +84,9 @@ function reportHydrationMismatch(error, name) {
   }
 }
 
-window.__xIslandRoots = [];
+// Preserve roots from a prior hydration entry on the same page (e.g. partial
+// re-hydration). Only initialize when the array doesn't exist yet.
+if (!window.__xIslandRoots) window.__xIslandRoots = [];
 
 document.querySelectorAll("[data-island]").forEach((el) => {
   const name = el.getAttribute("data-island");
