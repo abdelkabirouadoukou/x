@@ -11,6 +11,12 @@
  * - data-no-prefetch  — skip hover prefetch (navigation still works)
  */
 
+declare global {
+  interface Window {
+    __xIslandRoots?: Array<{ unmount(): void }>;
+  }
+}
+
 /**
  * Unmount every React root tracked in the global registry and reset it.
  * Exported so it can be tested directly; in production it runs inside the

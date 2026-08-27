@@ -9,7 +9,6 @@ import { generateHydrateEntry } from "./island-bundle";
 
 declare global {
   interface Window {
-    __xIslandRoots?: Array<{ unmount(): void }>;
     __xTestCleanupCount?: number;
   }
 }
