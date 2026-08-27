@@ -311,6 +311,78 @@ describe("auth hardening: brute-force lockout on credentials", () => {
   });
 });
 
+describe("auth hardening: a throwing provider cannot permanently lock an account/IP (#236)", () => {
+  let db: Database;
+  let auth: ReturnType<typeof defineAuth>;
+  let shouldThrow: boolean;
+
+  const flakyProvider = {
+    id: "flaky",
+    name: "Flaky",
+    type: "credentials" as const,
+    async authorize(params: Record<string, string>) {
+      // Simulate a provider hitting a transient DB outage, then recovering.
+      if (shouldThrow) throw new Error("db outage");
+      return { id: "u_flaky", name: "Flaky", email: params.email ?? "flaky@example.com" };
+    },
+  };
+
+  const flakyRequest = (email: string, ip: string): Request => {
+    const form = new FormData();
+    form.set("email", email);
+    form.set("password", "whatever");
+    return new Request(`${BASE_URL}/api/auth/signin/flaky`, {
+      method: "POST",
+      headers: { origin: BASE_URL, "x-forwarded-for": ip },
+      body: form,
+    });
+  };
+
+  beforeAll(() => {
+    configureTrustedProxy({ trustForwardedHeaders: true });
+    db = new Database(":memory:");
+    shouldThrow = true;
+    auth = defineAuth({
+      secret: "test-secret",
+      loginBruteForce: { maxAttempts: 3, windowMs: 60_000 },
+      store: createSQLiteSessionStore({ db }),
+      providers: [flakyProvider],
+    });
+  });
+
+  afterAll(() => {
+    db.close();
+    resetTrustedProxy();
+  });
+
+  test("reservations are released on throw, so a later healthy attempt still succeeds (#236)", async () => {
+    const ip = "203.0.113.60";
+    const email = "flake-reservations@example.com";
+    // Fire the throwing provider several times — well past `maxAttempts` (3).
+    // Each throw returns 5xx WITHOUT recording a failure, so the account/IP
+    // buckets must not lock.
+    shouldThrow = true;
+    for (let i = 0; i < 5; i++) {
+      const res = await auth.handleRequest(flakyRequest(email, ip));
+      expect(res.status).toBe(500);
+    }
+    // The provider recovers. Because every prior throw released its reservations
+    // (rather than leaking `inflight` capacity) and recorded no brute-force
+    // failure, this resolving attempt must still be admitted: 302, not a
+    // permanent 429.
+    shouldThrow = false;
+    const ok = await auth.handleRequest(flakyRequest(email, ip));
+    expect(ok.status).toBe(302);
+    // The reservation counter has no expiry (#236): if any reservation had been
+    // leaked, the next attempt — even a failing one — would have been refused
+    // with a permanent 429. Restore the throw and confirm a fresh burst still
+    // resolves to 5xx (server fault) rather than a phantom lockout.
+    shouldThrow = true;
+    const after = await auth.handleRequest(flakyRequest(email, ip));
+    expect(after.status).toBe(500);
+  });
+});
+
 // Real-Postgres integration tests. Skipped unless DATABASE_URL is set (see
 // PG_TEST_URL above); CI provides one through a postgres service container.
 describe("auth hardening: brute-force guard internals", () => {
