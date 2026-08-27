@@ -33,6 +33,7 @@ const sidebarSections: {
     title: "Guides",
     icon: Box,
     links: [
+      { href: "/docs/tutorial", label: "Tutorial: Hello World" },
       { href: "/docs/routing", label: "Routing" },
       { href: "/docs/pages", label: "Pages & Loaders" },
       { href: "/docs/layouts", label: "Layouts" },
@@ -49,6 +50,10 @@ const sidebarSections: {
       { href: "/docs/migration", label: "Migration Guide" },
       { href: "/docs/security", label: "Security" },
       { href: "/docs/observability", label: "Observability" },
+      { href: "/docs/audit-trail", label: "Audit Trail" },
+      { href: "/docs/request-tracing", label: "Request Tracing" },
+      { href: "/docs/secret-redaction", label: "Secret Redaction" },
+      { href: "/docs/backpressure", label: "Backpressure" },
     ],
   },
 ];

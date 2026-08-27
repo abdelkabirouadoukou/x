@@ -1,6 +1,6 @@
 import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
-import { CodeBlock } from "../../components/code-block";
+import { CodeBlock, TerminalBlock } from "../../components/code-block";
 
 export const mode = "static";
 
@@ -19,8 +19,20 @@ export default function DocPage(_props: RouteProps) {
       <h2 className="text-xl">How it works</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Every <span className="text-foreground">.tsx</span> file in your pages directory becomes a
-        route. The file path determines the URL pattern.
+        route. The file path determines the URL pattern. Fire up{" "}
+        <span className="text-foreground">x dev</span> and the dev server logs every route it
+        discovered:
       </p>
+      <TerminalBlock
+        label="terminal"
+        code={`$ x dev
+  [x] resolving routes...
+  [x]  ── / (index.tsx)
+  [x]  ── /about (about.tsx)
+  [x]  ── /blog/[slug] (blog/[slug].tsx)
+  [x]  ── /contact (contact.tsx)
+  [x] dev server running at http://localhost:3000`}
+      />
 
       <CodeBlock
         label="routing table"

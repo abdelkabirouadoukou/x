@@ -95,6 +95,34 @@ export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
         middleware chain.
       </p>
 
+      <h2 className="text-xl">Route-level export const middleware</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Instead of a separate <span className="text-foreground">_middleware.ts</span> file, you can
+        export <span className="text-foreground">middleware</span> directly from a page file. This
+        is useful when the middleware is short and tightly coupled to one route.
+      </p>
+      <CodeBlock
+        label="src/pages/dashboard.tsx"
+        code={`import type { RouteProps, MiddlewareContext, MiddlewareNext } from "@thexjs/core";
+
+export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) {
+  const session = ctx.request.headers.get("cookie");
+  if (!session) return new Response(null, { status: 302, headers: { Location: "/login" } });
+  return next();
+}
+
+export default function Dashboard({}: RouteProps) {
+  return <h1>Welcome back</h1>;
+}`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        When both a <span className="text-foreground">_middleware.ts</span> file and an inline{" "}
+        <span className="text-foreground">export const middleware</span> exist in the same
+        directory, the file-level middleware runs first, then the route-level one. The same{" "}
+        <span className="text-foreground">MiddlewareContext</span> and{" "}
+        <span className="text-foreground">MiddlewareNext</span> types apply to both variants.
+      </p>
+
       <h2 className="text-xl">composeMiddleware</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The <span className="text-foreground">_middleware.ts</span> convention builds a single

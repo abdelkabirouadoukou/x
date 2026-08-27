@@ -3,9 +3,13 @@ export type RouteMap = {
   "/": Record<string, never>;
   "/features": Record<string, never>;
   "/docs": Record<string, never>;
+  "/docs/secret-redaction": Record<string, never>;
   "/docs/content-collections": Record<string, never>;
   "/docs/isr": Record<string, never>;
   "/docs/build-deploy": Record<string, never>;
+  "/docs/request-tracing": Record<string, never>;
+  "/docs/backpressure": Record<string, never>;
+  "/docs/tutorial": Record<string, never>;
   "/docs/configuration": Record<string, never>;
   "/docs/observability": Record<string, never>;
   "/docs/data-layer": Record<string, never>;
@@ -26,6 +30,7 @@ export type RouteMap = {
   "/docs/client-navigation": Record<string, never>;
   "/docs/pages": Record<string, never>;
   "/docs/introduction": Record<string, never>;
+  "/docs/audit-trail": Record<string, never>;
   "/docs/security": Record<string, never>;
   "/docs/getting-started": Record<string, never>;
   "/docs/middleware": Record<string, never>;
