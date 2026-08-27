@@ -14,7 +14,7 @@ import { defineAuth, createSQLiteSessionStore, hashPassword, verifyPassword } fr
 
 export const auth = defineAuth({
   secret: process.env.AUTH_SECRET!,
-  store: createSQLiteSessionStore(), // or createPostgresSessionStore(client)
+  store: createSQLiteSessionStore({ path: "data/auth.db" }), // or createPostgresSessionStore(client)
   providers: [
     {
       id: "local",
@@ -33,6 +33,10 @@ export const auth = defineAuth({
       type: "oauth",
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      // The GitHub preset fills in authorizationUrl, tokenUrl, userInfoUrl, and profile automatically.
+      // For a custom OAuth2 provider, you must also provide:
+      // authorizationUrl: "https://...", tokenUrl: "https://...", userInfoUrl: "https://...",
+      // profile: (userInfo) => ({ id: String(userInfo.sub), name: userInfo.name, email: userInfo.email })
     },
   ],
 });

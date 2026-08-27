@@ -39,13 +39,13 @@ writing.
 | Build toolchain (`x build`, `.x/` output) | stable | yes | `build.test.ts`, `cli.test.ts` |
 | Dev server (file watching, route rebuild) | beta | yes | `createApp-watcher.test.ts` |
 | Vercel adapter (output v3, config.json) | stable | yes | `adapter.test.ts` |
-| Layouts / middleware chains | stable | partial | scanning tested; multi-layer rendering less so |
-| Content collections (`scanContent`) | beta | yes | `content.test.ts`; frontmatter parser is a small custom YAML subset |
-| Data layer (SQLite/Postgres migrations) | beta | yes | `data/migrate.test.ts`; retry/backoff + TLS pinned by `data/postgres.test.ts` |
-| Auth (`@thexjs/auth`) | stable | yes | `auth.test.ts` + `auth-failures.test.ts` (store outage, store swap, generic OAuth2) |
-| Islands / client hydration | beta | yes | build emits islands; runtime hydration pinned by `island-bundle.test.ts` (mount, SSR round-trip, event wiring) |
+| Layouts / middleware chains | stable | yes | `router.test.ts` (scanning), `createApp-request.test.ts` (middleware chains), `createApp-hydration.test.ts` (multi-layer rendering) |
+| Content collections (`scanContent`) | beta | yes | `content.test.ts`; frontmatter parsed as real YAML via Bun's native parser |
+| Data layer (SQLite/Postgres migrations) | beta | yes | `data/migrate.test.ts`; retry/backoff + TLS pinned by `data/postgres.test.ts`; SQLite WAL/FK options pinned by `data/sqlite.test.ts` |
+| Auth (`@thexjs/auth`) | stable | yes | `auth.test.ts` + `auth-failures.test.ts` (store outage, store swap, generic OAuth2) + `hardening.test.ts` (brute-force, PKCE, session revocation) + `rbac.test.ts` (roles/permissions) |
+| Islands / client hydration | beta | yes | build emits islands; runtime hydration pinned by `island-bundle.test.ts` (mount, SSR round-trip, event wiring) + `createApp-hydration.test.ts` + `render-stream.test.ts` |
 | Content-MDX | experimental | no | `.mdx` support exists but is the least exercised surface |
-| Observability (health/readyz, metrics) | beta | partial | health checked in `createApp-request.test.ts`; reporter flushing untested |
+| Observability (health/readyz, metrics) | beta | yes | health in `createApp-request.test.ts`; metrics in `observability/metrics.test.ts`; reporter flushing untested |
 
 ## Coverage debt (high → low priority)
 

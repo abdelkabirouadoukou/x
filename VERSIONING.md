@@ -11,16 +11,16 @@ All `@thexjs/*` packages are released in **lockstep** on a single versioning
 PR per cycle: one changeset can bump several packages, and the changelogs are
 written together. There is no independent release cadence per package.
 
-| Package | Status | Since |
+| Package | Status | Current |
 |---|---|---|
-| `@thexjs/core` | `1.x` | 1.0.0 |
-| `@thexjs/auth` | `3.x` | 1.0.0 |
-| `@thexjs/env` | `1.x` | 1.0.0 |
-| `@thexjs/cli` | `1.x` | 1.0.0 |
-| `@thexjs/hooks` | `0.x` | — (pre-1.0) |
-| `@thexjs/mcp` | `0.x` | — (pre-1.0) |
-| `@thexjs/adapter-vercel` | `1.x` | 1.0.0 |
-| `create-thexjs-app` | `1.x` | 1.0.0 |
+| `@thexjs/core` | `1.x` | 1.8.2 |
+| `@thexjs/auth` | `3.x` | 3.0.11 |
+| `@thexjs/env` | `1.x` | 1.1.0 |
+| `@thexjs/cli` | `1.x` | 1.1.6 |
+| `@thexjs/hooks` | `0.x` | 0.2.0 (pre-1.0) |
+| `@thexjs/mcp` | `0.x` | 0.1.0 (pre-1.0) |
+| `@thexjs/adapter-vercel` | `1.x` | 1.0.11 |
+| `create-thexjs-app` | `1.x` | 1.2.2 |
 
 `1.0.0` is the first tagged baseline. Before a package reaches `1.0.0`
 (currently only `@thexjs/hooks`), bump conservatively: prefer `patch`, avoid

@@ -332,9 +332,9 @@ releases. Pin exact versions if stability matters to you.
   changelogs when merged to `main`.
 - The release GitHub Action (`publish` on `main`) creates a versioning PR and
   publishes to npm on merge.
-- Currently published: `@thexjs/core` (1.6.x), `@thexjs/cli` (1.1.x),
-  `@thexjs/env` (1.x), `@thexjs/auth` (3.x), `@thexjs/hooks` (0.x),
-  `@thexjs/adapter-vercel` (1.0.x), `create-thexjs-app` (1.x).
+- Currently published: `@thexjs/core` (1.8.x), `@thexjs/cli` (1.1.x),
+  `@thexjs/env` (1.1.x), `@thexjs/auth` (3.0.x), `@thexjs/hooks` (0.2.x),
+  `@thexjs/adapter-vercel` (1.0.x), `create-thexjs-app` (1.2.x).
 
 ## Known limitations
 
