@@ -392,7 +392,9 @@ function buildServerEntry(
     "// a rejected promise from a background sweep) is reported through the",
     "// error reporter so the box reports instead of dying silently.",
     'const { installProcessCrashHandlers } = await import("@thexjs/core");',
-    "installProcessCrashHandlers();",
+    // Fail fast on an uncaughtException: the singleton state may be corrupted,
+    // so drain and let the orchestrator restart clean (see crash-handlers).
+    "installProcessCrashHandlers({ exitOnCrash: true });",
   );
   return lines.join("\n");
 }

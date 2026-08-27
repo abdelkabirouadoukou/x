@@ -9,9 +9,14 @@
  *
  * These handlers report the crash through the configured error reporter so an
  * operator sees it, rather than dying silently (or staying up silently with no
- * trace of what happened). By default the process keeps serving; set
- * `exitOnCrash` to opt into crash-on-error semantics (e.g. when running under
- * a supervisor like systemd/K8s that restarts the box).
+ * trace of what happened).
+ *
+ * A throw that escapes to the event loop (module eval, background sweep,
+ * native callback, timer) leaves module-scope singletons in an undefined
+ * state, so the process must not keep serving corrupted traffic. By default
+ * an `uncaughtException` fails fast (`exitOnCrash` defaults `true`) so the
+ * orchestrator (systemd/K8s) restarts the box clean. Unhandled rejections are
+ * usually recoverable and stay survivable by default.
  */
 
 import { reportException } from "./monitoring";
@@ -19,25 +24,37 @@ import { reportException } from "./monitoring";
 export interface ProcessCrashHandlerOptions {
   /** Phase tag forwarded to the error reporter. Defaults to "api". */
   phase?: "ssr" | "action" | "api" | "loader";
-  /** When true, `process.exit(1)` after reporting. Defaults to false. */
+  /**
+   * When true, `process.exit(1)` after an uncaught exception. Defaults to
+   * `true` — an uncaughtException can leave process singletons half-mutated,
+   * so it must fail fast for the orchestrator to restart clean. Set `false`
+   * to keep serving after reporting.
+   */
   exitOnCrash?: boolean;
+  /**
+   * When true, `process.exit(1)` after an unhandled rejection. Defaults to
+   * `false` — an unhandledRejection is usually a lone async failure the
+   * process can survive.
+   */
+  exitOnUnhandledRejection?: boolean;
 }
 
 /** Registers `uncaughtException`/`unhandledRejection` handlers; returns a disposer. */
 export function installProcessCrashHandlers(options: ProcessCrashHandlerOptions = {}): () => void {
   const phase = options.phase ?? "api";
-  const exitOnCrash = options.exitOnCrash ?? false;
+  const exitOnUncaughtException = options.exitOnCrash ?? true;
+  const exitOnUnhandledRejection = options.exitOnUnhandledRejection ?? false;
 
   const onUncaughtException = (error: Error) => {
     console.error("[x] uncaught exception:", error);
     reportException(error, { phase });
-    if (exitOnCrash) process.exit(1);
+    if (exitOnUncaughtException) process.exit(1);
   };
 
   const onUnhandledRejection = (reason: unknown) => {
     console.error("[x] unhandled rejection:", reason);
     reportException(reason, { phase });
-    if (exitOnCrash) process.exit(1);
+    if (exitOnUnhandledRejection) process.exit(1);
   };
 
   process.on("uncaughtException", onUncaughtException);
