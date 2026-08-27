@@ -1,10 +1,17 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { renderToString } from "react-dom/server";
+import { unmountIslandRoots } from "./client-nav";
 import { createIslandRegistry, Island, IslandProvider } from "./island";
 import { generateHydrateEntry } from "./island-bundle";
+
+declare global {
+  interface Window {
+    __xTestCleanupCount?: number;
+  }
+}
 
 const FIXTURE_DIR = join(import.meta.dir, "__fixtures__/islands");
 const ROUTE_PATH = join(FIXTURE_DIR, "route.tsx");
@@ -17,6 +24,24 @@ export function Counter() {
 }
 
 export const islands = { Counter };
+`;
+
+const CLEANUP_ROUTE_PATH = join(FIXTURE_DIR, "route-cleanup.tsx");
+
+const CLEANUP_ROUTE_SOURCE = `import { useEffect, useState } from "react";
+
+export function CleanupTracker() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      window.__xTestCleanupCount = (window.__xTestCleanupCount || 0) + 1;
+    };
+  }, []);
+  return <div>{mounted ? "alive" : "init"}</div>;
+}
+
+export const islands = { CleanupTracker };
 `;
 
 // SSR an island exactly as the request pipeline does (IslandProvider + Island),
@@ -49,10 +74,15 @@ async function hydrate(): Promise<void> {
 beforeAll(() => {
   mkdirSync(FIXTURE_DIR, { recursive: true });
   writeFileSync(ROUTE_PATH, ROUTE_SOURCE);
+  writeFileSync(CLEANUP_ROUTE_PATH, CLEANUP_ROUTE_SOURCE);
   GlobalRegistrator.register();
 });
 
-afterAll(() => {
+afterAll(async () => {
+  // Let React scheduler drain — unmounting island roots enqueues async work
+  // that references window.event; unregistering before it fires causes
+  // "ReferenceError: window is not defined" on Bun < 1.4.
+  await new Promise((r) => setTimeout(r, 200));
   GlobalRegistrator.unregister();
   rmSync(FIXTURE_DIR, { recursive: true, force: true });
 });
@@ -83,5 +113,88 @@ describe("island hydration runtime", () => {
     document.querySelector("button")?.click();
     await tick();
     expect(document.querySelector("button")?.textContent).toBe("Like 2");
+  });
+});
+
+describe("island root unmount on client-nav (#158)", () => {
+  beforeEach(() => {
+    window.__xIslandRoots = [];
+    window.__xTestCleanupCount = 0;
+  });
+
+  test("useEffect cleanup fires when island root is unmounted via __xIslandRoots", async () => {
+    const registry = createIslandRegistry();
+    const { CleanupTracker } = await import(CLEANUP_ROUTE_PATH);
+    document.body.innerHTML = renderToString(
+      <IslandProvider registry={registry}>
+        <Island name="CleanupTracker">
+          <CleanupTracker />
+        </Island>
+      </IslandProvider>,
+    );
+
+    const entryPath = join(FIXTURE_DIR, `entry-cleanup-${entryIndex++}.tsx`);
+    writeFileSync(entryPath, generateHydrateEntry(CLEANUP_ROUTE_PATH));
+    await import(entryPath);
+    await tick();
+
+    expect(document.querySelector("div")?.textContent).toBe("alive");
+    expect(window.__xTestCleanupCount).toBe(0);
+    expect(window.__xIslandRoots).toBeDefined();
+    expect(window.__xIslandRoots?.length).toBe(1);
+
+    unmountIslandRoots();
+    await tick();
+
+    expect(window.__xTestCleanupCount).toBe(1);
+  });
+
+  test("two sequential hydrate cycles do not leak island roots and cleanup fires per cycle", async () => {
+    // Use CleanupTracker so we can verify cleanup fires across both cycles,
+    // not just that the registry length resets.
+    const registry1 = createIslandRegistry();
+    const { CleanupTracker } = await import(CLEANUP_ROUTE_PATH);
+    document.body.innerHTML = renderToString(
+      <IslandProvider registry={registry1}>
+        <Island name="CleanupTracker">
+          <CleanupTracker />
+        </Island>
+      </IslandProvider>,
+    );
+
+    const entry1 = join(FIXTURE_DIR, `entry-seq1-${entryIndex++}.tsx`);
+    writeFileSync(entry1, generateHydrateEntry(CLEANUP_ROUTE_PATH));
+    await import(entry1);
+    await tick();
+
+    expect(window.__xIslandRoots).toBeDefined();
+    expect(window.__xIslandRoots?.length).toBe(1);
+    expect(window.__xTestCleanupCount).toBe(0);
+
+    unmountIslandRoots();
+    await tick();
+    expect(window.__xTestCleanupCount).toBe(1);
+
+    // Second cycle — fresh SSR + hydrate.
+    const registry2 = createIslandRegistry();
+    document.body.innerHTML = renderToString(
+      <IslandProvider registry={registry2}>
+        <Island name="CleanupTracker">
+          <CleanupTracker />
+        </Island>
+      </IslandProvider>,
+    );
+
+    const entry2 = join(FIXTURE_DIR, `entry-seq2-${entryIndex++}.tsx`);
+    writeFileSync(entry2, generateHydrateEntry(CLEANUP_ROUTE_PATH));
+    await import(entry2);
+    await tick();
+
+    expect(window.__xIslandRoots?.length).toBe(1);
+
+    unmountIslandRoots();
+    await tick();
+    expect(window.__xTestCleanupCount).toBe(2);
+    expect(window.__xIslandRoots?.length).toBe(0);
   });
 });

@@ -84,16 +84,21 @@ function reportHydrationMismatch(error, name) {
   }
 }
 
+// Preserve roots from a prior hydration entry on the same page (e.g. partial
+// re-hydration). Only initialize when the array doesn't exist yet.
+if (!window.__xIslandRoots) window.__xIslandRoots = [];
+
 document.querySelectorAll("[data-island]").forEach((el) => {
   const name = el.getAttribute("data-island");
   if (!name) return;
   const Component = resolveIsland(name);
   if (!Component) return;
-  hydrateRoot(el, React.createElement(Component), {
+  const root = hydrateRoot(el, React.createElement(Component), {
     onRecoverableError(error) {
       reportHydrationMismatch(error, name);
     },
   });
+  window.__xIslandRoots.push(root);
 });
 `;
 }
