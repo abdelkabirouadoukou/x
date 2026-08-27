@@ -1,5 +1,11 @@
 # @thexjs/core
 
+## 1.8.2
+
+### Patch Changes
+
+- c453015: Add a flood/consequence test covering the rate-limit fallback: a single heavy client exhausting the shared "unknown" bucket (no socket IP, trusted-proxy off) also 429s unrelated requests that share the same fallback bucket. No behavior change.
+
 ## 1.8.1
 
 ### Patch Changes
