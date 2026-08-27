@@ -165,6 +165,23 @@ describe("audit: credentials sign-in", () => {
     expect(entry.event).toBe("auth.session_revoked");
     expect(entry.userId).toBe("u_42");
   });
+
+  test("revokeAllForUser records ip + request-id when a req is passed", async () => {
+    entries = [];
+    const auth = defineAuth({
+      secret: "test-secret",
+      store: createSQLiteSessionStore({ db: new Database(":memory:") }),
+      providers: [acceptingProvider],
+    });
+
+    await auth.revokeAllForUser(
+      "u_42",
+      new Request(`${BASE_URL}/admin`, { headers: { "x-forwarded-for": "203.0.113.10" } }),
+    );
+    const entry = entries.at(-1) as Entry;
+    expect(entry.event).toBe("auth.session_revoked");
+    expect(entry.ip).toBe("203.0.113.10");
+  });
 });
 
 describe("audit: RBAC permission denied", () => {

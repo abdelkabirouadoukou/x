@@ -127,7 +127,7 @@ export interface Auth {
    * the change takes effect on the next request of each affected session
    * because sessions are looked up per-request and no longer exist in the store.
    */
-  revokeAllForUser(userId: string): Promise<void>;
+  revokeAllForUser(userId: string, req?: Request): Promise<void>;
   /**
    * Route guard middleware: requires a signed-in session for the route.
    * Returns a core `MiddlewareFn` for `export const middleware` / `export const auth`.
@@ -528,9 +528,18 @@ export function defineAuth(config: AuthConfig): Auth {
     res: Response,
     user: AuthUser,
     provider: string,
+    req?: Request,
   ): Promise<Response> => {
     const { token, sessionHash } = await createSession(user, provider);
-    auditLoginSuccess({ userId: user.id, provider, sessionHash, ip: null });
+    auditLoginSuccess({
+      userId: user.id,
+      provider,
+      sessionHash,
+      // Passing `req` threads the origin IP + request-id into the audit so a
+      // custom sign-in flow isn't blind to where the login came from. The
+      // optional form (no req) is kept for programmatic/offline flows.
+      ...requestAuditContext(req),
+    });
     return withSetCookie(res, sessionCookieHeader(token));
   };
 
@@ -556,9 +565,11 @@ export function defineAuth(config: AuthConfig): Auth {
     getSession,
     setSessionCookie,
     clearSessionCookie,
-    revokeAllForUser: async (userId) => {
+    revokeAllForUser: async (userId, req?) => {
       await resolved.store.revokeAllForUser(userId);
-      auditSessionRevoked({ userId, ip: null });
+      // Thread the request (when available) so a compromised-account response
+      // audit is correlated to the origin IP + request-id, not silently null.
+      auditSessionRevoked({ userId, ...requestAuditContext(req) });
     },
     requireAuth(options) {
       return toMiddleware(getSession, requireAuthGuard(), options);
