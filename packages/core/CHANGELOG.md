@@ -1,5 +1,11 @@
 # @thexjs/core
 
+## 1.8.1
+
+### Patch Changes
+
+- a2f974c: Fail fast on uncaught exceptions in production servers: `exitOnCrash` now defaults to `true` for `uncaughtException` (which can leave process singletons half-mutated), while unhandled rejections stay survivable by default unless `exitOnUnhandledRejection` is set. The generated production entry now emits `installProcessCrashHandlers({ exitOnCrash: true })` so an escaped throw drains (`server.stop(true)`) and exits clean for the orchestrator to restart. Closes #160.
+
 ## 1.8.0
 
 ### Minor Changes
