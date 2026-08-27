@@ -3,6 +3,7 @@ import { checkCsrf, generateCsrfToken, verifyCsrfToken, verifyOrigin } from "./c
 import { assertNoEnvLeakage, EnvLeakageError, findLeakedEnvKeys } from "./env-isolation";
 import { applySecurityHeaders, buildSecurityHeaders } from "./headers";
 import { createRateLimiter, rateLimitMiddleware } from "./rate-limit";
+import { configureTrustedProxy, resetTrustedProxy } from "./trusted-proxy";
 
 describe("csrf: verifyOrigin", () => {
   test("allows safe methods without any Origin/Referer header", () => {
@@ -151,18 +152,23 @@ describe("rate limiting", () => {
     expect(blocked?.status).toBe(429);
   });
 
-  test("separate keys get independent buckets", async () => {
-    const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
-    const reqA = new Request("https://example.com/x", {
-      headers: { "x-forwarded-for": "1.1.1.1" },
-    });
-    const reqB = new Request("https://example.com/x", {
-      headers: { "x-forwarded-for": "2.2.2.2" },
-    });
+  test("separate keys get independent buckets when trusted-proxy is enabled", async () => {
+    configureTrustedProxy({ trustForwardedHeaders: true });
+    try {
+      const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
+      const reqA = new Request("https://example.com/x", {
+        headers: { "x-forwarded-for": "1.1.1.1" },
+      });
+      const reqB = new Request("https://example.com/x", {
+        headers: { "x-forwarded-for": "2.2.2.2" },
+      });
 
-    expect(await rateLimitMiddleware(limiter, reqA)).toBeNull();
-    expect(await rateLimitMiddleware(limiter, reqB)).toBeNull();
-    expect(await rateLimitMiddleware(limiter, reqA)).not.toBeNull();
+      expect(await rateLimitMiddleware(limiter, reqA)).toBeNull();
+      expect(await rateLimitMiddleware(limiter, reqB)).toBeNull();
+      expect(await rateLimitMiddleware(limiter, reqA)).not.toBeNull();
+    } finally {
+      resetTrustedProxy();
+    }
   });
 
   test("resolves the client key from the socket IP before header fallbacks", async () => {
@@ -178,22 +184,34 @@ describe("rate limiting", () => {
     limiter.dispose();
   });
 
-  test("without a socket IP or proxy headers, requests do not share one global bucket", async () => {
-    // Two requests with no IP information must still not collapse into a
-    // single shared bucket that breaks every client at once: the fallback
-    // keys off something request-specific, so each gets its own bucket.
+  test("without a socket IP or proxy headers, all requests share the 'unknown' bucket", async () => {
     const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
-    const reqA = new Request("https://example.com/x", {
-      headers: { "x-real-ip": "10.0.0.1" },
-    });
-    const reqB = new Request("https://example.com/x", {
-      headers: { "x-real-ip": "10.0.0.2" },
-    });
+    const reqA = new Request("https://example.com/x");
+    const reqB = new Request("https://example.com/x");
 
     expect(await rateLimitMiddleware(limiter, reqA)).toBeNull();
-    expect(await rateLimitMiddleware(limiter, reqB)).toBeNull();
-    expect(await rateLimitMiddleware(limiter, reqA)).not.toBeNull();
+    expect(await rateLimitMiddleware(limiter, reqB)).not.toBeNull();
     limiter.dispose();
+  });
+
+  test("x-real-ip differentiates keys when trusted-proxy is enabled", async () => {
+    configureTrustedProxy({ trustForwardedHeaders: true });
+    try {
+      const limiter = createRateLimiter({ limit: 1, windowMs: 60_000 });
+      const reqA = new Request("https://example.com/x", {
+        headers: { "x-real-ip": "10.0.0.1" },
+      });
+      const reqB = new Request("https://example.com/x", {
+        headers: { "x-real-ip": "10.0.0.2" },
+      });
+
+      expect(await rateLimitMiddleware(limiter, reqA)).toBeNull();
+      expect(await rateLimitMiddleware(limiter, reqB)).toBeNull();
+      expect(await rateLimitMiddleware(limiter, reqA)).not.toBeNull();
+      limiter.dispose();
+    } finally {
+      resetTrustedProxy();
+    }
   });
 
   test("429 responses carry a text content type and Retry-After", async () => {
