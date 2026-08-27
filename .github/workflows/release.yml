@@ -55,6 +55,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create Release PR or Publish
+        id: changesets
         # v1 parses `New tag:` from the CLI's stdout to detect published
         # packages, which @changesets/cli v3 no longer prints. v2 reads the
         # CHANGESETS_OUTPUT event file the CLI writes instead.
@@ -70,6 +71,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Changesets/action creates one GitHub release per published package
+      # from the changelog, but its generated notes credit no one. This step
+      # enriches each new release with a "Contributors" section listing every
+      # distinct author whose commits landed since the last release — the
+      # humans who actually built the changes. Bots are noted separately and
+      # excluded from the human shout-outs.
+      - name: Add contributors to release notes
+        if: steps.changesets.outputs.published == 'true'
+        run: bun scripts/release/credit-contributors.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   sbom:
     name: Generate SBOM
