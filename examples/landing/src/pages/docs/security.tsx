@@ -242,6 +242,34 @@ export default defineConfig({
         budget).
       </p>
 
+      <h2 className="text-xl">Trusted proxy headers</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        By default, the framework ignores <span className="text-foreground">X-Forwarded-For</span>{" "}
+        and <span className="text-foreground">X-Real-IP</span> headers. A client can set these to
+        arbitrary values, which — if trusted — would let them defeat IP-based rate limiting and
+        poison audit trails with attacker-chosen IPs.
+      </p>
+      <p className="mt-4 text-muted-foreground">
+        Only enable trusted proxy headers when your app sits behind a reverse proxy that scrubs or
+        overwrites forwarded headers (e.g. Vercel Edge, Cloudflare, AWS ALB). Call{" "}
+        <span className="text-foreground">configureTrustedProxy</span> at application startup:
+      </p>
+      <CodeBlock
+        label="x.config.ts"
+        code={`import { defineConfig, configureTrustedProxy } from "@thexjs/core";
+
+configureTrustedProxy({ trustForwardedHeaders: true });
+
+export default defineConfig({
+  // ... standard options
+});`}
+      />
+      <p className="mt-4 text-muted-foreground">
+        The Vercel adapter calls this automatically when it detects it is running on Vercel's edge
+        network. For direct deployments behind nginx, Cloudflare, or similar, add the call yourself.
+        Check the current state with <span className="text-foreground">isTrustedProxy()</span>.
+      </p>
+
       <h2 className="text-xl">Disabling security</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         For local development or testing, you can disable everything:

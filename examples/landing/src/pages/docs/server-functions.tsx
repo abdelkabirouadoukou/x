@@ -1,6 +1,6 @@
 import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
-import { CodeBlock } from "../../components/code-block";
+import { CodeBlock, TerminalBlock } from "../../components/code-block";
 
 export const mode = "static";
 
@@ -17,6 +17,17 @@ export default function DocPage(_props: RouteProps) {
         call it like a normal function, or call it manually with{" "}
         <span className="text-foreground">fetch</span>. Both compile down to the same request.
       </p>
+
+      <p className="mt-3 text-sm text-muted-foreground">
+        When the dev server starts, registered server functions show up in the route log:
+      </p>
+      <TerminalBlock
+        label="terminal · x dev"
+        code={`$ x dev
+  [x] resolving routes...
+  [x]  ── actions: greet.greet, subscribe.subscribeUser
+  [x] dev server running at http://localhost:3000`}
+      />
 
       <h2 className="text-xl">Defining server functions</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">

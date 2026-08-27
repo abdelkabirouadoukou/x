@@ -1,6 +1,6 @@
 import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
-import { CodeBlock } from "../../components/code-block";
+import { CodeBlock, TerminalBlock } from "../../components/code-block";
 
 export const mode = "static";
 
@@ -21,8 +21,17 @@ export default function DocPage(_props: RouteProps) {
         A page full of interactive widgets doesn't need to ship one giant bundle. Each island is a
         small, self-contained hydration entry: it imports only what it needs, hydrates in place, and
         nothing on the page outside an island is ever re-rendered on the client. That keeps first
-        paint fast and the JS budget predictable.
+        paint fast and the JS budget predictable. The build step logs every island bundle it
+        generates:
       </p>
+      <TerminalBlock
+        label="terminal · x build"
+        code={`$ x build
+  [x] building island bundles...
+  [x]   ✓ /              LikeButton, SearchWidget
+  [x]   ✓ /blog/[slug]   LikeButton
+  [x] build complete in 1.1s -> .x`}
+      />
 
       <h2 className="text-xl">Creating an island</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">

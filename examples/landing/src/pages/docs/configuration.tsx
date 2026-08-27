@@ -91,6 +91,7 @@ security.rateLimit object|false enabled        Per-IP fixed-window limiter
 observability.logging boolean true             Structured JSON request logs
 observability.errorReporter fn undefined       Plugin for exceptions (Sentry/OTel)
 observability.health object undefined         /healthz + /readyz endpoints
+observability.metrics MetricsReporter undefined In-process or OTel metrics
 images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
       />
 
@@ -154,9 +155,11 @@ images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
         <span className="text-foreground">logging</span> toggles structured JSON request logs,
         <span className="text-foreground"> health</span> enables the{" "}
         <span className="text-foreground">/healthz</span> and{" "}
-        <span className="text-foreground">/readyz</span> probes, and{" "}
+        <span className="text-foreground">/readyz</span> probes,{" "}
         <span className="text-foreground">errorReporter</span> plugs exceptions into Sentry, OTel,
-        or your own handler. See{" "}
+        or your own handler, and <span className="text-foreground">metrics</span> installs a{" "}
+        <span className="text-foreground">MetricsReporter</span> for per-request counters and
+        latency histograms (Prometheus or OTel). See{" "}
         <a href="/docs/observability" className="text-primary underline underline-offset-2">
           Observability
         </a>

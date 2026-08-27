@@ -1,6 +1,6 @@
 import type { RouteProps } from "@thexjs/core";
 import { ArrowRight } from "lucide-react";
-import { CodeBlock } from "../../components/code-block";
+import { CodeBlock, TerminalBlock } from "../../components/code-block";
 
 export const mode = "static";
 
@@ -25,8 +25,19 @@ export default function DocPage(_props: RouteProps) {
       <h2 className="text-xl">Static pages</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         Static pages are rendered at build time and exported as HTML. Use this for marketing pages,
-        blog posts, or any content that doesn't need per-request rendering.
+        blog posts, or any content that doesn't need per-request rendering. The build output shows
+        which pages were prerendered:
       </p>
+      <TerminalBlock
+        label="terminal · x build"
+        code={`$ x build
+  [x] resolving routes...
+  [x] building static pages...
+  [x]   ✓ /                     (index.tsx)
+  [x]   ✓ /about                (about.tsx)
+  [x]   ✓ /blog/hello-world     (blog/[slug].tsx  slug: hello-world)
+  [x] build complete in 0.8s -> .x`}
+      />
       <CodeBlock
         label="src/pages/about.tsx"
         code={`import type { RouteProps } from "@thexjs/core";

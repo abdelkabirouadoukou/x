@@ -1,4 +1,5 @@
 import {
+  Activity,
   ArrowRight,
   BookOpen,
   Bot,
@@ -6,7 +7,9 @@ import {
   Code2,
   Cog,
   Database,
+  Eye,
   FileJson,
+  Gauge,
   Globe,
   KeyRound,
   Layers,
@@ -17,6 +20,7 @@ import {
   Rocket,
   Server,
   Shield,
+  ShieldAlert,
   Terminal,
   Zap,
 } from "lucide-react";
@@ -39,6 +43,12 @@ const startSections = [
     title: "Getting Started",
     desc: "Project structure, your first page, and running the dev server.",
     href: "/docs/getting-started",
+  },
+  {
+    icon: Code2,
+    title: "Tutorial: Hello World",
+    desc: "Five-minute walkthrough: page, island, dev server, and production build.",
+    href: "/docs/tutorial",
   },
   {
     icon: ArrowRight,
@@ -184,6 +194,30 @@ const guideSections = [
     desc: "Structured logging, health probes, and APM error tracing.",
     href: "/docs/observability",
   },
+  {
+    icon: Activity,
+    title: "Audit Trail",
+    desc: "Structured security event logging with automatic secret redaction.",
+    href: "/docs/audit-trail",
+  },
+  {
+    icon: Eye,
+    title: "Request Tracing",
+    desc: "OTel-compatible request-scoped tracing with correlation IDs.",
+    href: "/docs/request-tracing",
+  },
+  {
+    icon: ShieldAlert,
+    title: "Secret Redaction",
+    desc: "Automatic masking of bearer tokens, passwords, and API keys in logs.",
+    href: "/docs/secret-redaction",
+  },
+  {
+    icon: Gauge,
+    title: "Backpressure",
+    desc: "Per-process admission control to limit concurrent requests.",
+    href: "/docs/backpressure",
+  },
 ];
 
 function SectionGrid({ sections }: { sections: typeof startSections }) {
@@ -234,6 +268,14 @@ export default function DocsHubPage() {
 
       <h2 className="doc-label mb-4 mt-12">Guides</h2>
       <SectionGrid sections={guideSections} />
+
+      <p className="mt-16 border-t border-line pt-6 text-[13px] leading-relaxed text-fg-faint">
+        These docs are authored as <span className="font-mono">.tsx</span> components because many
+        pages embed interactive code blocks with syntax highlighting, structured card layouts, and
+        styled callouts that plain Markdown can't express. The rendered output is fully static —
+        every page exports <span className="font-mono">mode = "static"</span> and prerenders to HTML
+        at build time.
+      </p>
     </div>
   );
 }
