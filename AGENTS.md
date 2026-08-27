@@ -151,3 +151,13 @@ bun test packages/core/src/router.test.ts
 - **Env isolation**: variables not prefixed with `THEXJS_PUBLIC_` (or custom prefix) are server-only. The build step (`security/env-isolation.ts`) fails if client code references non-prefixed env keys.
 - **Security headers** are applied by default (CSP, HSTS, X-Frame-Options, etc.). Pass `security: { headers: false }` to disable.
 - **Rate limiting** is enabled by default. Pass `security: { rateLimit: false }` to disable.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as GitHub issues in this repo — use the `gh` CLI for all reads/writes. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root when present; proceed silently if absent. See `docs/agents/domain.md`.
