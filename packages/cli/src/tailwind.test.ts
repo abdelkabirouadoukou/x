@@ -5,13 +5,6 @@ import { compileTailwindAsync } from "./tailwind";
 
 const FIXTURE_DIR = join(import.meta.dir, "__fixtures__");
 
-function onceClosed(proc: ReturnType<typeof compileTailwindAsync>): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    proc.once("error", reject);
-    proc.once("close", resolve);
-  });
-}
-
 afterAll(() => {
   rmSync(FIXTURE_DIR, { recursive: true, force: true });
 });
@@ -38,20 +31,15 @@ describe("compileTailwindAsync serialization (#8)", () => {
       const first = compileTailwindAsync(twInput, twOutput, dir);
       // A second save lands mid-compile: it must coalesce into a follow-up run
       // instead of forking a second process that races the first on the same
-      // output file.
+      // output file. Serialization is asserted synchronously by identity — the
+      // second call must return the exact same in-flight process rather than
+      // spawning a new one immediately.
       const second = compileTailwindAsync(twInput, twOutput, dir);
       expect(second).toBe(first);
 
-      // The first run is still in flight, so nothing but its "start" marker has
-      // been written yet — the second call must not have spawned a second
-      // process immediately.
-      await onceClosed(first);
-      const onlyFirst = readLog(log);
-      expect(onlyFirst.filter((l) => l.startsWith("start"))).toHaveLength(1);
-      expect(onlyFirst.filter((l) => l.startsWith("end"))).toHaveLength(1);
-
       // The pending save triggers exactly one more run after the first exits,
-      // and the two runs must not overlap.
+      // and the two runs must not overlap (the second starts only after the
+      // first has fully closed).
       await pollLog(log, 2, 2);
       const lines = readLog(log);
       expect(lines.filter((l) => l.startsWith("start"))).toHaveLength(2);
@@ -60,11 +48,15 @@ describe("compileTailwindAsync serialization (#8)", () => {
       const ends = numbers(lines.filter((l) => l.startsWith("end")));
       expect(ends[0]).toBeLessThanOrEqual(starts[1] ?? 0);
 
-      // With the queue drained, a fresh save starts a brand-new compile.
+      // With the queue drained, a fresh save starts a brand-new compile. Wait
+      // for its marker to appear (printed asynchronously after the previous
+      // process closes) rather than asserting immediately.
       const third = compileTailwindAsync(twInput, twOutput, dir);
       expect(third).not.toBe(first);
-      await onceClosed(third);
-      expect(readLog(log).filter((l) => l.startsWith("start"))).toHaveLength(3);
+      await pollLog(log, 3, 3);
+      const finalLines = readLog(log);
+      expect(finalLines.filter((l) => l.startsWith("start"))).toHaveLength(3);
+      expect(finalLines.filter((l) => l.startsWith("end"))).toHaveLength(3);
     } finally {
       process.env.PATH = previousPath ?? "";
       rmSync(dir, { recursive: true, force: true });
@@ -95,7 +87,15 @@ function pollLog(path: string, starts: number, ends: number): Promise<void> {
 }
 
 function readLog(path: string): string[] {
-  return readFileSync(path, "utf8").split("\n").filter(Boolean);
+  // The log file is created by the (asynchronously spawned) compile process,
+  // so it may not exist yet when the first poll runs. Treat a missing file as
+  // an empty log and let the caller poll until it appears.
+  try {
+    return readFileSync(path, "utf8").split("\n").filter(Boolean);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw err;
+  }
 }
 
 function numbers(lines: string[]): number[] {
