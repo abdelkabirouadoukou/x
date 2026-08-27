@@ -17,6 +17,9 @@
 
 import { redactString, redactValue } from "./redact";
 
+/** Allowed inbound x-request-id: 1-128 alphanumeric, hyphens, or underscores. */
+const SAFE_REQUEST_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
+
 export type AuditEvent =
   | "auth.login.success"
   | "auth.login.failure"
@@ -73,7 +76,10 @@ export { clientIpFromRequest } from "../security/ip";
 
 /** Correlation id already assigned to the request by `withRequestLogging`, if any. */
 export function requestIdFromRequest(req: Request): string | undefined {
-  return req.headers.get("x-request-id") ?? undefined;
+  const raw = req.headers.get("x-request-id");
+  if (raw === null) return undefined;
+  if (!SAFE_REQUEST_ID_RE.test(raw)) return undefined;
+  return raw;
 }
 
 /**

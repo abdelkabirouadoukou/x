@@ -218,8 +218,18 @@ export function dbTraceAttributes(system: string, statement: string): Record<str
  */
 const requestIds = new WeakMap<Request, string>();
 
+/** Allowed inbound x-request-id: 1-128 alphanumeric, hyphens, or underscores. */
+const SAFE_REQUEST_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
+
+function safeRequestId(raw: string | null): string | null {
+  if (raw === null) return null;
+  return SAFE_REQUEST_ID_RE.test(raw) ? raw : null;
+}
+
 export function traceRequestId(req: Request): string {
-  return requestIds.get(req) ?? req.headers.get("x-request-id") ?? crypto.randomUUID();
+  return (
+    requestIds.get(req) ?? safeRequestId(req.headers.get("x-request-id")) ?? crypto.randomUUID()
+  );
 }
 
 /**
@@ -233,7 +243,7 @@ export function withRequestTracing<Server = unknown>(
   handler: (req: Request, server?: Server) => Response | Promise<Response>,
 ): (req: Request, server?: Server) => Promise<Response> {
   return async (req: Request, server?: Server) => {
-    const existing = req.headers.get("x-request-id");
+    const existing = safeRequestId(req.headers.get("x-request-id"));
     const requestId = existing ?? crypto.randomUUID();
     if (!existing) requestIds.set(req, requestId);
     const url = new URL(req.url);

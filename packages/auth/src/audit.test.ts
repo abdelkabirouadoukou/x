@@ -1,6 +1,13 @@
 import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { type AuditEntry, type AuditSink, noopAuditSink, setAuditSink } from "@thexjs/core";
+import {
+  type AuditEntry,
+  type AuditSink,
+  configureTrustedProxy,
+  noopAuditSink,
+  resetTrustedProxy,
+  setAuditSink,
+} from "@thexjs/core";
 import { defineAuth, SESSION_COOKIE } from "./auth";
 import type { CredentialsProvider } from "./providers";
 import { createSQLiteSessionStore } from "./session";
@@ -64,11 +71,13 @@ function extractCookie(res: Response, name: string): string | null {
 }
 
 beforeAll(() => {
+  configureTrustedProxy({ trustForwardedHeaders: true });
   setAuditSink(capturingSink);
 });
 
 afterAll(() => {
   setAuditSink(noopAuditSink);
+  resetTrustedProxy();
 });
 
 describe("audit: credentials sign-in", () => {

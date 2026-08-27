@@ -171,6 +171,12 @@ export {
   rateLimitMiddleware,
 } from "./security/rate-limit";
 export {
+  configureTrustedProxy,
+  isTrustedProxy,
+  resetTrustedProxy,
+  type TrustedProxyOptions,
+} from "./security/trusted-proxy";
+export {
   generateServerFunctionClient,
   getServerFunctionHandler,
   registerServerFunctions,
