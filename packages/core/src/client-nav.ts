@@ -10,6 +10,26 @@
  * - data-no-nav       — skip client navigation (full page load)
  * - data-no-prefetch  — skip hover prefetch (navigation still works)
  */
+
+/**
+ * Unmount every React root tracked in the global registry and reset it.
+ * Exported so it can be tested directly; in production it runs inside the
+ * inline navigate() script before the innerHTML swap.
+ */
+export function unmountIslandRoots(): void {
+  const roots = window.__xIslandRoots;
+  if (!roots) return;
+  for (let i = 0; i < roots.length; i++) {
+    try {
+      roots[i]?.unmount();
+      // Silently ignore: the root may have already been detached by a
+      // prior cleanup (e.g. double-navigate while a transition is in
+      // flight) — swallowing lets the remaining roots still unmount.
+    } catch (_) {}
+  }
+  roots.length = 0;
+}
+
 export const CLIENT_NAV_SCRIPT = `
 (function () {
   if (window.__xNav) return;
