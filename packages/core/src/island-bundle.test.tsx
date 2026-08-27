@@ -72,7 +72,11 @@ beforeAll(() => {
   GlobalRegistrator.register();
 });
 
-afterAll(() => {
+afterAll(async () => {
+  // Let React scheduler drain — unmounting island roots enqueues async work
+  // that references window.event; unregistering before it fires causes
+  // "ReferenceError: window is not defined" on Bun < 1.4.
+  await new Promise((r) => setTimeout(r, 200));
   GlobalRegistrator.unregister();
   rmSync(FIXTURE_DIR, { recursive: true, force: true });
 });
