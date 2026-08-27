@@ -61,6 +61,7 @@ export const OTEL_ERROR_STATUS_CODE = 2;
  * require only executes on a server runtime, and any platform without
  * async_hooks degrades to "no request context" instead of crashing.
  */
+import { SAFE_REQUEST_ID_RE } from "../security/trusted-proxy";
 import { redactString } from "./redact";
 
 interface AsyncLocalStorageLike {
@@ -217,9 +218,6 @@ export function dbTraceAttributes(system: string, statement: string): Record<str
  * instead of a cloned header.
  */
 const requestIds = new WeakMap<Request, string>();
-
-/** Allowed inbound x-request-id: 1-128 alphanumeric, hyphens, or underscores. */
-const SAFE_REQUEST_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 function safeRequestId(raw: string | null): string | null {
   if (raw === null) return null;

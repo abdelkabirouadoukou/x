@@ -15,10 +15,8 @@
  * value cannot slip into an entry.
  */
 
+import { SAFE_REQUEST_ID_RE } from "../security/trusted-proxy";
 import { redactString, redactValue } from "./redact";
-
-/** Allowed inbound x-request-id: 1-128 alphanumeric, hyphens, or underscores. */
-const SAFE_REQUEST_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 export type AuditEvent =
   | "auth.login.success"
