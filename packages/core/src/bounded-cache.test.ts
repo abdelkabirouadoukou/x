@@ -1,5 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { BoundedCache } from "./bounded-cache";
+import { createApp } from "./createApp";
+
+const FIXTURE_DIR = join(import.meta.dir, "__fixtures__/bounded-cache-integration");
 
 describe("BoundedCache", () => {
   test("grows normally under maxEntries", () => {
@@ -94,5 +99,31 @@ describe("BoundedCache", () => {
     cache.set("/1", "new");
     expect(cache.size).toBe(1);
     expect(cache.get("/1")).toBe("new");
+  });
+});
+
+describe("createApp islandCacheMaxEntries integration", () => {
+  beforeAll(() => {
+    mkdirSync(join(FIXTURE_DIR, "pages"), { recursive: true });
+    writeFileSync(
+      join(FIXTURE_DIR, "pages/index.tsx"),
+      `export default function Home() { return <h1>Home</h1>; }\n`,
+    );
+  });
+
+  afterAll(() => {
+    rmSync(FIXTURE_DIR, { recursive: true, force: true });
+  });
+
+  test("createApp initializes without error with a custom cache cap", async () => {
+    const app = await createApp({
+      pagesDir: join(FIXTURE_DIR, "pages"),
+      development: false,
+      security: { headers: false },
+      observability: { logging: false },
+      islandCacheMaxEntries: 10,
+    });
+    const res = await app.fetch(new Request("http://localhost/"));
+    expect(res.status).toBe(200);
   });
 });
