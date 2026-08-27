@@ -314,6 +314,146 @@ export const islands = { Like: Like };
     }
   });
 
+  test("dev server survives an uncaughtException outside the request lifecycle (#237)", async () => {
+    // Call-site guard for installProcessCrashHandlers: the dev server passes
+    // `exitOnCrash: false`, so a crash outside the request lifecycle (here: a
+    // timer scheduled by an API handler) is reported but must not kill the
+    // dev process — otherwise `x dev` silently dies mid-iteration.
+    const dev = join(FIXTURE_DIR, "dev-crash");
+    const marker = join(dev, "crash.marker");
+    mkdirSync(join(dev, "src/pages"), { recursive: true });
+    mkdirSync(join(dev, "src/api"), { recursive: true });
+    writeFileSync(
+      join(dev, "x.config.ts"),
+      'export default { pagesDir: "src/pages", apiDir: "src/api", port: 4315 };\n',
+    );
+    writeFileSync(
+      join(dev, "src/pages/index.tsx"),
+      "export default function Home() {\n" + "  return <h1>crash dev</h1>;\n" + "}\n",
+    );
+    writeFileSync(
+      join(dev, "src/api/crash.ts"),
+      'import { writeFileSync } from "node:fs";\n' +
+        "export async function GET() {\n" +
+        "  setTimeout(() => {\n" +
+        `    writeFileSync(${JSON.stringify(marker)}, "boom");\n` +
+        '    throw new Error("crash outside request lifecycle");\n' +
+        "  }, 100);\n" +
+        '  return new Response("scheduled crash");\n' +
+        "}\n",
+    );
+
+    const proc = spawn(process.execPath, [CLI_ENTRY, "dev", "--cwd", dev], {
+      cwd: dev,
+      env: process.env,
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+
+    const base = "http://localhost:4315";
+    try {
+      let up = false;
+      for (let i = 0; i < 100 && !up; i++) {
+        try {
+          up = (await fetch(`${base}/`)).status === 200;
+        } catch {}
+        if (!up) await new Promise((r) => setTimeout(r, 100));
+      }
+      expect(up).toBe(true);
+
+      const res = await fetch(`${base}/api/crash`);
+      expect(await res.text()).toBe("scheduled crash");
+
+      // Wait until the scheduled throw has provably reached the event loop.
+      let crashed = false;
+      for (let i = 0; i < 100 && !crashed; i++) {
+        crashed = existsSync(marker);
+        if (!crashed) await new Promise((r) => setTimeout(r, 50));
+      }
+      expect(crashed).toBe(true);
+
+      // exitOnCrash: false -> the process must still be alive and serving.
+      expect(proc.exitCode).toBeNull();
+      const rebound = await fetch(`${base}/`);
+      expect(rebound.status).toBe(200);
+      expect(await rebound.text()).toContain("crash dev");
+      expect(proc.exitCode).toBeNull();
+    } finally {
+      proc.kill("SIGTERM");
+      await new Promise((r) => setTimeout(r, 300));
+      try {
+        proc.kill("SIGKILL");
+      } catch {}
+      rmSync(dev, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  test("built prod entry exits on an uncaughtException outside the request lifecycle (#237)", async () => {
+    // Call-site guard for installProcessCrashHandlers: the generated prod
+    // entry (build.ts) passes `exitOnCrash: true`, so the same scheduled
+    // crash must fail fast with exit code 1 for the orchestrator.
+    const prodDir = join(FIXTURE_DIR, "prod-crash");
+    const marker = join(prodDir, "crash.marker");
+    mkdirSync(join(prodDir, "src/pages"), { recursive: true });
+    mkdirSync(join(prodDir, "src/api"), { recursive: true });
+    writeFileSync(
+      join(prodDir, "x.config.ts"),
+      'export default { pagesDir: "src/pages", apiDir: "src/api" };\n',
+    );
+    writeFileSync(
+      join(prodDir, "src/pages/index.tsx"),
+      "export default function Home() {\n" + "  return <h1>crash prod</h1>;\n" + "}\n",
+    );
+    writeFileSync(
+      join(prodDir, "src/api/crash.ts"),
+      'import { writeFileSync } from "node:fs";\n' +
+        "export async function GET() {\n" +
+        "  setTimeout(() => {\n" +
+        `    writeFileSync(${JSON.stringify(marker)}, "boom");\n` +
+        '    throw new Error("crash outside request lifecycle");\n' +
+        "  }, 100);\n" +
+        '  return new Response("scheduled crash");\n' +
+        "}\n",
+    );
+
+    const build = runCli(["build", "--cwd", prodDir]);
+    expect(build.status).toBe(0);
+    expect(existsSync(join(prodDir, ".x/server/index.ts"))).toBe(true);
+
+    const proc = spawn(process.execPath, [join(prodDir, ".x", "server", "index.ts")], {
+      cwd: prodDir,
+      env: { ...process.env, NODE_ENV: "production", PORT: "4316" },
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+
+    const base = "http://localhost:4316";
+    try {
+      let up = false;
+      for (let i = 0; i < 100 && !up; i++) {
+        try {
+          up = (await fetch(`${base}/`)).status === 200;
+        } catch {}
+        if (!up) await new Promise((r) => setTimeout(r, 100));
+      }
+      expect(up).toBe(true);
+
+      const res = await fetch(`${base}/api/crash`);
+      expect(await res.text()).toBe("scheduled crash");
+
+      // The scheduled throw must take the process down (exitOnCrash: true).
+      const code = await new Promise<number | null>((resolve) => {
+        proc.on("exit", (c) => resolve(c));
+        setTimeout(() => resolve(null), 10_000);
+      });
+      expect(existsSync(marker)).toBe(true);
+      expect(code).toBe(1);
+    } finally {
+      try {
+        proc.kill("SIGKILL");
+      } catch {}
+      rmSync(prodDir, { recursive: true, force: true });
+    }
+  }, 30_000);
+
   test("x start shows a friendly error when bun is not on PATH (#180)", async () => {
     const noBun = join(FIXTURE_DIR, "no-bun-start");
     mkdirSync(join(noBun, ".x", "server"), { recursive: true });

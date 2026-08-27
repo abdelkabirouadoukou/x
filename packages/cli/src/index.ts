@@ -141,8 +141,10 @@ async function cmdDev(): Promise<void> {
   xInfo("dev server starting...");
   // Report crashes outside the request lifecycle (module-eval throws, rejected
   // background promises) through the error reporter instead of dying silently.
-  // The prod server gets the same handlers from the generated entry (build.ts).
-  installProcessCrashHandlers();
+  // Dev keeps serving after a crash so the next hot-reload can recover. The
+  // prod server gets the same handlers but fails fast: build.ts's generated
+  // entry passes exitOnCrash: true so the orchestrator restarts a clean box.
+  installProcessCrashHandlers({ exitOnCrash: false });
   const app = await createApp({ ...dirs, development: true });
   let port = opts.port;
   let server: ReturnType<typeof Bun.serve> | undefined;
