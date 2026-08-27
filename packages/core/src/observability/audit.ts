@@ -15,7 +15,7 @@
  * value cannot slip into an entry.
  */
 
-import { SAFE_REQUEST_ID_RE } from "../security/trusted-proxy";
+import { SAFE_REQUEST_ID_RE } from "../security/validation";
 import { redactString, redactValue } from "./redact";
 
 export type AuditEvent =

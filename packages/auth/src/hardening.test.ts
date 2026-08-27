@@ -296,17 +296,20 @@ describe("auth hardening: brute-force lockout on credentials", () => {
 describe("auth hardening: brute-force guard internals", () => {
   test("account and IP buckets are namespaced apart (#133)", () => {
     configureTrustedProxy({ trustForwardedHeaders: true });
-    const guard = createBruteForceGuard({ maxAttempts: 3, windowMs: 60_000 });
-    guard.dispose();
-    // An identifier that looks like an IP must not key the same bucket as the
-    // actual client IP — a collision would share failures/resets between the
-    // account and IP axes and break independent throttling.
-    const identifier = "198.51.100.42";
-    const req = new Request("http://x/", {
-      headers: { "x-forwarded-for": identifier },
-    });
-    expect(guard.accountKey(identifier)).not.toBe(guard.ipKey(req));
-    resetTrustedProxy();
+    try {
+      const guard = createBruteForceGuard({ maxAttempts: 3, windowMs: 60_000 });
+      guard.dispose();
+      // An identifier that looks like an IP must not key the same bucket as the
+      // actual client IP — a collision would share failures/resets between the
+      // account and IP axes and break independent throttling.
+      const identifier = "198.51.100.42";
+      const req = new Request("http://x/", {
+        headers: { "x-forwarded-for": identifier },
+      });
+      expect(guard.accountKey(identifier)).not.toBe(guard.ipKey(req));
+    } finally {
+      resetTrustedProxy();
+    }
   });
 
   test("ipKey is null when no client IP is knowable (#133)", () => {
@@ -321,11 +324,14 @@ describe("auth hardening: brute-force guard internals", () => {
 
   test("ipKey resolves when trustForwardedHeaders is true", () => {
     configureTrustedProxy({ trustForwardedHeaders: true });
-    const guard = createBruteForceGuard();
-    guard.dispose();
-    const withIp = new Request("http://x/", { headers: { "x-real-ip": "203.0.113.7" } });
-    expect(guard.ipKey(withIp)).toBe("login:ip:203.0.113.7");
-    resetTrustedProxy();
+    try {
+      const guard = createBruteForceGuard();
+      guard.dispose();
+      const withIp = new Request("http://x/", { headers: { "x-real-ip": "203.0.113.7" } });
+      expect(guard.ipKey(withIp)).toBe("login:ip:203.0.113.7");
+    } finally {
+      resetTrustedProxy();
+    }
   });
 
   test("attacker-set X-Forwarded-For does not create separate IP buckets when untrusted", () => {
@@ -356,25 +362,28 @@ describe("auth hardening: brute-force guard internals", () => {
 
   test("genuinely trusted and consistent X-Forwarded-For lands in the same IP bucket", () => {
     configureTrustedProxy({ trustForwardedHeaders: true });
-    const guard = createBruteForceGuard({ maxAttempts: 2, windowMs: 60_000 });
-    guard.dispose();
+    try {
+      const guard = createBruteForceGuard({ maxAttempts: 2, windowMs: 60_000 });
+      guard.dispose();
 
-    const reqA = new Request("http://x/", { headers: { "x-forwarded-for": "203.0.113.99" } });
-    const reqB = new Request("http://x/", { headers: { "x-forwarded-for": "203.0.113.99" } });
+      const reqA = new Request("http://x/", { headers: { "x-forwarded-for": "203.0.113.99" } });
+      const reqB = new Request("http://x/", { headers: { "x-forwarded-for": "203.0.113.99" } });
 
-    expect(guard.ipKey(reqA)).toBe("login:ip:203.0.113.99");
-    expect(guard.ipKey(reqB)).toBe("login:ip:203.0.113.99");
+      expect(guard.ipKey(reqA)).toBe("login:ip:203.0.113.99");
+      expect(guard.ipKey(reqB)).toBe("login:ip:203.0.113.99");
 
-    const keyA = guard.ipKey(reqA) as string;
-    const keyB = guard.ipKey(reqB) as string;
-    expect(keyA).toBe(keyB);
+      const keyA = guard.ipKey(reqA) as string;
+      const keyB = guard.ipKey(reqB) as string;
+      expect(keyA).toBe(keyB);
 
-    guard.recordFailure(keyA);
-    guard.recordFailure(keyA);
-    expect(guard.status(keyA).ok).toBe(false);
-    expect(guard.status(keyB).ok).toBe(false); // same bucket
-    guard.dispose();
-    resetTrustedProxy();
+      guard.recordFailure(keyA);
+      guard.recordFailure(keyA);
+      expect(guard.status(keyA).ok).toBe(false);
+      expect(guard.status(keyB).ok).toBe(false); // same bucket
+      guard.dispose();
+    } finally {
+      resetTrustedProxy();
+    }
   });
 });
 

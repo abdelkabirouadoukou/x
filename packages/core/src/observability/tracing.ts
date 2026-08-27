@@ -61,7 +61,7 @@ export const OTEL_ERROR_STATUS_CODE = 2;
  * require only executes on a server runtime, and any platform without
  * async_hooks degrades to "no request context" instead of crashing.
  */
-import { SAFE_REQUEST_ID_RE } from "../security/trusted-proxy";
+import { SAFE_REQUEST_ID_RE } from "../security/validation";
 import { redactString } from "./redact";
 
 interface AsyncLocalStorageLike {
