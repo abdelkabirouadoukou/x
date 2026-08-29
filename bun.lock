@@ -32,7 +32,7 @@
         "@thexjs/adapter-vercel": "workspace:*",
         "@thexjs/cli": "workspace:*",
         "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
+        "@types/react-dom": "^19.2.5",
         "shadcn": "^4.18.0",
       },
     },
@@ -54,7 +54,7 @@
         "@tailwindcss/cli": "^4.3.3",
         "@thexjs/cli": "workspace:*",
         "@types/react": "^19.1.0",
-        "@types/react-dom": "^19.1.0",
+        "@types/react-dom": "^19.2.5",
         "tailwindcss": "^4.3.3",
         "typescript": "^5.8.0",
       },
@@ -69,7 +69,7 @@
       "devDependencies": {
         "@tailwindcss/cli": "^4.3.3",
         "@types/react": "^19.1.0",
-        "@types/react-dom": "^19.1.0",
+        "@types/react-dom": "^19.2.5",
         "tailwindcss": "^4.3.3",
         "typescript": "^5.8.0",
       },
@@ -95,7 +95,7 @@
         "@thexjs/cli": "workspace:*",
         "@thexjs/mcp": "workspace:*",
         "@types/react": "^19.2.18",
-        "@types/react-dom": "^19.2.4",
+        "@types/react-dom": "^19.2.5",
         "tailwindcss": "^4.3.3",
         "typescript": "^7.0.2",
       },
@@ -118,7 +118,7 @@
         "@tailwindcss/cli": "^4.3.3",
         "@thexjs/cli": "workspace:*",
         "@types/react": "^19.1.0",
-        "@types/react-dom": "^19.1.0",
+        "@types/react-dom": "^19.2.5",
         "tailwindcss": "^4.3.3",
         "typescript": "^5.8.0",
       },
@@ -172,7 +172,7 @@
       "version": "1.8.2",
       "devDependencies": {
         "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
+        "@types/react-dom": "^19.2.5",
         "tsup": "^8.3.0",
       },
       "peerDependencies": {
@@ -210,7 +210,7 @@
       "devDependencies": {
         "@happy-dom/global-registrator": "^20.11.2",
         "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
+        "@types/react-dom": "^19.2.5",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "tsup": "^8.3.0",
@@ -594,7 +594,7 @@
 
     "@types/react": ["@types/react@19.2.18", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w=="],
 
-    "@types/react-dom": ["@types/react-dom@19.2.4", "", { "peerDependencies": { "@types/react": "^19.2.0" } }, "sha512-Bsc+QHgp+P/F02XDzNCY9jnZNCUuLki36KT7VKrTXXLdHf+vHMNZnW1rVu5DNW/rCK+fya3DATySbLM4yhtKUw=="],
+    "@types/react-dom": ["@types/react-dom@19.2.5", "", { "peerDependencies": { "@types/react": "^19.2.0" } }, "sha512-fMPwH9v7r/pp43yUd2/Mbiex5KouJwwR3dzHkhLREUC6764VyDsqxhAxv6OFEYR1RhjOyD1naqba8ECDBe7ZQg=="],
 
     "@types/validate-npm-package-name": ["@types/validate-npm-package-name@4.0.2", "", {}, "sha512-lrpDziQipxCEeK5kWxvljWYhUvOiB2A9izZd9B2AFarYAkqZshb4lPbRs7zKEic6eGtH8V/2qJW+dPp9OtF6bw=="],
 
