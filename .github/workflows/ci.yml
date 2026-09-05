@@ -6,6 +6,25 @@ on:
   pull_request:
 
 jobs:
+  lockfile:
+    name: Lockfile drift guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          # Pinned for reproducible builds — bump deliberately.
+          bun-version: 1.3.14
+
+      - name: Install dependencies (frozen lockfile)
+        run: bun install --frozen-lockfile
+
+      - name: Guard against bun.lock / package.json drift
+        run: git diff --exit-code -- bun.lock package.json
+
   test:
     name: Test (${{ matrix.os }})
     strategy:

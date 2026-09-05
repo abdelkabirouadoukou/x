@@ -61,10 +61,14 @@ jobs:
         # CHANGESETS_OUTPUT event file the CLI writes instead.
         uses: changesets/action@v2
         with:
-          # changeset:version = `changeset version && bun run lint:fix`, so the
-          # versioning PR is never blocked by biome formatting of the rewritten
-          # package.json files (JSON.stringify writes multi-line arrays).
-          version-script: bun run changeset:version
+          # changeset:version = `changeset version && bun run lint:fix`, but the
+          # version PR must also refresh bun.lock so it stays in sync with the
+          # bumped package.json versions (see #247). Inlining the sequence here
+          # is least-fragile: changesets/action@v2 runs version-script via
+          # `exec(script)` then `git add .` / GitHub API commit, so any file
+          # touched by the script (including bun.lock) is captured in the
+          # version commit without a follow-up step.
+          version-script: changeset version && bun install && bun run lint:fix
           publish-script: bunx @changesets/cli publish
           pr-title: "chore: version packages"
           commit-message: "chore: version packages"
