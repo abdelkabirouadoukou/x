@@ -169,7 +169,7 @@
     },
     "packages/core": {
       "name": "@thexjs/core",
-      "version": "1.8.2",
+      "version": "1.8.3",
       "devDependencies": {
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.2.5",
@@ -182,7 +182,7 @@
     },
     "packages/create-thexjs-app": {
       "name": "create-thexjs-app",
-      "version": "1.2.2",
+      "version": "1.2.3",
       "bin": {
         "create-thexjs-app": "./dist/index.js",
       },
@@ -206,7 +206,7 @@
     },
     "packages/hooks": {
       "name": "@thexjs/hooks",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "devDependencies": {
         "@happy-dom/global-registrator": "^20.11.6",
         "@types/react": "^19.0.0",
