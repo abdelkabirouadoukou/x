@@ -1,5 +1,12 @@
 # @thexjs/hooks
 
+## 0.2.1
+
+### Patch Changes
+
+- 7c960ba: Update @types/react-dom devDependency via dependabot.
+- 67b82c6: Update @happy-dom/global-registrator devDependency via dependabot.
+
 ## 0.2.0
 
 ### Minor Changes
