@@ -1,5 +1,11 @@
 # @thexjs/core
 
+## 1.8.3
+
+### Patch Changes
+
+- 7c960ba: Update @types/react-dom devDependency via dependabot.
+
 ## 1.8.2
 
 ### Patch Changes

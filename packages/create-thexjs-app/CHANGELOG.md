@@ -1,5 +1,11 @@
 # create-thexjs-app
 
+## 1.2.3
+
+### Patch Changes
+
+- 7701dcf: Update @types/node devDependency via dependabot.
+
 ## 1.2.2
 
 ### Patch Changes
