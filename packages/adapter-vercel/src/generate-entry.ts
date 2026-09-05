@@ -69,8 +69,18 @@ function nodeRequestToWebRequest(req) {
 
 async function sendWebResponse(response, res) {
   res.statusCode = response.status;
+  // Never copy Content-Length verbatim. For streamed bodies the upstream length
+  // may disagree with the bytes actually emitted: a shorter stream hangs the
+  // client (it waits for bytes that never arrive), a longer one makes Node
+  // destroy the socket with ERR_HTTP_CONTENT_LENGTH_MISMATCH after headers are
+  // already sent. We drop it and let Node negotiate chunked transfer-encoding.
+  // A computed length is only set when we intentionally buffer a small body
+  // (206 partial content), so its true size is known up front.
+  const isPartial = response.status === 206;
   for (const [key, value] of response.headers) {
-    if (key.toLowerCase() === "set-cookie") continue;
+    const lower = key.toLowerCase();
+    if (lower === "set-cookie") continue;
+    if (lower === "content-length") continue;
     res.setHeader(key, value);
   }
   const cookies = response.headers.getSetCookie ? response.headers.getSetCookie() : [];
@@ -85,14 +95,31 @@ async function sendWebResponse(response, res) {
   res.on("close", cancel);
   res.on("error", cancel);
   try {
-    while (!cancelled) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (cancelled) break;
-      // Honor backpressure: if the OS socket buffer is full, wait for the
-      // Idle event instead of piling bytes into Node's memory.
-      if (!res.write(value)) {
-        await new Promise((resolve) => res.once("drain", resolve));
+    if (isPartial) {
+      // 206 partial content: buffer so we can stamp the real Content-Length.
+      const chunks = [];
+      let total = 0;
+      while (!cancelled) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (cancelled) break;
+        chunks.push(value);
+        total += value.byteLength;
+      }
+      if (!cancelled) {
+        res.setHeader("Content-Length", String(total));
+        for (const chunk of chunks) res.write(chunk);
+      }
+    } else {
+      while (!cancelled) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (cancelled) break;
+        // Honor backpressure: if the OS socket buffer is full, wait for the
+        // Idle event instead of piling bytes into Node's memory.
+        if (!res.write(value)) {
+          await new Promise((resolve) => res.once("drain", resolve));
+        }
       }
     }
   } finally {

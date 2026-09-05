@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { once } from "node:events";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer, type ServerResponse } from "node:http";
 import { join } from "node:path";
 import { generateEntrySource } from "./generate-entry";
 import { buildVercelOutput } from "./index";
@@ -181,6 +183,116 @@ describe("generateEntrySource", () => {
     const src = generateEntrySource(unitManifest(), "/tmp/e");
     expect(src).toContain("if (res.headersSent)");
     expect(src).toContain("res.destroy");
+  });
+});
+
+describe("sendWebResponse (generated entry, executes the real bridge)", () => {
+  // sendWebResponse is emitted as plain JS inside the generated entry source
+  // (a template string in generate-entry.ts). To actually exercise it we pull
+  // the function out of the generated source and eval it, then drive it through
+  // a real node:http server -- so the tests assert real socket behavior, not
+  // string matching.
+  function evalSendWebResponse(
+    src: string,
+  ): (response: Response, res: ServerResponse) => Promise<void> {
+    const marker = "async function sendWebResponse(response, res)";
+    const startIdx = src.indexOf(marker);
+    if (startIdx === -1) throw new Error("sendWebResponse not found in generated entry");
+    const open = src.indexOf("{", startIdx);
+    let depth = 0;
+    let end = -1;
+    for (let i = open; i < src.length; i++) {
+      if (src[i] === "{") depth++;
+      else if (src[i] === "}") {
+        depth--;
+        if (depth === 0) {
+          end = i + 1;
+          break;
+        }
+      }
+    }
+    if (end === -1) throw new Error("could not find end of sendWebResponse");
+    const fnSrc = src.slice(startIdx, end);
+    // eslint-disable-next-line no-new-func
+    const compile = new Function(`${fnSrc}; return sendWebResponse;`);
+    return compile() as (response: Response, res: ServerResponse) => Promise<void>;
+  }
+
+  // Serve a Response through sendWebResponse over a real http.Server and return
+  // what the client actually received. Rejects if the socket dies (e.g. Node
+  // throwing ERR_HTTP_CONTENT_LENGTH_MISMATCH after headers were sent).
+  async function serve(
+    sendWebResponse: (response: Response, res: ServerResponse) => Promise<void>,
+    response: Response,
+  ): Promise<{ status: number; headers: Record<string, string | undefined>; body: string }> {
+    const server = createServer((_req, res) => {
+      sendWebResponse(response, res).catch((err) => {
+        res.destroy(err);
+      });
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const addr = server.address();
+    if (!addr || typeof addr === "string") throw new Error("no listening address");
+    const url = `http://127.0.0.1:${addr.port}/`;
+    try {
+      const client = await fetch(url);
+      const body = await client.text();
+      const headers: Record<string, string | undefined> = {};
+      client.headers.forEach((v, k) => {
+        headers[k.toLowerCase()] = v;
+      });
+      return { status: client.status, headers, body };
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  }
+
+  test("drops the stale Content-Length when a streamed body emits fewer bytes than declared", async () => {
+    // The upstream declares 1000 bytes but the stream only emits 5. Before the
+    // fix the header was copied verbatim, so Node waited for 1000 bytes -> the
+    // client hung (or got ERR_HTTP_CONTENT_LENGTH_MISMATCH). Now the length is
+    // dropped and Node negotiates chunked transfer-encoding.
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("short"));
+        controller.close();
+      },
+    });
+    const response = new Response(body, {
+      status: 200,
+      headers: { "content-length": "1000" },
+    });
+
+    const sendWebResponse = evalSendWebResponse(generateEntrySource(unitManifest(), "/tmp/e"));
+    const result = await serve(sendWebResponse, response);
+
+    expect(result.status).toBe(200);
+    expect(result.body).toBe("short");
+    // The stale length must not reach the client.
+    expect(result.headers["content-length"]).toBeUndefined();
+  });
+
+  test("stamps the real computed Content-Length when buffering a 206 partial body", async () => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("range!"));
+        controller.close();
+      },
+    });
+    const response = new Response(body, {
+      status: 206,
+      headers: { "content-length": "999", "content-range": "bytes 0-5/100" },
+    });
+
+    const sendWebResponse = evalSendWebResponse(generateEntrySource(unitManifest(), "/tmp/e"));
+    const result = await serve(sendWebResponse, response);
+
+    expect(result.status).toBe(206);
+    expect(result.body).toBe("range!");
+    expect(result.headers["content-range"]).toBe("bytes 0-5/100");
+    // 6 bytes actually emitted -> computed length, not the stale 999.
+    expect(result.headers["content-length"]).toBe("6");
   });
 });
 
