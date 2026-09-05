@@ -7,7 +7,7 @@
       "devDependencies": {
         "@biomejs/biome": "^2.5.10",
         "@changesets/cli": "^3.0.0",
-        "@happy-dom/global-registrator": "^20.11.2",
+        "@happy-dom/global-registrator": "^20.11.6",
         "@types/bun": "latest",
         "happy-dom": "^20.11.2",
         "typescript": "^5.9.3",
@@ -208,7 +208,7 @@
       "name": "@thexjs/hooks",
       "version": "0.2.0",
       "devDependencies": {
-        "@happy-dom/global-registrator": "^20.11.2",
+        "@happy-dom/global-registrator": "^20.11.6",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.2.5",
         "react": "^19.0.0",
