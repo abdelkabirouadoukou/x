@@ -60,7 +60,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@clack/prompts": "^1.7.0"
+    "@clack/prompts": "^1.8.0"
   },
   "devDependencies": {
     "@types/node": "^26.3.0",
