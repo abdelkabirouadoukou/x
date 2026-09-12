@@ -28,6 +28,39 @@ export default function DocPage(_props: RouteProps) {
         clean failure the caller can retry.
       </p>
 
+      <h2 className="text-xl">Configure createApp</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Backpressure is opt-in on the normal app config. Leaving it unset, or setting it to false,
+        preserves the existing unbounded request-admission behavior.
+      </p>
+      <CodeBlock
+        label="x.config.ts"
+        code={`import { defineConfig } from "@thexjs/core";
+
+export default defineConfig({
+  backpressure: {
+    maxConcurrent: 50,
+    maxQueue: 20,
+    retryAfterSeconds: 2,
+  },
+});`}
+      />
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Each <span className="text-foreground">createApp()</span> instance owns its own in-memory
+        controller, so these limits are per process or serverless instance, not a fleet-wide cap.
+        Under sustained overload the queue never grows past maxQueue: excess requests fail fast with
+        503 instead of accumulating unbounded resident work. Liveness/readiness probes, an enabled
+        built-in metrics endpoint, generated island assets, and the dev live-reload stream bypass
+        admission so control-plane or long-lived framework paths do not consume slots.
+      </p>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        The native admission gate wraps the existing request pipeline. Rate limiting remains a
+        separate inner policy: if the process is already saturated, the capacity 503 can be returned
+        before a request reaches an inner 429 rate-limit decision. For streaming responses, the
+        admission slot is released when the handler produces its Response; streaming SSR separately
+        honors downstream demand and cancel-on-disconnect.
+      </p>
+
       <h2 className="text-xl">Wrap a handler with withBackpressure</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
         The simplest way to add backpressure is to wrap your request handler with{" "}

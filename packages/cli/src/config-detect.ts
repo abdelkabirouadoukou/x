@@ -13,6 +13,7 @@ export interface DetectedOptions {
   security?: Record<string, unknown>;
   observability?: Record<string, unknown>;
   images?: Record<string, unknown>;
+  backpressure?: Record<string, unknown> | false;
 }
 
 export function findConfig(projectDir: string): string | null {
@@ -71,6 +72,10 @@ export function detectOptionsFromConfig(
     security: (cfg.security as Record<string, unknown>) ?? undefined,
     observability: (cfg.observability as Record<string, unknown>) ?? undefined,
     images: (cfg.images as Record<string, unknown>) ?? undefined,
+    backpressure:
+      cfg.backpressure === false
+        ? false
+        : ((cfg.backpressure as Record<string, unknown>) ?? undefined),
   }) as unknown as DetectedOptions;
 }
 

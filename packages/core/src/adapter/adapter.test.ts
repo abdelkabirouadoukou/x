@@ -50,11 +50,13 @@ export default function Home() {
 
   test("resolveBuildManifest scans server-mode routes and API routes at build time", async () => {
     const scratch = join(FIXTURE_DIR, ".resolve");
+    const backpressure = { maxConcurrent: 8, maxQueue: 4, retryAfterSeconds: 2 };
     const manifest = await resolveBuildManifest(
       {
         projectRoot: FIXTURE_DIR,
         pagesDir: join(FIXTURE_DIR, "src/pages"),
         apiDir: join(FIXTURE_DIR, "src/api"),
+        backpressure,
       },
       scratch,
     );
@@ -68,6 +70,7 @@ export default function Home() {
     // Static mode pages are excluded -- the core build prerenders them.
     expect(paths.some((p) => p === "/")).toBe(false);
     expect(manifest.stylesheetHref).toBe("/styles.css");
+    expect(manifest.backpressure).toEqual(backpressure);
   });
 
   test("generateAdapterEntry emits a statically-imported, createApp-booting entry", async () => {
@@ -92,17 +95,37 @@ export default function Home() {
       actions: [],
       hasServerSurface: true,
       stylesheetHref: "/styles.css",
+      backpressure: { maxConcurrent: 8, maxQueue: 4, retryAfterSeconds: 2 },
     };
     const src = generateAdapterEntry(manifest, "/tmp/e");
     expect(src).toContain('import { createApp, registerServerFunctions } from "@thexjs/core";');
     expect(src).toContain("__x_preloadedRoutes");
     expect(src).toContain('stylesheetHref: "/styles.css"');
     expect(src).toContain("module: __x_page_1");
+    expect(src).toContain(
+      'const __x_backpressure = {"maxConcurrent":8,"maxQueue":4,"retryAfterSeconds":2};',
+    );
+    expect(src).toContain(
+      "...(__x_backpressure !== undefined ? { backpressure: __x_backpressure } : {}),",
+    );
     expect(src).not.toContain("import(");
     expect(src).toContain("export { __x_app };");
     // Build-machine absolute paths must not leak into the generated entry.
     expect(src).not.toContain('"/s/about.tsx"');
     expect(src).not.toContain('filePath: "/s/about.tsx"');
+  });
+
+  test("generateAdapterEntry preserves explicit backpressure disable", () => {
+    const manifest: BuildManifest = {
+      projectRoot: "/s",
+      pagesDirLabel: "src/pages",
+      routes: [],
+      actions: [],
+      hasServerSurface: true,
+      backpressure: false,
+    };
+    const src = generateAdapterEntry(manifest, "/tmp/e");
+    expect(src).toContain("const __x_backpressure = false;");
   });
 
   test("generateAdapterEntry relativizes emitted paths against the project root", () => {

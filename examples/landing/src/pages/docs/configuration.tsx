@@ -50,6 +50,13 @@ export default defineConfig({
     rateLimit: { limit: 120 },
   },
 
+  // Per-process overload protection (opt-in)
+  backpressure: {
+    maxConcurrent: 50,
+    maxQueue: 20,
+    retryAfterSeconds: 2,
+  },
+
   // Observability (logging, health probes, error reporting)
   observability: {
     logging: true,
@@ -88,6 +95,7 @@ stylesheetHref  string      undefined          Precomputed stylesheet <link> hre
 security.csrf   object|false enabled           CSRF for /__x/actions/*
 security.headers object|false enabled          CSP, HSTS, X-Frame-Options, ...
 security.rateLimit object|false enabled        Per-IP fixed-window limiter
+backpressure    object|false undefined         Per-process active + queue bound
 observability.logging boolean true             Structured JSON request logs
 observability.errorReporter fn undefined       Plugin for exceptions (Sentry/OTel)
 observability.health object undefined         /healthz + /readyz endpoints
@@ -148,6 +156,18 @@ images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
           Security
         </a>{" "}
         for the full reference.
+      </p>
+
+      <h2 className="text-xl">backpressure</h2>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
+        Optional per-process admission control. <span className="text-foreground">maxConcurrent</span>{" "}
+        bounds active admitted requests and <span className="text-foreground">maxQueue</span> bounds
+        additional waiters; saturation returns 503 plus Retry-After. The setting is disabled when
+        omitted or set to false. See{" "}
+        <a href="/docs/backpressure" className="text-primary underline underline-offset-2">
+          Backpressure
+        </a>{" "}
+        for overload and single-instance semantics.
       </p>
 
       <h2 className="text-xl">observability</h2>
