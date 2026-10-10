@@ -52,7 +52,7 @@ bun run dev
 
 The scaffolder is feature-based: it asks which features you want (`tailwind`, `auth`, `content`, `hooks`, `shadcn`) — pick nothing for a blank home page, then the dev server runs at `http://localhost:3000`. Pass features non-interactively with flags like `--tailwind --auth`; `--no-install` and `--no-git` skip the install/init steps.
 
-In maintenance mode (author busy with the collage), releases, reviews, and merges happen on a best-effort weekly cadence — see [ROADMAP.md](ROADMAP.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+In maintenance mode (author busy with the college), releases, reviews, and merges happen on a best-effort weekly cadence — see [ROADMAP.md](ROADMAP.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What's inside
 

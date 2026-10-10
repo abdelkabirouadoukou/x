@@ -1,7 +1,7 @@
 # Contributing to x
 
 Thanks for wanting to help. x is a small framework run in **maintenance mode**
-by a solo author who is currently focused on the collage — so your PR
+by a solo author who is currently focused on the college — so your PR
 is the primary engine for improvements right now. A few guidelines keep it
 reviewable and consistent.
 

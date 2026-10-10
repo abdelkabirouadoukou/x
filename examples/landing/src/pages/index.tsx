@@ -60,7 +60,7 @@ export default function HomePage() {
                 href="/sandbox"
                 className="inline-flex items-center gap-1 text-[14.5px] text-fg-muted underline decoration-line underline-offset-4 transition-colors hover:text-fg"
               >
-                Try it in the browser
+                Online sandbox (coming soon)
                 <ArrowRight className="h-3.5 w-3.5 transition-transform hover:translate-x-0.5" />
               </a>
             </div>

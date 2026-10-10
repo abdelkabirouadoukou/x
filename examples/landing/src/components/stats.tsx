@@ -4,7 +4,7 @@ interface Stat {
 }
 
 const STATS: Stat[] = [
-  { value: "7×", label: "faster cold start than Node.js SSR" },
+  { value: "20×", label: "faster cold start than Next.js (32ms vs 640ms)" },
   { value: "92", label: "request count vs. server bundles in one process" },
   { value: "HTTP/3", label: "behind the built-in production server" },
   { value: "−4MB", label: "node_modules vs. a Next.js portable build" },
