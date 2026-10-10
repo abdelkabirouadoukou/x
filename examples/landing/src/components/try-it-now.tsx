@@ -86,7 +86,7 @@ export default function TryItNow() {
               href="/sandbox"
               className="cut btn-accent h-10 px-4 text-sm font-semibold text-white [--cut:7px]"
             >
-              Open the sandbox
+              Sandbox (coming soon)
             </a>
           </div>
         </div>

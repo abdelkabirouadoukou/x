@@ -6,7 +6,7 @@ file is the honest scoreboard, not a marketing plan.
 ## Project status
 
 The project is in **maintenance mode** while the author is busy with the
-collage. What that means:
+college. What that means:
 
 - **Feature work is frozen.** The existing surface is the surface; new ideas
   go to the issue board for later, not into `main` this season.
