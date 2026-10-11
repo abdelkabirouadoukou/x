@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@thexjs/core": "^1.8.0",
-    "react": "^19.0.0"
+    "react": "^19.3.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
