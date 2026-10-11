@@ -340,4 +340,28 @@ describe("env isolation", () => {
     const code = "const url = process.env.THEXJS_PUBLIC_API_URL;";
     expect(() => assertNoEnvLeakage(code, "dist/client/_islands/foo.js")).not.toThrow();
   });
+
+  test("findLeakedEnvValues catches a secret value inlined as a literal, which the key-scan misses", async () => {
+    // Simulates what a bundler that inlines `process.env.X` into a string
+    // literal would produce: the `process.env.SECRET` reference is gone, so
+    // the regex key-scan has nothing to match against. Imported dynamically
+    // (rather than as a top-level named import) so this test exercises
+    // whether the export exists at all, instead of failing the whole file to
+    // load before any test runs.
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const env = { SECRET: "s3cr3t-token-value-12345" };
+    const code = 'const key = "s3cr3t-token-value-12345";\nfetch("/x", { headers: { key } });';
+
+    expect(findLeakedEnvKeys(code)).toEqual([]);
+    expect(() => assertNoEnvLeakage(code, "dist/client/_islands/foo.js")).not.toThrow();
+
+    expect(findLeakedEnvValues(code, env)).toEqual(["SECRET"]);
+  });
+
+  test("findLeakedEnvValues ignores common build-environment values like NODE_ENV", async () => {
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const env = { NODE_ENV: "production", PWD: "/home/runner/work/x/x" };
+    const code = 'if (process.env.NODE_ENV === "production") console.log("prod");';
+    expect(findLeakedEnvValues(code, env)).toEqual([]);
+  });
 });
