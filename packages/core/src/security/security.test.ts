@@ -364,4 +364,43 @@ describe("env isolation", () => {
     const code = 'if (process.env.NODE_ENV === "production") console.log("prod");';
     expect(findLeakedEnvValues(code, env)).toEqual([]);
   });
+
+  test("findLeakedEnvValues does not flag ordinary non-sensitive env values that coincidentally appear in the bundle", async () => {
+    // These are realistic values that a production deploy sets (Vercel's
+    // system env var among them) and that commonly collide with strings
+    // already present in React or in page content. None of the keys look
+    // sensitive and none of the values look like a generated secret, so none
+    // should be reported.
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const env = {
+      VERCEL_ENV: "production",
+      APP_ENV: "production",
+      DB_HOST: "localhost",
+      APP_URL: "http://localhost:3000",
+      FEATURE_MODE: "default",
+    };
+    const code = `
+      const mode = "production";
+      const host = "localhost";
+      const url = "http://localhost:3000";
+      const fallback = "default";
+    `;
+    expect(findLeakedEnvValues(code, env)).toEqual([]);
+  });
+
+  test("findLeakedEnvValues still flags a sensitive-named key even without a random-looking value", async () => {
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const code = 'const t = "deployment-token-value";';
+    expect(findLeakedEnvValues(code, { DEPLOY_TOKEN: "deployment-token-value" })).toEqual([
+      "DEPLOY_TOKEN",
+    ]);
+  });
+
+  test("findLeakedEnvValues still flags a random-looking value under a non-sensitive key name", async () => {
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const code = 'const v = "aXb92Kp0Qz7mN3wYt5Rj1Vc8";';
+    expect(findLeakedEnvValues(code, { BUILD_ID: "aXb92Kp0Qz7mN3wYt5Rj1Vc8" })).toEqual([
+      "BUILD_ID",
+    ]);
+  });
 });

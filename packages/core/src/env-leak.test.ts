@@ -38,6 +38,19 @@ const ok = 42;
 hydrateRoot(document, null);
 console.log(ok);`;
 
+// A bundle that happens to contain the same words a production deploy's
+// ordinary (non-secret) env values hold — "production" and "localhost" show
+// up in plenty of legitimate client code and site content. This must build
+// clean even with those env vars set, unlike the leaky/inlined fixtures
+// above.
+const COINCIDENTAL_ROUTE_DIR = join(FIXTURE_DIR, "src/routes-coincidental");
+const COINCIDENTAL_ROUTE = join(COINCIDENTAL_ROUTE_DIR, "coincidental.tsx");
+const COINCIDENTAL_BUNDLE_CODE = `import { hydrateRoot } from "react-dom/client";
+const mode = "production";
+const host = "localhost";
+hydrateRoot(document, null);
+console.log(mode, host);`;
+
 // What ships if a bundler ever inlines `process.env.SECRET` into a string
 // literal instead of preserving the reference: no `process.env` syntax
 // remains for the key-scan to match, only the secret's literal value.
@@ -46,6 +59,8 @@ const INLINED_BUNDLE_CODE = `const key = "${INLINE_SECRET_VALUE}";
 function render() { return key; }`;
 
 const previousSecretEnv = process.env.SECRET;
+let previousVercelEnv: string | undefined;
+let previousDbHost: string | undefined;
 
 let buildSpy: ReturnType<typeof spyOn>;
 
@@ -59,7 +74,9 @@ function fakeBuildFor(opts: { entrypoints?: (string | URL)[] }): {
     ? LEAKY_BUNDLE_CODE
     : entry.includes("inlined")
       ? INLINED_BUNDLE_CODE
-      : CLEAN_BUNDLE_CODE;
+      : entry.includes("coincidental")
+        ? COINCIDENTAL_BUNDLE_CODE
+        : CLEAN_BUNDLE_CODE;
   return {
     success: true,
     outputs: [{ kind: "entry-point", text: async () => code }],
@@ -151,9 +168,44 @@ export default function InlinedPage() {
 `,
   );
 
+  writeRoute(
+    COINCIDENTAL_ROUTE,
+    `import { Island } from "${pathToFileURL(ISLAND_PATH).href}";
+
+export function Coincidental() {
+  const count = 0;
+  return <button>{count}</button>;
+}
+
+export const islands = { Coincidental };
+
+export const mode = "static";
+
+export default function CoincidentalPage() {
+  return (
+    <main>
+      <h1>Coincidental</h1>
+      <Island name="Coincidental" client="idle">
+        <Coincidental />
+      </Island>
+    </main>
+  );
+}
+`,
+  );
+
   // Real env var, so `findLeakedEnvValues(code, process.env)` — the actual
   // call site wiring — has something non-public to match against.
   process.env.SECRET = INLINE_SECRET_VALUE;
+
+  // Realistic, non-sensitive env vars whose values ("production", "localhost")
+  // coincidentally match words already present in COINCIDENTAL_BUNDLE_CODE.
+  // Neither the key name nor the value shape is sensitive, so these must not
+  // trip the value scan.
+  previousVercelEnv = process.env.VERCEL_ENV;
+  previousDbHost = process.env.DB_HOST;
+  process.env.VERCEL_ENV = "production";
+  process.env.DB_HOST = "localhost";
 
   buildSpy = spyOn(Bun, "build");
   buildSpy.mockImplementation(async (opts: Parameters<typeof Bun.build>[0]) =>
@@ -165,6 +217,10 @@ afterAll(() => {
   buildSpy.mockRestore();
   if (previousSecretEnv === undefined) delete process.env.SECRET;
   else process.env.SECRET = previousSecretEnv;
+  if (previousVercelEnv === undefined) delete process.env.VERCEL_ENV;
+  else process.env.VERCEL_ENV = previousVercelEnv;
+  if (previousDbHost === undefined) delete process.env.DB_HOST;
+  else process.env.DB_HOST = previousDbHost;
   rmSync(join(import.meta.dir, "__fixtures__/env-leak"), { recursive: true, force: true });
 });
 
@@ -243,6 +299,24 @@ describe("dev-mode island env isolation", () => {
       expect(code).not.toContain("data-island-hydrated");
       expect(code).toContain("hydrateRoot");
       expect(code.length).toBeGreaterThan(50);
+      expect(errorSpy.mock.calls.length).toBe(0);
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  test("an island that coincidentally contains ordinary env-var values (VERCEL_ENV=production, DB_HOST=localhost) builds normally", async () => {
+    const errorSpy = spyOn(console, "error");
+    try {
+      const code = await buildIslandBundleInMemory(
+        COINCIDENTAL_ROUTE,
+        [],
+        ["Coincidental"],
+        new Map(),
+        FIXTURE_DIR,
+      );
+      expect(code).not.toContain("data-island-hydrated");
+      expect(code).toContain("hydrateRoot");
       expect(errorSpy.mock.calls.length).toBe(0);
     } finally {
       errorSpy.mockRestore();

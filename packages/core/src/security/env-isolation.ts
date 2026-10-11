@@ -17,7 +17,11 @@
  *    non-public env var in the bundled output, regardless of what syntax (if
  *    any) produced it. This exists so a future bundler/config change that
  *    inlines `process.env.X` into a string literal — which would make the
- *    key-scan above match nothing — still gets caught.
+ *    key-scan above match nothing — still gets caught. Restricted to
+ *    sensitive-looking names/values (see `isSensitiveEnvKey` / `looksRandom`)
+ *    so ordinary values like `VERCEL_ENV=production` don't fail real builds
+ *    just because the word "production" also appears somewhere in the
+ *    bundle.
  * Neither catches a value that a build plugin re-encodes (e.g. base64,
  * concatenation) before it lands in the bundle; that's a known gap, not a
  * silent one, since both scans run on the final emitted text.
@@ -110,15 +114,58 @@ const SAFE_ENV_KEYS = new Set([
   "TMP",
 ]);
 
+// Name fragments that suggest a variable actually holds a secret. The value
+// scan is restricted to these (plus `looksRandom` below) because an
+// unrestricted scan flags ordinary, non-secret values like
+// `VERCEL_ENV=production`, `APP_ENV=production`, or `DB_HOST=localhost` the
+// moment that word happens to also appear somewhere in React or in page
+// content — which is common and not a leak.
+const SENSITIVE_KEY_PATTERNS = [
+  /SECRET/i,
+  /TOKEN/i,
+  /PASSWORD/i,
+  /PRIVATE/i,
+  /CREDENTIAL/i,
+  /API_KEY/i,
+  /_KEY$/i,
+  /AUTH/i,
+  /SALT/i,
+  /DSN/i,
+  /DATABASE_URL/i,
+  /CONNECTION_STRING/i,
+];
+
+function isSensitiveEnvKey(key: string): boolean {
+  return SENSITIVE_KEY_PATTERNS.some((re) => re.test(key));
+}
+
+// A value that reads as random-looking (long, digit-bearing, base64/hex-like
+// charset) is worth flagging even under a key name that doesn't look
+// sensitive, since that's the shape of an actual generated secret rather than
+// a plain English/config word.
+const MIN_RANDOM_VALUE_LENGTH = 24;
+const RANDOM_LOOKING_VALUE_RE = /^[A-Za-z0-9+/_=-]+$/;
+
+function looksRandom(value: string): boolean {
+  return (
+    value.length >= MIN_RANDOM_VALUE_LENGTH &&
+    /[0-9]/.test(value) &&
+    RANDOM_LOOKING_VALUE_RE.test(value)
+  );
+}
+
 /**
  * Scans bundled JS/TS source for the literal serialized *value* of any
  * non-public (`THEXJS_PUBLIC_`-prefixed) environment variable. Unlike
  * `findLeakedEnvKeys`, this doesn't look for `process.env.X` syntax — it
  * looks for the secret's actual value verbatim in the output, so it still
  * catches a leak if a bundler inlined the value into a string literal and
- * dropped the `process.env` reference entirely. Returns the offending
- * variable names, deduplicated. An empty array means no known env value
- * appears literally in the code.
+ * dropped the `process.env` reference entirely. Only variables that look
+ * sensitive by name or whose value looks like a generated secret are
+ * checked (see `isSensitiveEnvKey` / `looksRandom`) — otherwise ordinary
+ * config values collide with unrelated bundle text far too often. Returns
+ * the offending variable names, deduplicated. An empty array means no known
+ * env value appears literally in the code.
  */
 export function findLeakedEnvValues(
   code: string,
@@ -128,6 +175,7 @@ export function findLeakedEnvValues(
   for (const [key, value] of Object.entries(env)) {
     if (!value || key.startsWith(PUBLIC_ENV_PREFIX) || SAFE_ENV_KEYS.has(key)) continue;
     if (value.length < MIN_LEAKED_VALUE_LENGTH) continue;
+    if (!isSensitiveEnvKey(key) && !looksRandom(value)) continue;
     if (code.includes(value)) found.add(key);
   }
   return [...found];
@@ -137,9 +185,14 @@ export class EnvLeakageError extends Error {
   constructor(
     public readonly file: string,
     public readonly keys: string[],
+    kind: "access" | "value" = "access",
   ) {
+    const detail =
+      kind === "value"
+        ? "its value was found literally in the bundled output (no process.env.* reference, only a value match) — track down where this string is embedded and move it out of client-shipped code"
+        : "move this access into a loader, server function, or API route";
     super(
-      `[x] server-only environment variable(s) leaked into client bundle "${file}": ${keys.join(", ")}. Only "${PUBLIC_ENV_PREFIX}*" variables may be referenced in client-shipped code — move this access into a loader, server function, or API route.`,
+      `[x] server-only environment variable(s) leaked into client bundle "${file}": ${keys.join(", ")}. Only "${PUBLIC_ENV_PREFIX}*" variables may be referenced in client-shipped code — ${detail}.`,
     );
     this.name = "EnvLeakageError";
   }
@@ -149,7 +202,7 @@ export class EnvLeakageError extends Error {
 export function assertNoEnvLeakage(code: string, file: string): void {
   const leaked = findLeakedEnvKeys(code);
   if (leaked.length > 0) {
-    throw new EnvLeakageError(file, leaked);
+    throw new EnvLeakageError(file, leaked, "access");
   }
 }
 
@@ -161,6 +214,6 @@ export function assertNoEnvValueLeakage(
 ): void {
   const leaked = findLeakedEnvValues(code, env);
   if (leaked.length > 0) {
-    throw new EnvLeakageError(file, leaked);
+    throw new EnvLeakageError(file, leaked, "value");
   }
 }
