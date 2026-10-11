@@ -1,6 +1,10 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { assertNoEnvLeakage, EnvLeakageError } from "./security/env-isolation";
+import {
+  assertNoEnvLeakage,
+  assertNoEnvValueLeakage,
+  EnvLeakageError,
+} from "./security/env-isolation";
 import { generateServerFunctionClient } from "./server-functions";
 
 export interface ActionModuleInfo {
@@ -162,6 +166,7 @@ export async function buildIslandBundleInMemory(
     const result = await Bun.build({
       entrypoints: [entryPath],
       target: "browser",
+      env: "disable",
       plugins: [actionsRewritePlugin(actionModules)],
     });
 
@@ -178,6 +183,7 @@ export async function buildIslandBundleInMemory(
 
     const code = await built.text();
     assertNoEnvLeakage(code, entryPath);
+    assertNoEnvValueLeakage(code, entryPath, process.env);
     return wrapIslandBundle(code);
   } catch (err) {
     // A leaked server-only env var isn't a routine build hiccup. Dev keeps
@@ -224,6 +230,7 @@ export async function bundleRouteIslandsToDisk(
     const result = await Bun.build({
       entrypoints: [entryPath],
       target: "browser",
+      env: "disable",
       plugins: [actionsRewritePlugin(actionModules)],
     });
 
@@ -233,6 +240,7 @@ export async function bundleRouteIslandsToDisk(
       if (built) {
         const code = await built.text();
         assertNoEnvLeakage(code, bundlePath);
+        assertNoEnvValueLeakage(code, bundlePath, process.env);
         writeFileSync(bundlePath, wrapIslandBundle(code), "utf-8");
         return [`/_islands/${entryId}/${entryId}.js`];
       }

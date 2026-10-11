@@ -340,4 +340,80 @@ describe("env isolation", () => {
     const code = "const url = process.env.THEXJS_PUBLIC_API_URL;";
     expect(() => assertNoEnvLeakage(code, "dist/client/_islands/foo.js")).not.toThrow();
   });
+
+  test("findLeakedEnvValues catches a secret value inlined as a literal, which the key-scan misses", async () => {
+    // Simulates what a bundler that inlines `process.env.X` into a string
+    // literal would produce: the `process.env.SECRET` reference is gone, so
+    // the regex key-scan has nothing to match against. Imported dynamically
+    // (rather than as a top-level named import) so this test exercises
+    // whether the export exists at all, instead of failing the whole file to
+    // load before any test runs.
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const env = { SECRET: "s3cr3t-token-value-12345" };
+    const code = 'const key = "s3cr3t-token-value-12345";\nfetch("/x", { headers: { key } });';
+
+    expect(findLeakedEnvKeys(code)).toEqual([]);
+    expect(() => assertNoEnvLeakage(code, "dist/client/_islands/foo.js")).not.toThrow();
+
+    expect(findLeakedEnvValues(code, env)).toEqual(["SECRET"]);
+  });
+
+  test("findLeakedEnvValues ignores common build-environment values like NODE_ENV", async () => {
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const env = { NODE_ENV: "production", PWD: "/home/runner/work/x/x" };
+    const code = 'if (process.env.NODE_ENV === "production") console.log("prod");';
+    expect(findLeakedEnvValues(code, env)).toEqual([]);
+  });
+
+  test("findLeakedEnvValues does not flag ordinary non-sensitive env values that coincidentally appear in the bundle", async () => {
+    // These are realistic values that a production deploy sets (Vercel's
+    // system env var among them) and that commonly collide with strings
+    // already present in React or in page content. None of the keys look
+    // sensitive and none of the values look like a generated secret, so none
+    // should be reported.
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const env = {
+      VERCEL_ENV: "production",
+      APP_ENV: "production",
+      DB_HOST: "localhost",
+      APP_URL: "http://localhost:3000",
+      FEATURE_MODE: "default",
+    };
+    const code = `
+      const mode = "production";
+      const host = "localhost";
+      const url = "http://localhost:3000";
+      const fallback = "default";
+    `;
+    expect(findLeakedEnvValues(code, env)).toEqual([]);
+  });
+
+  test("findLeakedEnvValues still flags a sensitive-named key even without a random-looking value", async () => {
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const code = 'const t = "deployment-token-value";';
+    expect(findLeakedEnvValues(code, { DEPLOY_TOKEN: "deployment-token-value" })).toEqual([
+      "DEPLOY_TOKEN",
+    ]);
+  });
+
+  test("findLeakedEnvValues still flags a random-looking value under a non-sensitive key name", async () => {
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const code = 'const v = "aXb92Kp0Qz7mN3wYt5Rj1Vc8";';
+    expect(findLeakedEnvValues(code, { BUILD_ID: "aXb92Kp0Qz7mN3wYt5Rj1Vc8" })).toEqual([
+      "BUILD_ID",
+    ]);
+  });
+
+  test("THEXJS_ENV_SCAN_IGNORE skips listed keys in the value scan but not others", async () => {
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const code = 'const a = "development", b = "hunter2hunter2";';
+    const env = { AUTH_MODE: "development", DB_PASSWORD: "hunter2hunter2" };
+    expect(findLeakedEnvValues(code, env)).toEqual(["AUTH_MODE", "DB_PASSWORD"]);
+    expect(findLeakedEnvValues(code, { ...env, THEXJS_ENV_SCAN_IGNORE: "AUTH_MODE" })).toEqual([
+      "DB_PASSWORD",
+    ]);
+    expect(
+      findLeakedEnvValues(code, { ...env, THEXJS_ENV_SCAN_IGNORE: " AUTH_MODE , OTHER " }),
+    ).toEqual(["DB_PASSWORD"]);
+  });
 });
