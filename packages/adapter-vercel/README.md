@@ -16,7 +16,7 @@ vercel deploy --prebuilt
   config.json                    routes: filesystem first, then fallback -> render
   static/                        HTML, CSS, island JS chunks (served via Vercel's CDN)
   functions/render.func/
-    .vc-config.json              runtime: nodejs20.x, handler: index.mjs
+    .vc-config.json              runtime: nodejs22.x, handler: index.mjs
     index.mjs                    standalone SSR + API bundle
 ```
 
@@ -51,7 +51,7 @@ await buildVercelOutput({
   actionsDir: "src/actions",
   contentDir: "content",
   outputDir: ".vercel/output", // default
-  runtime: "nodejs20.x",       // "nodejs18.x" | "nodejs20.x" | "nodejs22.x"
+  runtime: "nodejs22.x",       // default; "nodejs20.x" is discontinued on Vercel
 });
 ```
 

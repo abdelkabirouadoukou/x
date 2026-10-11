@@ -177,7 +177,7 @@ vercel deploy --prebuilt`}
         If every page in your app uses <span className="text-foreground">mode = "static"</span> (no
         API routes, no server actions), no function is emitted at all, just static files and
         filesystem routing. Server-mode pages, API routes, and server actions run inside a single
-        bundled <span className="text-foreground">nodejs20.x</span> function.
+        bundled <span className="text-foreground">nodejs22.x</span> function.
       </p>
 
       <div className="mt-16 border-t border-border pt-8">
