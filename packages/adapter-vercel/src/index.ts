@@ -22,7 +22,7 @@ export type { VercelAdapterOptions } from "./types";
  *   config.json                 routes: filesystem, then fallback -> render
  *   static/                      HTML/CSS/JS -- served from Vercel's CDN
  *   functions/render.func/
- *     .vc-config.json            runtime: nodejs20.x, handler: index.mjs
+ *     .vc-config.json            runtime: nodejs22.x, handler: index.mjs
  *     index.mjs                  standalone SSR + API bundle
  * ```
  *
@@ -43,7 +43,7 @@ export type { VercelAdapterOptions } from "./types";
  */
 export async function buildVercelOutput(options: VercelAdapterOptions = {}): Promise<void> {
   const outputDir = resolveOutputDir(options);
-  const runtime = options.runtime ?? "nodejs20.x";
+  const runtime = options.runtime ?? "nodejs22.x";
 
   // The core build scratch dir lives *inside* the project tree (under the
   // output dir) rather than an OS tmpdir: island bundling writes its hydrate
