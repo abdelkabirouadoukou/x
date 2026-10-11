@@ -135,6 +135,14 @@ const SENSITIVE_KEY_PATTERNS = [
   /CONNECTION_STRING/i,
 ];
 
+/**
+ * Escape hatch: a comma-separated list of variable names the value scan skips,
+ * e.g. `THEXJS_ENV_SCAN_IGNORE=AUTH_MODE,TOKEN_URL`. For non-secret variables
+ * whose values collide with bundle text. It only affects the value scan:
+ * `process.env.X` references in client code are still rejected.
+ */
+export const ENV_SCAN_IGNORE_KEY = "THEXJS_ENV_SCAN_IGNORE";
+
 function isSensitiveEnvKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERNS.some((re) => re.test(key));
 }
@@ -172,8 +180,15 @@ export function findLeakedEnvValues(
   env: Record<string, string | undefined>,
 ): string[] {
   const found = new Set<string>();
+  const ignored = new Set(
+    (env[ENV_SCAN_IGNORE_KEY] ?? "")
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean),
+  );
   for (const [key, value] of Object.entries(env)) {
     if (!value || key.startsWith(PUBLIC_ENV_PREFIX) || SAFE_ENV_KEYS.has(key)) continue;
+    if (key === ENV_SCAN_IGNORE_KEY || ignored.has(key)) continue;
     if (value.length < MIN_LEAKED_VALUE_LENGTH) continue;
     if (!isSensitiveEnvKey(key) && !looksRandom(value)) continue;
     if (code.includes(value)) found.add(key);

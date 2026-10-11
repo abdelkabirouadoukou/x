@@ -403,4 +403,17 @@ describe("env isolation", () => {
       "BUILD_ID",
     ]);
   });
+
+  test("THEXJS_ENV_SCAN_IGNORE skips listed keys in the value scan but not others", async () => {
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const code = 'const a = "development", b = "hunter2hunter2";';
+    const env = { AUTH_MODE: "development", DB_PASSWORD: "hunter2hunter2" };
+    expect(findLeakedEnvValues(code, env)).toEqual(["AUTH_MODE", "DB_PASSWORD"]);
+    expect(findLeakedEnvValues(code, { ...env, THEXJS_ENV_SCAN_IGNORE: "AUTH_MODE" })).toEqual([
+      "DB_PASSWORD",
+    ]);
+    expect(
+      findLeakedEnvValues(code, { ...env, THEXJS_ENV_SCAN_IGNORE: " AUTH_MODE , OTHER " }),
+    ).toEqual(["DB_PASSWORD"]);
+  });
 });

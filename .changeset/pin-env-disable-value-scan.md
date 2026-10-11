@@ -11,3 +11,7 @@ sensitive-looking variable names (`SECRET`, `TOKEN`, `PASSWORD`, `API_KEY`,
 etc.) or random-looking values, so it doesn't fail real builds over ordinary
 values like `VERCEL_ENV=production` coincidentally matching other bundle
 text.
+
+Non-secret variables that still collide with bundle text can be skipped with
+`THEXJS_ENV_SCAN_IGNORE=KEY1,KEY2`. This only affects the value scan;
+`process.env.X` references in client code are still rejected.
