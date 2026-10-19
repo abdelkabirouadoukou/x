@@ -3,27 +3,27 @@ import { useEffect, useRef, useState } from "react";
 const COMMAND = "bun create thexjs-app@latest";
 
 /**
- * Dark CTA — near-black slab with a breathing terminal cursor and a copy
- * button, mirroring bun.sh's "Try it right now" section.
+ * Closing CTA: giant headline, a command that types itself in once the island
+ * is visible, and a copy button. The ghost "x" behind it lives in the page.
  */
 export default function TryItNow() {
   const [copied, setCopied] = useState(false);
   const [typed, setTyped] = useState(0);
-  const [done, setDone] = useState(false);
-  const raf = useRef(false);
+  const started = useRef(false);
 
   useEffect(() => {
-    if (raf.current) return;
-    raf.current = true;
+    if (started.current) return;
+    started.current = true;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setTyped(COMMAND.length);
+      return;
+    }
     let i = 0;
     const id = window.setInterval(() => {
       i += 1;
       setTyped(i);
-      if (i > COMMAND.length) {
-        window.clearInterval(id);
-        setDone(true);
-      }
-    }, 30);
+      if (i >= COMMAND.length) window.clearInterval(id);
+    }, 38);
     return () => window.clearInterval(id);
   }, []);
 
@@ -42,54 +42,40 @@ export default function TryItNow() {
     window.setTimeout(() => setCopied(false), 1600);
   }
 
+  const done = typed >= COMMAND.length;
+
   return (
-    <div className="relative mx-auto w-full max-w-container px-gutter">
-      <div className="cut relative flex w-full flex-col items-center overflow-hidden border border-line-strong bg-slab px-6 py-16 text-on-slab sm:px-12 [--cut:14px]">
-        <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-          <p className="label text-accent">Try it right now</p>
-          <p className="display mt-4 text-[2.4rem] leading-[1.02] sm:text-[3rem]">
-            Run a real X app in seconds.
-          </p>
-          <p className="mt-4 max-w-[46ch] text-[15.5px] leading-relaxed text-on-slab/70">
-            One command scaffolds a complete project: pages, API routes, auth, and the build
-            pipeline.
-          </p>
-          <div className="cmd-slab mt-8 flex h-12 w-full max-w-[30rem] items-stretch [--cut:8px] sm:h-[54px] sm:[--cut:10px]">
-            <code className="readout scroll-none flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap px-3 font-mono text-[13px] text-[#f2f2f0] sm:px-5 sm:text-[15px]">
-              <span className="mr-2 select-none text-[#70d6a3]">$</span>
-              {COMMAND.slice(0, typed)}
-              {!done && (
-                <span className="animate-blink ml-px inline-block h-[1.05em] w-[0.55em] bg-[#70d6a3] align-text-bottom" />
-              )}
-            </code>
-            <button
-              type="button"
-              onClick={copy}
-              aria-label="Copy command"
-              className="inline-flex w-11 shrink-0 items-center justify-center border-l border-white/15 text-white/60 transition-colors hover:bg-white/10 hover:text-white sm:w-14"
-            >
-              {copied ? (
-                <span className="text-[#28dc82]">✓</span>
-              ) : (
-                <span className="text-[13px]">Copy</span>
-              )}
-            </button>
-          </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="/docs/installation"
-              className="cut h-10 border border-white/20 bg-white/5 px-4 text-sm font-medium text-on-slab transition-colors hover:bg-white/10 [--cut:7px]"
-            >
-              Install X
-            </a>
-            <a
-              href="/sandbox"
-              className="cut btn-accent h-10 px-4 text-sm font-semibold text-white [--cut:7px]"
-            >
-              Sandbox (coming soon)
-            </a>
-          </div>
-        </div>
+    <div className="lp-wrap lp-cta-inner">
+      <p className="lp-eyebrow">
+        <span>
+          <b>07</b> Try it right now
+        </span>
+        <span className="lp-eyebrow-note">zero configuration</span>
+      </p>
+      <p className="lp-cta-h">
+        Ship something <em>fast</em>.
+      </p>
+      <p className="lp-lead">
+        One command scaffolds a complete project: pages, API routes, auth, and the build pipeline.
+      </p>
+
+      <div className="lp-cmd">
+        <code>
+          <span className="lp-cmd-p">$</span> {COMMAND.slice(0, typed)}
+          {!done && <span className="lp-cmd-caret" />}
+        </code>
+        <button type="button" onClick={copy} aria-label="Copy command">
+          {copied ? "Copied ✓" : "Copy"}
+        </button>
+      </div>
+
+      <div className="lp-cta">
+        <a href="/docs/installation" className="lp-btn lp-btn-solid">
+          Install X
+        </a>
+        <a href="/docs" className="lp-btn lp-btn-ghost">
+          Read the docs
+        </a>
       </div>
     </div>
   );
