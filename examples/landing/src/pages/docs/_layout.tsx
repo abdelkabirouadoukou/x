@@ -118,9 +118,9 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:px-8 sm:py-12">
-          <nav aria-label="Breadcrumb" className="mb-6 text-[12px] text-fg-faint">
+          <nav aria-label="Breadcrumb" className="mb-8 border-b border-line-strong pb-3 font-mono text-[11px] uppercase tracking-[0.1em] text-fg-faint">
             <ol className="flex items-center gap-1.5">
-              <li>X</li>
+              <li className="text-accent">X</li>
               <li aria-hidden="true">/</li>
               <li>Docs</li>
             </ol>
@@ -144,7 +144,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
   document.querySelectorAll("[data-doc-link]").forEach(function(a){
     var href=a.getAttribute("data-doc-link").replace(/\\/$/,"")||"/docs";
     if(href===path||(path!=="/docs"&&href!=="/docs"&&path.indexOf(href)===0)){
-      a.classList.add("border-accent","font-semibold","text-fg");
+      a.classList.add("border-accent","font-semibold","text-fg","doc-nav-active");
     }
   });
   var btn=document.getElementById("sidebar-btn");

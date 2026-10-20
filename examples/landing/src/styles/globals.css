@@ -1643,3 +1643,86 @@ html:not(.motion) .lp-marq {
     animation: none !important;
   }
 }
+
+
+/* ========================================================================== */
+/* SHELL: navbar, footer, docs + features polish                              */
+/* ========================================================================== */
+.nav-link {
+  position: relative;
+  border-radius: 0;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-fg-muted);
+  background: transparent !important;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 4px;
+  height: 2px;
+  background: var(--c-accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 300ms var(--ease-out);
+}
+.nav-link:hover,
+.nav-link[aria-current="page"] {
+  color: var(--c-fg);
+}
+.nav-link:hover::after,
+.nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+.foot-word {
+  margin: 0;
+  padding-inline: var(--gutter);
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-stretch: 110%;
+  font-size: clamp(5rem, 24vw, 26rem);
+  line-height: 0.74;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--c-fg) 16%, transparent);
+  transform: translateY(16%);
+  user-select: none;
+  pointer-events: none;
+}
+.font-serif {
+  font-family: "Instrument Serif", Georgia, serif;
+}
+
+/* docs */
+.doc-content h1.display,
+.doc-content > div > h1 {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.doc-content .label {
+  color: var(--c-accent);
+  font-weight: 700;
+}
+.doc-content h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.doc-content pre,
+.doc-content .CodeBlock {
+  border: 1px solid var(--c-line-strong);
+  border-radius: 0;
+}
+.doc-nav-active {
+  background: var(--c-subtle);
+  box-shadow: inset 2px 0 0 var(--c-accent);
+}
