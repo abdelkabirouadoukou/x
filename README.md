@@ -1,6 +1,6 @@
 <p align="center">
   <a href="#">
-    <img src="./examples/landing/public/favicon.ico" alt="x framework logo" width="120" height="120">
+    <img src="./examples/landing/public/icon-512.png" alt="Thexjs logo" width="128" height="128">
   </a>
 </p>
 
