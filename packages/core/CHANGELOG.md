@@ -1,5 +1,11 @@
 # @thexjs/core
 
+## 1.9.0
+
+### Minor Changes
+
+- d306e11: Wire the existing bounded backpressure primitive into the public `createApp` / `defineConfig` surface, propagate the option through dev, production build/start, and adapter manifests, and document the per-process overload semantics. Saturated requests return 503 + `Retry-After`; queued client disconnects are removed without becoming false 500s.
+
 ## 1.8.4
 
 ### Patch Changes
