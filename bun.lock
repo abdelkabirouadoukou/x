@@ -170,7 +170,7 @@
     },
     "packages/core": {
       "name": "@thexjs/core",
-      "version": "1.8.3",
+      "version": "1.8.4",
       "devDependencies": {
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.2.5",
@@ -222,7 +222,7 @@
     },
     "packages/mcp": {
       "name": "@thexjs/mcp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "bin": {
         "thexjs-mcp": "./dist/index.js",
       },

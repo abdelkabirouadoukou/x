@@ -102,11 +102,17 @@ jobs:
       - name: Audit production dependencies
         run: bun audit --prod
 
+      # Workspace version gate: bun's --frozen-lockfile does NOT fail when
+      # workspace package versions (e.g. "@thexjs/core": 1.8.2 vs 1.8.3) drift
+      # from package.json after `changeset version`. See issue #247.
+      - name: Verify bun.lock workspace versions
+        run: bun run check:bun-lock
+
       # bun.lock integrity gate: depends on bun's own `--frozen-lockfile`
       # (which enforces lockfile <-> package.json sync on install, above), plus
       # a committed hash so an *unreviewed* hand-edit of the lockfile fails CI
       # even when it happens to stay in sync. Regenerate with `git add bun.lock`
-      # then `shasum -a 256 bun.lock` and update `.github/bun-lock.sha256`.
+      # then `bun run update:bun-hash` or `shasum -a 256 bun.lock` and update `.github/bun-lock.sha256`.
       - name: Verify bun.lock integrity hash
         run: |
           actual="$(shasum -a 256 bun.lock | awk '{print $1}')"

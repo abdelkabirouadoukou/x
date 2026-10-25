@@ -12,7 +12,9 @@
   "scripts": {
     "test": "bun test",
     "changeset": "changeset",
-    "changeset:version": "changeset version && bun run lint:fix",
+    "changeset:version": "changeset version && bun install && bun scripts/update-bun-hash.mjs && bun run lint:fix",
+    "check:bun-lock": "bun scripts/check-bun-lock.mjs",
+    "update:bun-hash": "bun scripts/update-bun-hash.mjs",
     "typecheck": "for p in packages/*/tsconfig.json examples/*/tsconfig.json; do echo \"-- $p\"; tsc --noEmit -p \"$p\" || exit 1; done",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
