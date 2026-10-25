@@ -8,16 +8,13 @@ function importPath(from: string, ref: CompiledModuleRef): string {
 }
 
 /**
- * Serializes runtime config (security / observability / images) into the
- * generated entry. Only JSON-serializable values can cross the build
- * boundary -- a `security.errorReporter` or `observability.logger` callback
- * in `x.config.ts` must not silently vanish, or the deployed function would
- * drift from `x start`. Fail the build loudly with the offending keys.
+ * Serializes runtime config (security / observability / images / backpressure)
+ * into the generated entry. Only JSON-serializable values can cross the build
+ * boundary -- a callback in runtime config must not silently vanish, or the
+ * deployed function would drift from `x start`. Fail the build loudly with
+ * the offending keys.
  */
-export function serializeRuntimeOptions(
-  label: string,
-  options: Record<string, unknown> | undefined,
-): string {
+export function serializeRuntimeOptions(label: string, options: object | undefined): string {
   if (options === undefined) return "{}";
   const offenders: string[] = [];
   JSON.stringify(options, (key, value) => {
@@ -47,7 +44,8 @@ export function serializeRuntimeOptions(
  * function behaves exactly like the `x start` production server -- health
  * checks, rate limiting, revalidation, server actions, SSR with
  * loaders/layouts/middleware, API routes, security headers, the 404 page,
- * request logging -- all of it, with no drift between the two.
+ * request logging, and configured request backpressure -- all of it, with no
+ * drift between the two.
  *
  * The returned module exports a `handler` function; the platform adapter
  * decides its signature (e.g. a Node `(req, res)` bridge for Vercel).
@@ -61,14 +59,21 @@ export function generateAdapterEntry(manifest: BuildManifest, entryDir: string):
     "",
   );
 
-  // -- security & observability config --------------------------------------
+  // -- runtime config -------------------------------------------------------
   const securityOpts = serializeRuntimeOptions("security", manifest.security);
   const observabilityOpts = serializeRuntimeOptions("observability", manifest.observability);
   const imagesOpts = serializeRuntimeOptions("images", manifest.images);
+  const backpressureOpts =
+    manifest.backpressure === undefined
+      ? "undefined"
+      : manifest.backpressure === false
+        ? "false"
+        : serializeRuntimeOptions("backpressure", manifest.backpressure);
   lines.push(
     `const __x_security = ${securityOpts};`,
     `const __x_observability = ${observabilityOpts};`,
     `const __x_images = ${imagesOpts};`,
+    `const __x_backpressure = ${backpressureOpts};`,
     "",
   );
 
@@ -150,6 +155,7 @@ export function generateAdapterEntry(manifest: BuildManifest, entryDir: string):
     "  ...(Object.keys(__x_security).length > 0 ? { security: __x_security } : {}),",
     "  ...(Object.keys(__x_observability).length > 0 ? { observability: __x_observability } : {}),",
     "  ...(Object.keys(__x_images).length > 0 ? { images: __x_images } : {}),",
+    "  ...(__x_backpressure !== undefined ? { backpressure: __x_backpressure } : {}),",
     "  preloaded: {",
     "    routes: __x_preloadedRoutes,",
     ...(manifest.notFound

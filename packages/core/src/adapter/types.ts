@@ -1,3 +1,5 @@
+import type { BackpressureOptions } from "../backpressure";
+
 export interface AdapterOptions {
   /** Project root (defaults to process.cwd()). */
   projectRoot?: string;
@@ -16,6 +18,8 @@ export interface AdapterOptions {
   images?: {
     remoteHosts?: string[];
   };
+  /** Optional per-process request admission/backpressure. */
+  backpressure?: BackpressureOptions | false;
   /** Client build output dir. Server-mode routes' island bundles are emitted
    *  into `<islandsDir>/_islands/` here so adapters can ship them as static
    *  assets. Undefined skips island bundling (server HTML ships no island
@@ -77,4 +81,6 @@ export interface BuildManifest {
   observability?: AdapterOptions["observability"];
   /** Remote image proxy options serialized for the generated entry. */
   images?: AdapterOptions["images"];
+  /** Backpressure options serialized for the generated entry. */
+  backpressure?: AdapterOptions["backpressure"];
 }
