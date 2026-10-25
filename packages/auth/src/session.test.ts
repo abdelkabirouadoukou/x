@@ -46,7 +46,9 @@ describe("SQLite session store — created_at preserved on upsert", () => {
 
     async function getStore() {
       if (!store) {
-        store = createPostgresSessionStore(connectPostgres({ url: process.env.DATABASE_URL! }));
+        const url = process.env.DATABASE_URL;
+        if (!url) throw new Error("DATABASE_URL is required for this test");
+        store = createPostgresSessionStore(connectPostgres({ url }));
       }
       return store;
     }

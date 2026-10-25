@@ -1,5 +1,34 @@
 # @thexjs/core
 
+## 1.8.4
+
+### Patch Changes
+
+- bfe83ae: Fix CI and Vercel builds:
+  
+  - Treat Vercel's non-secret `VERCEL_HASH_SALT` timestamp as safe in the
+    client-bundle value scan. Its short numeric value collides with numbers in
+    bundled JS, which previously failed every Vercel deployment with a false
+    `EnvLeakageError`.
+  - Emit the `x-routes.ts` `href()` helper in Biome-formatted form so regenerating
+    the manifest in dev doesn't make `biome check` fail.
+  - Upgrade `@thexjs/mcp` to Zod 4, matching the MCP SDK's resolved Zod version.
+    The previous dual Zod 3/Zod 4 type graph made `tsc`/`tsup --dts` fail with
+    `TS2589: Type instantiation is excessively deep and possibly infinite`.
+- 9f73ec2: Pin `env: "disable"` on browser-target island `Bun.build()` calls and add a
+  literal-value scan (`findLeakedEnvValues`) alongside the existing
+  `process.env.X` syntax scan, so a non-public environment variable's value
+  still gets caught even if it were ever inlined into the bundle as a string
+  literal instead of left as a reference. The value scan only checks
+  sensitive-looking variable names (`SECRET`, `TOKEN`, `PASSWORD`, `API_KEY`,
+  etc.) or random-looking values, so it doesn't fail real builds over ordinary
+  values like `VERCEL_ENV=production` coincidentally matching other bundle
+  text.
+  
+  Non-secret variables that still collide with bundle text can be skipped with
+  `THEXJS_ENV_SCAN_IGNORE=KEY1,KEY2`. This only affects the value scan;
+  `process.env.X` references in client code are still rejected.
+
 ## 1.8.3
 
 ### Patch Changes
