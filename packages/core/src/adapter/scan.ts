@@ -221,6 +221,7 @@ export async function resolveBuildManifest(
     security: options.security,
     observability: options.observability,
     images: options.images,
+    backpressure: options.backpressure,
   };
 }
 

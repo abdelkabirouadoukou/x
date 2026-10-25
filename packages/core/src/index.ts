@@ -1,3 +1,4 @@
+export { type CreateAppOptions, createApp, defineConfig } from "./application";
 export {
   type BackpressureController,
   type BackpressureHandler,
@@ -17,13 +18,7 @@ export {
   renderMarkdown,
   scanContent,
 } from "./content";
-export {
-  type CreateAppOptions,
-  createApp,
-  defineConfig,
-  type RevalidateOptions,
-  type RouteProps,
-} from "./createApp";
+export type { RevalidateOptions, RouteProps } from "./createApp";
 export { renderErrorOverlay } from "./error-overlay";
 export { buildSrcSet, Image, type ImageProps, SRCSET_WIDTHS, setImageRemoteHosts } from "./image";
 export { createImageProxyHandler, type ImageProxyOptions } from "./images/proxy";

@@ -30,9 +30,10 @@ export interface BuildOptions {
   /**
    * Absolute path to the project's x.config.ts/js/mjs, if any. When set, the
    * generated production server entry re-imports it at startup and forwards
-   * its `security`/`observability` fields into `createApp()` — those fields
-   * can hold live values (rate-limit key functions, error reporters, health
-   * checks) that can't be serialized into the generated file directly.
+   * its runtime `security`/`observability`/`images`/`backpressure` fields into
+   * `createApp()` — those fields can hold live values (rate-limit key
+   * functions, error reporters, health checks) that can't be serialized into
+   * the generated file directly.
    */
   configPath?: string;
 }
@@ -334,9 +335,7 @@ function buildServerEntry(
     lines.push(`  const mod = await import(${JSON.stringify(configImportPath)});`);
     lines.push("  userConfig = mod.default ?? {};");
     lines.push("} catch (err) {");
-    lines.push(
-      '  console.warn("[x] failed to load x.config for security/observability options:", err);',
-    );
+    lines.push('  console.warn("[x] failed to load x.config runtime options:", err);');
     lines.push("}");
   }
 
@@ -348,14 +347,17 @@ function buildServerEntry(
   if (stylesheetHref) lines.push(`  stylesheetHref: ${JSON.stringify(stylesheetHref)},`);
   lines.push('  port: parseInt(process.env.PORT || "3000", 10),', "  development: false,");
   if (configImportPath) {
-    // security/observability can hold live values (rate-limit key functions,
-    // error reporters, health checks) so these come from the user's own
-    // config module at runtime rather than being inlined as JSON above.
+    // Runtime options can hold live values (rate-limit key functions, error
+    // reporters, health checks), so these come from the user's own config
+    // module at runtime rather than being inlined as JSON above.
     lines.push("  ...(userConfig.security ? { security: userConfig.security } : {}),");
     lines.push(
       "  ...(userConfig.observability ? { observability: userConfig.observability } : {}),",
     );
     lines.push("  ...(userConfig.images ? { images: userConfig.images } : {}),");
+    lines.push(
+      "  ...(userConfig.backpressure !== undefined ? { backpressure: userConfig.backpressure } : {}),",
+    );
   }
   lines.push(
     "});",
