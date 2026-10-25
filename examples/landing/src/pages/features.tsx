@@ -167,12 +167,16 @@ export default function FeaturesPage() {
               className="group relative bg-canvas p-8 transition-colors hover:bg-subtle"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-display text-[2.4rem] font-black leading-none tracking-[-0.05em] text-fg/15 transition-colors group-hover:text-accent">{String(i + 1).padStart(2, "0")}</span>
+                <span className="font-display text-[2.4rem] font-black leading-none tracking-[-0.05em] text-fg/15 transition-colors group-hover:text-accent">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 <div className="flex h-9 w-9 items-center justify-center border border-line-strong bg-canvas text-accent transition-colors group-hover:border-accent/40">
                   <f.icon className="h-4 w-4" />
                 </div>
               </div>
-              <h3 className="mt-6 font-display text-[1.25rem] font-extrabold leading-tight tracking-[-0.025em] text-fg">{f.title}</h3>
+              <h3 className="mt-6 font-display text-[1.25rem] font-extrabold leading-tight tracking-[-0.025em] text-fg">
+                {f.title}
+              </h3>
               <p className="mt-2 text-[13.5px] leading-relaxed text-fg-muted">{f.desc}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-fg">
                 Details

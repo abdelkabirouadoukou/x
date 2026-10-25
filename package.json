@@ -20,30 +20,32 @@
     "build": "bun run build:packages && bun run --cwd examples/basic build",
     "build:packages": "bun run --cwd packages/core build && bun run --cwd packages/env build && bun run --cwd packages/adapter-vercel build && bun run --cwd packages/cli build && bun run --cwd packages/auth build && bun run --cwd packages/hooks build && bun run --cwd packages/mcp build",
     "dev": "bun run build:packages && bun --cwd examples/basic run dev",
-    "vercel-build": "bun run build:packages && bun run --cwd examples/basic vercel-build && rm -rf .vercel/output && cp -R examples/basic/.vercel/output .vercel/output && rm -rf examples/basic/.vercel",
+    "vercel-build": "bun run build:packages && bun run --cwd examples/basic vercel-build && rm -rf .vercel/output && mkdir -p .vercel && cp -R examples/basic/.vercel/output .vercel/output && rm -rf examples/basic/.vercel",
     "postinstall": "bun run build:packages && cd packages/cli && bun link --force && echo '[x] \"x\" CLI linked globally. Make sure ~/.bun/bin is in your PATH.' || echo '[x] Could not link globally. Use \"bun run dev\" in the example instead.'"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.10",
     "@changesets/cli": "^3.0.1",
-    "@happy-dom/global-registrator": "^20.11.6",
+    "@happy-dom/global-registrator": "^21.0.4",
     "@types/bun": "latest",
-    "happy-dom": "^20.11.6",
+    "happy-dom": "^21.0.4",
     "typescript": "^5.9.3"
   },
   "overrides": {
     "esbuild": "^0.28.1",
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "@hono/node-server": "^2.0.5",
-    "fast-uri": "^3.1.6",
-    "qs": "^6.15.4",
-    "brace-expansion": "^5.0.9",
+    "body-parser": "^2.4.0",
+    "brace-expansion": "^5.0.12",
+    "fast-uri": "^3.1.9",
     "hono": "^4.12.34",
+    "ip-address": "^10.7.5",
+    "js-yaml": "^4.3.1",
+    "launch-editor": "^2.14.2",
     "nanoid": "^3.3.17",
-    "js-yaml": "^4.3.1"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0",
-    "zod": "^3.25.76"
+    "qs": "^6.15.4",
+    "shell-quote": "^1.12.0",
+    "source-map-js": "^1.2.2",
+    "undici": "^7.30.1"
   }
 }

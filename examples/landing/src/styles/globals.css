@@ -1012,7 +1012,9 @@ html.lenis body {
 }
 .lp-ch {
   display: inline-block;
-  font-variation-settings: "wght" 780, "wdth" 110;
+  font-variation-settings:
+    "wght" 780,
+    "wdth" 110;
 }
 .lp-ch.is-x {
   color: var(--c-accent);
@@ -1643,7 +1645,6 @@ html:not(.motion) .lp-marq {
     animation: none !important;
   }
 }
-
 
 /* ========================================================================== */
 /* SHELL: navbar, footer, docs + features polish                              */

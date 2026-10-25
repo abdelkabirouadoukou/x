@@ -112,6 +112,11 @@ const SAFE_ENV_KEYS = new Set([
   "TMPDIR",
   "TEMP",
   "TMP",
+  // Vercel injects this at build time as a cache-busting salt for
+  // content-addressed output (a Unix timestamp, e.g. "1783933175"). It is not
+  // a secret, but its short numeric value routinely appears inside bundled
+  // code, so the value scan would otherwise fail every Vercel build.
+  "VERCEL_HASH_SALT",
 ]);
 
 // Name fragments that suggest a variable actually holds a secret. The value

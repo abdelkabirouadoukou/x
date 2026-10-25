@@ -118,7 +118,10 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:px-8 sm:py-12">
-          <nav aria-label="Breadcrumb" className="mb-8 border-b border-line-strong pb-3 font-mono text-[11px] uppercase tracking-[0.1em] text-fg-faint">
+          <nav
+            aria-label="Breadcrumb"
+            className="mb-8 border-b border-line-strong pb-3 font-mono text-[11px] uppercase tracking-[0.1em] text-fg-faint"
+          >
             <ol className="flex items-center gap-1.5">
               <li className="text-accent">X</li>
               <li aria-hidden="true">/</li>

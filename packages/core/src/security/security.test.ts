@@ -365,6 +365,16 @@ describe("env isolation", () => {
     expect(findLeakedEnvValues(code, env)).toEqual([]);
   });
 
+  test("findLeakedEnvValues ignores Vercel's non-secret hash salt timestamp", async () => {
+    // VERCEL_HASH_SALT is a Unix timestamp (e.g. "1783933175") that Vercel
+    // injects for content-addressed output. Its short numeric value collides
+    // with numbers in bundled JS, so despite the "SALT" in the key name it
+    // must not be treated as a secret.
+    const { findLeakedEnvValues } = await import("./env-isolation");
+    const code = "const t = 1783933175;";
+    expect(findLeakedEnvValues(code, { VERCEL_HASH_SALT: "1783933175" })).toEqual([]);
+  });
+
   test("findLeakedEnvValues does not flag ordinary non-sensitive env values that coincidentally appear in the bundle", async () => {
     // These are realistic values that a production deploy sets (Vercel's
     // system env var among them) and that commonly collide with strings

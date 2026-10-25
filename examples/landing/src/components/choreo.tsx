@@ -122,7 +122,11 @@ export default function Choreo() {
       }
     });
 
-    if (reduce) return () => disposers.forEach((d) => d());
+    if (reduce)
+      return () =>
+        disposers.forEach((d) => {
+          d();
+        });
 
     /* ------------------------------------------------------------------ *
      * Motion layer

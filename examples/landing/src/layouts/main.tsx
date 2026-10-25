@@ -213,7 +213,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               </a>
             </div>
             {FOOTER_COLS.map((col) => (
-              <nav key={col.title} aria-label={col.title} className="flex flex-col gap-2.5 text-[14.5px]">
+              <nav
+                key={col.title}
+                aria-label={col.title}
+                className="flex flex-col gap-2.5 text-[14.5px]"
+              >
                 <p className="mb-2 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-[#28dc82]">
                   {col.title}
                 </p>
@@ -235,7 +239,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <i className="h-2 w-2 rounded-full bg-[#28dc82]" /> Built for Bun · MIT licensed
             </span>
             <span>© 2026 The X contributors</span>
-            <a href="#" className="text-fg transition-colors hover:text-[#28dc82]">
+            <a href="#top" className="text-fg transition-colors hover:text-[#28dc82]">
               Back to top ↑
             </a>
           </div>
