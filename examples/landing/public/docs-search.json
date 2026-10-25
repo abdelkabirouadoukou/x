@@ -88,6 +88,223 @@
       ]
     },
     {
+      "route": "/docs/audit-trail",
+      "title": "Audit trail",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Observability",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Audit trail",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Structured, append-only audit logging for security-relevant events. The audit trail captures who did what and when — login attempts, permission checks, role changes, session revocations — with secrets automatically redacted before they reach the sink.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Why a dedicated audit system",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Application logs mix operational data with security events. An audit trail keeps a separate, append-only channel for events a compliance reviewer or operator needs: \"did anyone log in from an unexpected IP?\" or \"which sessions were revoked before expiry?\" Every entry carries a typed event name, a timestamp, the user id (or null), the client IP, and a human-readable reason — all redacted before emission.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Setting up a sink",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "The default sink is a no-op. Install one at application startup — typically in x.config.ts or a setup file — using setAuditSink . The built-in console sink writes one JSON object per line to stdout:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig, createConsoleAuditSink, setAuditSink } from \"@thexjs/core\";setAuditSink(createConsoleAuditSink());export default defineConfig({ // ... standard options});",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "{\"timestamp\":\"2026-08-27T10:00:00.000Z\",\"event\":\"auth.login.success\",\"userId\":\"user_abc\",\"ip\":\"203.0.113.42\",\"reason\":\"login from known device\"}{\"timestamp\":\"2026-08-27T10:01:00.000Z\",\"event\":\"auth.login.failure\",\"ip\":\"198.51.100.7\",\"reason\":\"invalid password\"}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Logging events",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Use the convenience functions for the built-in event types. Each accepts a consistent input shape and handles redaction automatically:",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Custom events",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "For application-specific security events, call the low-level audit function directly with your own AuditEntry . The same redaction rules apply:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { audit } from \"@thexjs/core\";audit({ timestamp: new Date().toISOString(), event: \"auth.login.success\", // must match the AuditEvent union userId: \"user_abc\", ip: \"203.0.113.42\", reason: \"OAuth flow completed\", provider: \"github\", metadata: { org: \"acme-corp\", plan: \"enterprise\" },});",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Writing a custom sink",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Implement the AuditSink interface to route events to a SIEM, a database table, or a cloud logging service:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { type AuditSink, type AuditEntry, setAuditSink } from \"@thexjs/core\";class SiemWebhookSink implements AuditSink { async write(entry: AuditEntry): Promise> { // Fire-and-forget POST to your SIEM fetch(\"https://siem.example.com/events\", { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, body: JSON.stringify(entry), }).catch(() => {}); // don&#x27;t block the request }}setAuditSink(new SiemWebhookSink());",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The sink must treat entries as append-only — never modify or delete past entries. The default console sink achieves this via stdout (append-only at the OS level). A database-backed sink should use INSERT with no UPDATE or DELETE .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Redaction guarantees",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "Before the entry reaches the sink, the audit function passes the reason string through redactString and every value in metadata through redactValue . This means bearer tokens, password strings, or API keys that accidentally end up in a metadata field are masked as [REDACTED] before they leave the process. See the Secret Redaction page for the full rules.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "API reference",
+          "anchor": "#sec-6"
+        },
+        {
+          "kind": "pre",
+          "text": "type AuditEvent = | \"auth.login.success\" | \"auth.login.failure\" | \"auth.logout\" | \"auth.password_changed\" | \"auth.role_changed\" | \"auth.permission_denied\" | \"auth.session_revoked\";",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/backpressure",
+      "title": "Backpressure",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Guides",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Backpressure",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Protect your process from overload by bounding the number of requests that can execute or queue concurrently. Backpressure is separate from rate limiting: rate limiting controls request frequency per identity, while backpressure bounds the total in-flight work inside one process at a time.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Why backpressure matters",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "A sudden traffic spike can saturate your process with concurrent requests. Without backpressure, each new request adds more work to the event loop, degrading latency for everyone until the process becomes unresponsive or runs out of memory. The backpressure controller acts as an admission gate: it allows at most maxConcurrent requests to execute at once and queues up to maxQueue additional ones. When the queue is full, new requests are rejected immediately with a 503 Service Unavailable — a clean failure the caller can retry.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Wrap a handler with withBackpressure",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "The simplest way to add backpressure is to wrap your request handler with withBackpressure . It returns a handler with the same signature, so it composes with other middleware:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { withBackpressure } from \"@thexjs/core\";const app = createApp({ ... });Bun.serve({ fetch: withBackpressure((req) => app.fetch(req), { maxConcurrent: 50, // process up to 50 requests at once maxQueue: 20, // let 20 more wait for a slot retryAfterSeconds: 2, // Retry-After header when saturated }), port: 3000,});",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "HTTP/1.1 503 Service UnavailableContent-Type: text/plain; charset=utf-8Retry-After: 2Service Unavailable",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "When the queue is full, new requests are rejected with 503 Service Unavailable (not 429 Too Many Requests): the caller is not being rate-limited; this specific process has no capacity left.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Using the controller directly",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "For more control — e.g. to apply different limits per route or release a lease after a subtask — create a BackpressureController with createBackpressureController and call acquire / release manually:",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Handling saturated errors",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "When acquire rejects with BackpressureSaturatedError , the error includes a retryAfterSeconds property so you can produce a compliant response:",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Monitoring the controller",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Call snapshot() at any time to inspect the controller&#x27;s state. This is useful for metrics endpoints or health checks:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { createBackpressureController } from \"@thexjs/core\";const controller = createBackpressureController({ maxConcurrent: 50, maxQueue: 20 });// Expose as a /metrics endpoint or log periodicallyfunction getBackpressureMetrics() { const s = controller.snapshot(); return { active_requests: s.active, queued_requests: s.queued, max_concurrent: s.maxConcurrent, max_queue: s.maxQueue, utilization_pct: Math.round((s.active / s.maxConcurrent) * 100), };}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "AbortSignal support",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "If the request&#x27;s AbortSignal fires while the request is waiting in the queue, it is removed from the queue and its promise rejects with the abort reason — it never invokes the upstream handler. This prevents queued work from executing for clients that have already disconnected.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
       "route": "/docs/build-deploy",
       "title": "Build & deploy",
       "blocks": [
@@ -238,7 +455,7 @@
         },
         {
           "kind": "p",
-          "text": "If every page in your app uses mode = \"static\" (no API routes, no server actions), no function is emitted at all, just static files and filesystem routing. Server-mode pages, API routes, and server actions run inside a single bundled nodejs20.x function.",
+          "text": "If every page in your app uses mode = \"static\" (no API routes, no server actions), no function is emitted at all, just static files and filesystem routing. Server-mode pages, API routes, and server actions run inside a single bundled nodejs22.x function.",
           "anchor": ""
         }
       ]
@@ -500,7 +717,7 @@
         },
         {
           "kind": "p",
-          "text": "logging toggles structured JSON request logs, health enables the /healthz and /readyz probes, and errorReporter plugs exceptions into Sentry, OTel, or your own handler. See Observability .",
+          "text": "logging toggles structured JSON request logs, health enables the /healthz and /readyz probes, errorReporter plugs exceptions into Sentry, OTel, or your own handler, and metrics installs a MetricsReporter for per-request counters and latency histograms (Prometheus or OTel). See Observability .",
           "anchor": ""
         },
         {
@@ -999,8 +1216,18 @@
         },
         {
           "kind": "h3",
-          "text": "Migration Guide",
+          "text": "Tutorial: Hello World",
           "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Five-minute walkthrough: page, island, dev server, and production build.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Migration Guide",
+          "anchor": "#sec-5"
         },
         {
           "kind": "p",
@@ -1010,12 +1237,12 @@
         {
           "kind": "h2",
           "text": "Packages",
-          "anchor": "#sec-5"
+          "anchor": "#sec-6"
         },
         {
           "kind": "h3",
           "text": "@thexjs/core",
-          "anchor": "#sec-6"
+          "anchor": "#sec-7"
         },
         {
           "kind": "p",
@@ -1025,7 +1252,7 @@
         {
           "kind": "h3",
           "text": "@thexjs/auth",
-          "anchor": "#sec-7"
+          "anchor": "#sec-8"
         },
         {
           "kind": "p",
@@ -1035,7 +1262,7 @@
         {
           "kind": "h3",
           "text": "@thexjs/cli",
-          "anchor": "#sec-8"
+          "anchor": "#sec-9"
         },
         {
           "kind": "p",
@@ -1045,7 +1272,7 @@
         {
           "kind": "h3",
           "text": "@thexjs/env",
-          "anchor": "#sec-9"
+          "anchor": "#sec-10"
         },
         {
           "kind": "p",
@@ -1055,7 +1282,7 @@
         {
           "kind": "h3",
           "text": "@thexjs/adapter-vercel",
-          "anchor": "#sec-10"
+          "anchor": "#sec-11"
         },
         {
           "kind": "p",
@@ -1065,7 +1292,7 @@
         {
           "kind": "h3",
           "text": "@thexjs/hooks",
-          "anchor": "#sec-11"
+          "anchor": "#sec-12"
         },
         {
           "kind": "p",
@@ -1075,7 +1302,7 @@
         {
           "kind": "h3",
           "text": "@thexjs/mcp",
-          "anchor": "#sec-12"
+          "anchor": "#sec-13"
         },
         {
           "kind": "p",
@@ -1085,12 +1312,12 @@
         {
           "kind": "h2",
           "text": "Guides",
-          "anchor": "#sec-13"
+          "anchor": "#sec-14"
         },
         {
           "kind": "h3",
           "text": "Routing",
-          "anchor": "#sec-14"
+          "anchor": "#sec-15"
         },
         {
           "kind": "p",
@@ -1100,7 +1327,7 @@
         {
           "kind": "h3",
           "text": "Pages & Loaders",
-          "anchor": "#sec-15"
+          "anchor": "#sec-16"
         },
         {
           "kind": "p",
@@ -1110,7 +1337,7 @@
         {
           "kind": "h3",
           "text": "Layouts",
-          "anchor": "#sec-16"
+          "anchor": "#sec-17"
         },
         {
           "kind": "p",
@@ -1120,7 +1347,7 @@
         {
           "kind": "h3",
           "text": "API Routes",
-          "anchor": "#sec-17"
+          "anchor": "#sec-18"
         },
         {
           "kind": "p",
@@ -1130,7 +1357,7 @@
         {
           "kind": "h3",
           "text": "Server Functions",
-          "anchor": "#sec-18"
+          "anchor": "#sec-19"
         },
         {
           "kind": "p",
@@ -1140,7 +1367,7 @@
         {
           "kind": "h3",
           "text": "Islands",
-          "anchor": "#sec-19"
+          "anchor": "#sec-20"
         },
         {
           "kind": "p",
@@ -1150,7 +1377,7 @@
         {
           "kind": "h3",
           "text": "Incremental Static Regeneration",
-          "anchor": "#sec-20"
+          "anchor": "#sec-21"
         },
         {
           "kind": "p",
@@ -1160,7 +1387,7 @@
         {
           "kind": "h3",
           "text": "Client Navigation & Images",
-          "anchor": "#sec-21"
+          "anchor": "#sec-22"
         },
         {
           "kind": "p",
@@ -1170,7 +1397,7 @@
         {
           "kind": "h3",
           "text": "Content Collections",
-          "anchor": "#sec-22"
+          "anchor": "#sec-23"
         },
         {
           "kind": "p",
@@ -1180,7 +1407,7 @@
         {
           "kind": "h3",
           "text": "Middleware",
-          "anchor": "#sec-23"
+          "anchor": "#sec-24"
         },
         {
           "kind": "p",
@@ -1190,7 +1417,7 @@
         {
           "kind": "h3",
           "text": "Data Layer",
-          "anchor": "#sec-24"
+          "anchor": "#sec-25"
         },
         {
           "kind": "p",
@@ -1200,7 +1427,7 @@
         {
           "kind": "h3",
           "text": "Build & Deploy",
-          "anchor": "#sec-25"
+          "anchor": "#sec-26"
         },
         {
           "kind": "p",
@@ -1210,7 +1437,7 @@
         {
           "kind": "h3",
           "text": "Configuration",
-          "anchor": "#sec-26"
+          "anchor": "#sec-27"
         },
         {
           "kind": "p",
@@ -1220,7 +1447,7 @@
         {
           "kind": "h3",
           "text": "Security",
-          "anchor": "#sec-27"
+          "anchor": "#sec-28"
         },
         {
           "kind": "p",
@@ -1230,11 +1457,56 @@
         {
           "kind": "h3",
           "text": "Observability",
-          "anchor": "#sec-28"
+          "anchor": "#sec-29"
         },
         {
           "kind": "p",
           "text": "Structured logging, health probes, and APM error tracing.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Audit Trail",
+          "anchor": "#sec-30"
+        },
+        {
+          "kind": "p",
+          "text": "Structured security event logging with automatic secret redaction.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Request Tracing",
+          "anchor": "#sec-31"
+        },
+        {
+          "kind": "p",
+          "text": "OTel-compatible request-scoped tracing with correlation IDs.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Secret Redaction",
+          "anchor": "#sec-32"
+        },
+        {
+          "kind": "p",
+          "text": "Automatic masking of bearer tokens, passwords, and API keys in logs.",
+          "anchor": ""
+        },
+        {
+          "kind": "h3",
+          "text": "Backpressure",
+          "anchor": "#sec-33"
+        },
+        {
+          "kind": "p",
+          "text": "Per-process admission control to limit concurrent requests.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "These docs are authored as .tsx components because many pages embed interactive code blocks with syntax highlighting, structured card layouts, and styled callouts that plain Markdown can&#x27;t express. The rendered output is fully static — every page exports mode = \"static\" and prerenders to HTML at build time.",
           "anchor": ""
         }
       ]
@@ -1517,7 +1789,12 @@
         },
         {
           "kind": "p",
-          "text": "A page full of interactive widgets doesn&#x27;t need to ship one giant bundle. Each island is a small, self-contained hydration entry: it imports only what it needs, hydrates in place, and nothing on the page outside an island is ever re-rendered on the client. That keeps first paint fast and the JS budget predictable.",
+          "text": "A page full of interactive widgets doesn&#x27;t need to ship one giant bundle. Each island is a small, self-contained hydration entry: it imports only what it needs, hydrates in place, and nothing on the page outside an island is ever re-rendered on the client. That keeps first paint fast and the JS budget predictable. The build step logs every island bundle it generates:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "$x build[x] building island bundles...[x] ✓ / LikeButton, SearchWidget[x] ✓ /blog/[slug] LikeButton[x] build complete in 1.1s -> .x",
           "anchor": ""
         },
         {
@@ -1825,8 +2102,28 @@
         },
         {
           "kind": "h2",
-          "text": "composeMiddleware",
+          "text": "Route-level export const middleware",
           "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Instead of a separate _middleware.ts file, you can export middleware directly from a page file. This is useful when the middleware is short and tightly coupled to one route.",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import type { RouteProps, MiddlewareContext, MiddlewareNext } from \"@thexjs/core\";export async function middleware(ctx: MiddlewareContext, next: MiddlewareNext) { const session = ctx.request.headers.get(\"cookie\"); if (!session) return new Response(null, { status: 302, headers: { Location: \"/login\" } }); return next();}export default function Dashboard({}: RouteProps) { return >Welcome back>;}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "When both a _middleware.ts file and an inline export const middleware exist in the same directory, the file-level middleware runs first, then the route-level one. The same MiddlewareContext and MiddlewareNext types apply to both variants.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "composeMiddleware",
+          "anchor": "#sec-5"
         },
         {
           "kind": "p",
@@ -1841,7 +2138,7 @@
         {
           "kind": "h2",
           "text": "Redirect patterns",
-          "anchor": "#sec-5"
+          "anchor": "#sec-6"
         },
         {
           "kind": "p",
@@ -1856,7 +2153,7 @@
         {
           "kind": "h2",
           "text": "Composing middleware",
-          "anchor": "#sec-6"
+          "anchor": "#sec-7"
         },
         {
           "kind": "p",
@@ -2278,7 +2575,7 @@
         },
         {
           "kind": "pre",
-          "text": ".vercel/output/config.json routes: filesystem first, then fallback -> renderstatic/ HTML, CSS, island JS chunks (served via Vercel&#x27;s CDN)functions/render.func/ .vc-config.json runtime: nodejs20.x, handler: index.mjs index.mjs standalone SSR + API bundle",
+          "text": ".vercel/output/config.json routes: filesystem first, then fallback -> renderstatic/ HTML, CSS, island JS chunks (served via Vercel&#x27;s CDN)functions/render.func/ .vc-config.json runtime: nodejs22.x, handler: index.mjs index.mjs standalone SSR + API bundle",
           "anchor": ""
         },
         {
@@ -3095,7 +3392,12 @@
         },
         {
           "kind": "p",
-          "text": "Static pages are rendered at build time and exported as HTML. Use this for marketing pages, blog posts, or any content that doesn&#x27;t need per-request rendering.",
+          "text": "Static pages are rendered at build time and exported as HTML. Use this for marketing pages, blog posts, or any content that doesn&#x27;t need per-request rendering. The build output shows which pages were prerendered:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "$x build[x] resolving routes...[x] building static pages...[x] ✓ / (index.tsx)[x] ✓ /about (about.tsx)[x] ✓ /blog/hello-world (blog/[slug].tsx slug: hello-world)[x] build complete in 0.8s -> .x",
           "anchor": ""
         },
         {
@@ -3161,6 +3463,137 @@
       ]
     },
     {
+      "route": "/docs/request-tracing",
+      "title": "Request tracing",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Observability",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Request tracing",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Instrument your application with request-scoped spans. Every trace carries a correlation id, and spans created inside a traced request inherit it automatically, so you can drill from a log line into a waterfall trace in your APM.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "How tracing works",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "The tracing layer is a lightweight wrapper around OpenTelemetry-compatible tracers. X never initializes an OTel SDK — your application provides a tracer whose interface matches the small TracerLike surface (the real OTel startSpan method works). When no tracer is configured, every tracing call is a synchronous no-op with zero overhead.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Setting up a tracer",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Call setTracer once at application startup with your OTel tracer. Then wrap your request handler with withRequestTracing to create an x.http root span for every request:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { setTracer, withRequestTracing } from \"@thexjs/core\";import { trace } from \"@opentelemetry/api\";// Your OTel SDK setup — initialise the provider firstconst otelTracer = trace.getTracer(\"my-app\");setTracer(otelTracer);// Wrap the framework&#x27;s own request handlerconst app = createApp({ ... });Bun.serve({ fetch: withRequestTracing((req) => app.fetch(req)), port: 3000,});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Every incoming request now gets an x.http root span with attributes route , method , x.requestId , and (once the response is written) http.response.status_code .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Instrumenting loaders and actions",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Use tracePhase to create child spans inside your loaders and server functions. The span inherits the current request&#x27;s correlation id automatically:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { tracePhase } from \"@thexjs/core\";export async function loader({}: LoaderArgs) { const users = await tracePhase(\"fetch.users\", { \"db.table\": \"users\" }, async () => { return db.query(\"SELECT * FROM users ORDER BY created_at DESC\").all(); }); return { users };}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "If the request is not being traced (e.g. a build-time render or a background job), tracePhase runs the function with zero overhead — no span is created. For synchronous work, use tracePhaseSync with the same signature.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Database trace attributes",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "The dbTraceAttributes helper builds a standard set of DB-span attributes — system, operation, and a redacted statement — for use with any database driver:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { tracePhase, dbTraceAttributes } from \"@thexjs/core\";function queryUsers() { return tracePhase(\"db.query\", dbTraceAttributes(\"sqlite\", \"SELECT * FROM users WHERE id = ?\"), async () => { return db.query(\"SELECT * FROM users WHERE id = ?\").all(); });}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The statement has its quoted literals masked (so bound parameters never appear in traces) and is truncated to 512 characters. The redaction layer also strips bearer/authorization-shaped patterns before the attribute is set.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Error status codes",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "When an instrumented phase throws, the span is marked with error status and the exception is recorded. The OTEL_ERROR_STATUS_CODE constant matches OpenTelemetry&#x27;s SpanStatusCode.ERROR (2) for when you need to set error status yourself:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { OTEL_ERROR_STATUS_CODE, getTracer } from \"@thexjs/core\";const span = getTracer().startSpan(\"custom.work\");try { const result = doWork(); span.end(); return result;} catch (error) { span.recordException(error); span.setStatus({ code: OTEL_ERROR_STATUS_CODE, message: String(error) }); span.end(); throw error;}",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Low-level APIs",
+          "anchor": "#sec-5"
+        },
+        {
+          "kind": "p",
+          "text": "For advanced use cases — writing a custom server, running background jobs, or instrumenting non-request code — the underlying primitives are exported directly:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "runWithRequestSpan(requestId, attributes, work) runs work inside a root span and an AsyncLocalStorage context, returning the work&#x27;s value.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "traceRequestId(req) returns the request id a given Request is traced under, minting one if none exists.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "setTracer(tracer) and getTracer() manage the active tracer globally.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
       "route": "/docs/routing",
       "title": "File-based routing",
       "blocks": [
@@ -3186,7 +3619,12 @@
         },
         {
           "kind": "p",
-          "text": "Every .tsx file in your pages directory becomes a route. The file path determines the URL pattern.",
+          "text": "Every .tsx file in your pages directory becomes a route. The file path determines the URL pattern. Fire up x dev and the dev server logs every route it discovered:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "$x dev[x] resolving routes...[x] ── / (index.tsx)[x] ── /about (about.tsx)[x] ── /blog/[slug] (blog/[slug].tsx)[x] ── /contact (contact.tsx)[x] dev server running at http://localhost:3000",
           "anchor": ""
         },
         {
@@ -3277,6 +3715,127 @@
         {
           "kind": "pre",
           "text": "export default function NotFound() { return ( className=\"text-center py-20\"> className=\"text-6xl font-bold text-muted-foreground\">404> className=\"mt-3 max-w-[56ch] text-[15px] leading-relaxed text-fg-muted\">Page not found> href=\"/docs\" className=\"mt-6 inline-block text-primary hover:underline\"> Go home > > );}",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/secret-redaction",
+      "title": "Secret redaction",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Observability",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Secret redaction",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Server logs can silently echo secrets — a DB driver error that interpolates a connection string, an app error whose message contains a token, or a caller passing { password } into the logger. The redaction layer masks values shaped like secrets before anything reaches the log sink or audit trail.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "What gets redacted",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "The redaction operates at two levels: string scanning and object walking. Together they cover the common ways secrets appear in log data:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Bearer and Basic tokens — any instance of Bearer or Basic in a string is replaced with Bearer [REDACTED] .",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Authorization headers — inline Authorization: or auth= patterns.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "URI userinfo — credentials in URLs like https://user:pass@host become https://user:[REDACTED]@host .",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "Sensitive key names — any object key matching password , token , secret , api_key , private_key , authorization , session , credential , or bearer has its entire value replaced with [REDACTED] .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "redactString — scanning plain text",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Use redactString on error messages, log messages, or any string that might contain an embedded secret:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { redactString, REDACTED } from \"@thexjs/core\";const safe = redactString( \"Authorization: Bearer sk-abc123def456, connection via https://admin:hunter2@db.example.com\");// \"Authorization: Bearer [REDACTED], connection via https://admin:[REDACTED]@db.example.com\"const noop = redactString( \"User 42 updated their profile picture\");// unchanged — no secret patterns detected",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "redactValue — sanitizing objects",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "When logging structured data, wrap the object with redactValue . It walks the object tree recursively, redacting both string values (via redactString ) and values under sensitive keys:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { redactValue } from \"@thexjs/core\";const payload = { userId: \"user_abc\", password: \"s3cret!\", metadata: { token: \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0\", error: \"Connection refused — Bearer sk-abc123\", },};const safe = redactValue(payload);// {// userId: \"user_abc\",// password: \"[REDACTED]\",// metadata: {// token: \"[REDACTED]\",// error: \"Connection refused — Bearer [REDACTED]\",// },// }",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Checking key names",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "The isSensitiveKey function lets you check whether a given key name would be treated as sensitive. This is useful when building custom log sanitizers:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { isSensitiveKey } from \"@thexjs/core\";isSensitiveKey(\"password\"); // trueisSensitiveKey(\"api_key\"); // trueisSensitiveKey(\"access-token\"); // trueisSensitiveKey(\"Authorization\"); // trueisSensitiveKey(\"name\"); // falseisSensitiveKey(\"email\"); // false",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Where redaction is applied automatically",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "You don&#x27;t need to call these functions for most cases — the framework applies them internally:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "The audit trail passes every entry&#x27;s reason through redactString and all metadata values through redactValue .",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "The tracing layer passes database statements through redactString and masks quoted literals before recording them as span attributes.",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": "The logger&#x27;s internal formatter applies redactValue to every structured field before serializing the JSON log line.",
           "anchor": ""
         }
       ]
@@ -3472,8 +4031,33 @@
         },
         {
           "kind": "h2",
-          "text": "Disabling security",
+          "text": "Trusted proxy headers",
           "anchor": "#sec-7"
+        },
+        {
+          "kind": "p",
+          "text": "By default, the framework ignores X-Forwarded-For and X-Real-IP headers. A client can set these to arbitrary values, which — if trusted — would let them defeat IP-based rate limiting and poison audit trails with attacker-chosen IPs.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Only enable trusted proxy headers when your app sits behind a reverse proxy that scrubs or overwrites forwarded headers (e.g. Vercel Edge, Cloudflare, AWS ALB). Call configureTrustedProxy at application startup:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { defineConfig, configureTrustedProxy } from \"@thexjs/core\";configureTrustedProxy({ trustForwardedHeaders: true });export default defineConfig({ // ... standard options});",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The Vercel adapter calls this automatically when it detects it is running on Vercel&#x27;s edge network. For direct deployments behind nginx, Cloudflare, or similar, add the call yourself. Check the current state with isTrustedProxy() .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "Disabling security",
+          "anchor": "#sec-8"
         },
         {
           "kind": "p",
@@ -3509,6 +4093,16 @@
         {
           "kind": "p",
           "text": "Call server-side functions from the browser without writing REST endpoints. Server functions live in src/actions/ . Import one into an island and call it like a normal function, or call it manually with fetch . Both compile down to the same request.",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "When the dev server starts, registered server functions show up in the route log:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "$x dev[x] resolving routes...[x] ── actions: greet.greet, subscribe.subscribeUser[x] dev server running at http://localhost:3000",
           "anchor": ""
         },
         {
@@ -3594,6 +4188,142 @@
         {
           "kind": "p",
           "text": "Server functions are ideal for form handling, sending emails, database mutations, and any server-side logic that doesn&#x27;t need a dedicated REST API. They reduce boilerplate and keep your client code simple.",
+          "anchor": ""
+        }
+      ]
+    },
+    {
+      "route": "/docs/tutorial",
+      "title": "Hello World",
+      "blocks": [
+        {
+          "kind": "p",
+          "text": "Tutorial",
+          "anchor": ""
+        },
+        {
+          "kind": "h1",
+          "text": "Hello World",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Build a page, add an interactive counter island, run the dev server, and ship a production build. This tutorial takes about five minutes and requires only Bun.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "1. Scaffold the project",
+          "anchor": "#sec-0"
+        },
+        {
+          "kind": "p",
+          "text": "Create a new X project with the scaffolder. Accept the defaults at the feature prompt (press enter with nothing selected) for a blank project:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "$bun create thexjs-app@latest hello-world? Select features (space to toggle, enter to confirm) › done✓ created hello-world/✓ installed dependencies$ cd hello-world$ x dev[x] dev server running at http://localhost:3000",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Open http://localhost:3000 in your browser. You should see a blank page with \"Hello x!\" — that is the default home page from src/pages/index.tsx .",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "2. Edit the home page",
+          "anchor": "#sec-1"
+        },
+        {
+          "kind": "p",
+          "text": "Open src/pages/index.tsx and replace its content with a page that has a title and a placeholder for an interactive counter:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { Island } from \"@thexjs/core\";import { Counter } from \"../components/counter\";export const islands = { Counter };export default function Home() { return ( className=\"mx-auto max-w-2xl py-20 text-center\"> className=\"text-4xl font-bold\">Hello from x!> className=\"mt-3 text-muted-foreground\"> This page is fully server-rendered. The counter below is an island: it hydrates in the browser while everything else ships zero JS. > name=\"Counter\" client=\"load\"> /> > > > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The page imports Island from @thexjs/core , registers Counter via export const islands , and renders it inside an wrapper with client=\"load\" (hydrate immediately on page load). The dev server hot-reloads the page as soon as you save the file.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "3. Create the island component",
+          "anchor": "#sec-2"
+        },
+        {
+          "kind": "p",
+          "text": "Create src/components/counter.tsx with a simple interactive counter that uses useState :",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "import { useState } from \"react\";export function Counter() { const [count, setCount] = useState(0); return ( className=\"mt-8\"> className=\"text-lg\">Count: {count}> className=\"mt-4 flex justify-center gap-3\"> onClick={() => setCount((c) => c - 1)} className=\"rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted\" > -1 > onClick={() => setCount((c) => c + 1)} className=\"rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted\" > +1 > > > );}",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Because is registered as an island on the page, only this component&#x27;s JavaScript ships to the browser. The heading, paragraph, and wrapper div are just static HTML.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "4. See it hydrate",
+          "anchor": "#sec-3"
+        },
+        {
+          "kind": "p",
+          "text": "Save both files. The dev server picks up the changes and reloads the page automatically. Open your browser&#x27;s developer tools and check the Network tab — you should see a small JavaScript chunk load for the island:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "$x dev[x] resolving routes...[x] ── / (index.tsx)[x] compiling island bundles...[x] ── Counter (client=load)[x] dev server running at http://localhost:3000",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Click the +1 and -1 buttons — they work without a full page reload because the island hydrated its React state in-place. The rest of the page (the heading, the paragraph) was never re-rendered or hydrated.",
+          "anchor": ""
+        },
+        {
+          "kind": "h2",
+          "text": "5. Production build",
+          "anchor": "#sec-4"
+        },
+        {
+          "kind": "p",
+          "text": "Stop the dev server (Ctrl+C) and run a production build:",
+          "anchor": ""
+        },
+        {
+          "kind": "pre",
+          "text": "$x build[x] resolving routes...[x] building static pages...[x] ✓ / (index.tsx)[x] building island bundles...[x] ✓ / Counter[x] building server bundle...[x] build complete in 0.9s -> .x",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "The .x/ directory now contains:",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": ".x/client/index.html — the prerendered HTML with the counter&#x27;s server-rendered markup embedded",
+          "anchor": ""
+        },
+        {
+          "kind": "li",
+          "text": ".x/client/_islands/ — the Counter hydration chunk (a few hundred bytes)",
+          "anchor": ""
+        },
+        {
+          "kind": "p",
+          "text": "Because the page has no mode export, it defaults to server mode. If you export mode = \"static\" , the page prerenders at build time and can deploy to any static host — the island still hydrates the same way.",
           "anchor": ""
         }
       ]

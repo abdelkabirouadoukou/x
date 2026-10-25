@@ -18,7 +18,7 @@ const BENCHES: Bench[] = [
     metric: "Startup",
     unit: "ms",
     bar: "32ms",
-    compare: "vs Node.js SSR 640ms",
+    compare: "vs Next.js 640ms",
     rows: [
       { name: "X on Bun", value: "32ms", pct: 100, highlight: true },
       { name: "Next.js", value: "640ms", pct: 24 },
@@ -32,7 +32,7 @@ const BENCHES: Bench[] = [
     metric: "RPS",
     unit: "req/s",
     bar: "94,200/s",
-    compare: "vs Node.js SSR 26,400/s",
+    compare: "vs Next.js 26,400/s",
     rows: [
       { name: "X on Bun", value: "94,200/s", pct: 100, highlight: true },
       { name: "Next.js", value: "26,400/s", pct: 40 },

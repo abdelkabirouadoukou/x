@@ -374,7 +374,7 @@ export default function About() {
     const funcDir = join(OUTPUT_DIR, "functions/render.func");
     expect(existsSync(join(funcDir, "index.mjs"))).toBe(true);
     const vc = JSON.parse(readFileSync(join(funcDir, ".vc-config.json"), "utf-8"));
-    expect(vc.runtime).toBe("nodejs20.x");
+    expect(vc.runtime).toBe("nodejs22.x");
     expect(vc.handler).toBe("index.mjs");
   });
 

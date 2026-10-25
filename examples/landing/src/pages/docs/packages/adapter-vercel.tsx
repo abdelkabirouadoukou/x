@@ -44,7 +44,7 @@ vercel deploy --prebuilt`}
   config.json                    routes: filesystem first, then fallback -> render
   static/                        HTML, CSS, island JS chunks (served via Vercel's CDN)
   functions/render.func/
-    .vc-config.json              runtime: nodejs20.x, handler: index.mjs
+    .vc-config.json              runtime: nodejs22.x, handler: index.mjs
     index.mjs                    standalone SSR + API bundle`}
       />
       <p className="mt-4 text-muted-foreground">

@@ -11,7 +11,7 @@ export type {
 export interface VercelAdapterOptions extends AdapterOptions {
   /** Where to emit the Build Output API v3 tree. Defaults to `<projectRoot>/.vercel/output`. */
   outputDir?: string;
-  /** Vercel Node.js runtime to target. Defaults to "nodejs20.x". */
+  /** Vercel Node.js runtime to target. Defaults to "nodejs22.x". Vercel has discontinued nodejs20.x, so deployments that use it fail. */
   runtime?: "nodejs18.x" | "nodejs20.x" | "nodejs22.x";
   /** Extra directories to copy verbatim into static/ (in addition to public/). */
   additionalStaticDirs?: string[];

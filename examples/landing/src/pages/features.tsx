@@ -140,34 +140,43 @@ export const mode = "static";
 
 export default function FeaturesPage() {
   return (
-    <div className="mx-auto w-full max-w-container px-gutter py-20">
-      <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-        <p className="label">Features</p>
-        <h1 className="display mt-4 text-[clamp(2.5rem,6vw,4rem)] leading-[0.92]">
-          Everything you need to build for the web
+    <div className="mx-auto w-full max-w-[90rem] px-gutter py-16 sm:py-24">
+      <div className="flex flex-col">
+        <p className="lp-eyebrow">
+          <span>
+            <b>00</b> Features
+          </span>
+          <span className="lp-eyebrow-note">{allFeatures.length} capabilities</span>
+        </p>
+        <h1 className="lp-h2 !max-w-[18ch]">
+          Everything you need to build for the <em>web</em>.
         </h1>
-        <p className="mt-5 max-w-[52ch] text-[15.5px] leading-relaxed text-fg-muted">
+        <p className="lp-lead">
           X combines static generation, server rendering, APIs, and server functions in a single Bun
           process, with zero configuration.
         </p>
       </div>
 
-      <div className="mt-16 border-t border-line">
+      <div className="mt-16 border-t border-line-strong">
         <div className="grid gap-px border-l border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
           {allFeatures.map((f, i) => (
             <a
               key={f.title}
               href={f.href}
               aria-label={`${f.title}: learn more`}
-              className="group relative bg-canvas p-7 transition-colors hover:bg-subtle"
+              className="group relative bg-canvas p-8 transition-colors hover:bg-subtle"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="label">{String(i + 1).padStart(2, "0")}</span>
-                <div className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-code-bg text-accent transition-colors group-hover:border-accent/40">
+                <span className="font-display text-[2.4rem] font-black leading-none tracking-[-0.05em] text-fg/15 transition-colors group-hover:text-accent">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="flex h-9 w-9 items-center justify-center border border-line-strong bg-canvas text-accent transition-colors group-hover:border-accent/40">
                   <f.icon className="h-4 w-4" />
                 </div>
               </div>
-              <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-fg">{f.title}</h3>
+              <h3 className="mt-6 font-display text-[1.25rem] font-extrabold leading-tight tracking-[-0.025em] text-fg">
+                {f.title}
+              </h3>
               <p className="mt-2 text-[13.5px] leading-relaxed text-fg-muted">{f.desc}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-fg">
                 Details

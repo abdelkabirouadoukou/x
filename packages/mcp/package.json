@@ -1,6 +1,6 @@
 {
   "name": "@thexjs/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server that gives AI coding agents (Claude Code, Cursor, Claude Desktop, Windsurf...) grounded, accurate knowledge of the x framework's conventions, so they stop guessing Next.js/TanStack Start syntax.",
   "keywords": [
     "mcp",
@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "zod": "^3.23.8"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "tsup": "^8.3.0"
