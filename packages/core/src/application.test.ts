@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { BackpressureOptions } from "./backpressure";
 import { createApp } from "./application";
+import type { BackpressureOptions } from "./backpressure";
 
 const WORK_URL = "http://localhost/api/work";
 
@@ -46,13 +46,16 @@ describe("createApp backpressure wiring", () => {
     let active = 0;
     let maxActive = 0;
 
-    const app = await appWithHandler(async () => {
-      active += 1;
-      maxActive = Math.max(maxActive, active);
-      await blocked;
-      active -= 1;
-      return new Response("ok");
-    }, { maxConcurrent: 1, maxQueue: 1, retryAfterSeconds: 4 });
+    const app = await appWithHandler(
+      async () => {
+        active += 1;
+        maxActive = Math.max(maxActive, active);
+        await blocked;
+        active -= 1;
+        return new Response("ok");
+      },
+      { maxConcurrent: 1, maxQueue: 1, retryAfterSeconds: 4 },
+    );
 
     const first = app.fetch(new Request(WORK_URL));
     await tick();
@@ -76,10 +79,13 @@ describe("createApp backpressure wiring", () => {
       unblock = resolve;
     });
 
-    const app = await appWithHandler(async () => {
-      await blocked;
-      return new Response("ok");
-    }, { maxConcurrent: 1, maxQueue: 0 });
+    const app = await appWithHandler(
+      async () => {
+        await blocked;
+        return new Response("ok");
+      },
+      { maxConcurrent: 1, maxQueue: 0 },
+    );
 
     const running = app.fetch(new Request(WORK_URL));
     await tick();
@@ -100,11 +106,14 @@ describe("createApp backpressure wiring", () => {
     });
     let calls = 0;
 
-    const app = await appWithHandler(async () => {
-      calls += 1;
-      await blocked;
-      return new Response("ok");
-    }, { maxConcurrent: 1, maxQueue: 1 });
+    const app = await appWithHandler(
+      async () => {
+        calls += 1;
+        await blocked;
+        return new Response("ok");
+      },
+      { maxConcurrent: 1, maxQueue: 1 },
+    );
 
     const running = app.fetch(new Request(WORK_URL));
     await tick();

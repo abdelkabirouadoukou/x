@@ -160,10 +160,10 @@ images.remoteHosts string[]  undefined        /_x/image proxy allow-list`}
 
       <h2 className="text-xl">backpressure</h2>
       <p className="mt-3 text-[14.5px] leading-relaxed text-fg-muted">
-        Optional per-process admission control. <span className="text-foreground">maxConcurrent</span>{" "}
-        bounds active admitted requests and <span className="text-foreground">maxQueue</span> bounds
-        additional waiters; saturation returns 503 plus Retry-After. The setting is disabled when
-        omitted or set to false. See{" "}
+        Optional per-process admission control.{" "}
+        <span className="text-foreground">maxConcurrent</span> bounds active admitted requests and{" "}
+        <span className="text-foreground">maxQueue</span> bounds additional waiters; saturation
+        returns 503 plus Retry-After. The setting is disabled when omitted or set to false. See{" "}
         <a href="/docs/backpressure" className="text-primary underline underline-offset-2">
           Backpressure
         </a>{" "}
