@@ -51,7 +51,7 @@ okay later, not because I'm precious about git history.
 ## Picking a first issue
 
 If you're new to the repo, start from the
-[`good first issue` / `help wanted` labels](https://github.com/abdelkabirouadoukou/x/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+[`good first issue` / `help wanted` labels](https://github.com/thexjs/x/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 Each issue lists acceptance criteria and a regression test to add.
 
 - **Comment on the issue first** to claim it and avoid overlap.

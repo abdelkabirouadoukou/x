@@ -100,4 +100,4 @@ bun run start   # x start, serves .x/
 
 ## Full docs
 
-https://thexjs.vercel.app/docs · https://thexjs.vercel.app/llms.txt
+https://thexjs.abdelkabir.me/docs · https://thexjs.abdelkabir.me/llms.txt

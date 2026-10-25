@@ -17,7 +17,7 @@ college. What that means:
   limited weekly window (~30–60 min). Small, test-backed PRs are the fastest
   path through review.
 - **Good first issues**: see the
-  [7 beginner-friendly issues](https://github.com/abdelkabirouadoukou/x/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  [7 beginner-friendly issues](https://github.com/thexjs/x/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   if you want somewhere concrete to start.
 
 ## API stability matrix

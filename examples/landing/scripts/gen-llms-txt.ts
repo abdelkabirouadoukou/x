@@ -46,7 +46,7 @@ function buildLlmsTxt(): string {
   lines.push("");
   for (const topic of listTopics()) {
     lines.push(
-      `- [${topic.title}](https://thexjs.vercel.app/llms-full.txt#${topic.id}): ${topic.summary}`,
+      `- [${topic.title}](https://thexjs.abdelkabir.me/llms-full.txt#${topic.id}): ${topic.summary}`,
     );
   }
   lines.push("");
@@ -55,7 +55,7 @@ function buildLlmsTxt(): string {
   lines.push(
     "- Agents with MCP tool access should prefer the `@thexjs/mcp` server " +
       "(`bunx @thexjs/mcp`) over this file — it's queryable and includes a " +
-      "`scaffold_file` tool. See https://github.com/abdelkabirouadoukou/x/tree/main/packages/mcp",
+      "`scaffold_file` tool. See https://github.com/thexjs/x/tree/main/packages/mcp",
   );
   lines.push("");
   return lines.join("\n");

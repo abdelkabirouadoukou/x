@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/abdelkabirouadoukou/x/raw/main/examples/landing/public/favicon.ico" alt="x framework logo" width="96" height="96">
+  <img src="https://github.com/thexjs/x/raw/main/examples/landing/public/icon-512.png" alt="Thexjs logo" width="96" height="96">
 </p>
 
 <h1 align="center">create-thexjs-app</h1>

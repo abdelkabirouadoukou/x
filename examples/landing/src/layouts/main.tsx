@@ -36,17 +36,17 @@ const FOOTER_COLS: { title: string; links: { href: string; label: string }[] }[]
   {
     title: "Community",
     links: [
-      { href: "https://github.com/abdelkabirouadoukou/x", label: "GitHub" },
-      { href: "https://github.com/abdelkabirouadoukou/x/issues", label: "Issues" },
-      { href: "https://github.com/abdelkabirouadoukou/x/releases", label: "Releases" },
-      { href: "https://github.com/abdelkabirouadoukou/x/blob/main/LICENSE", label: "License" },
+      { href: "https://github.com/thexjs/x", label: "GitHub" },
+      { href: "https://github.com/thexjs/x/issues", label: "Issues" },
+      { href: "https://github.com/thexjs/x/releases", label: "Releases" },
+      { href: "https://github.com/thexjs/x/blob/main/LICENSE", label: "License" },
     ],
   },
   {
     title: "Company",
     links: [
       { href: "https://github.com/abdelkabirouadoukou", label: "GitHub" },
-      { href: "https://github.com/abdelkabirouadoukou/x", label: "Source" },
+      { href: "https://github.com/thexjs/x", label: "Source" },
     ],
   },
 ];
@@ -158,7 +158,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <a
-              href="https://github.com/abdelkabirouadoukou/x"
+              href="https://github.com/thexjs/x"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub repository"
@@ -204,7 +204,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 : static, SSR, APIs and server functions.
               </p>
               <a
-                href="https://github.com/abdelkabirouadoukou/x"
+                href="https://github.com/thexjs/x"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="lp-btn lp-btn-ghost !h-10 w-fit !px-4 !text-[11.5px]"
