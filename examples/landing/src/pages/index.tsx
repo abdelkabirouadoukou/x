@@ -186,7 +186,7 @@ export default function HomePage() {
                   </a>
                 </span>
                 <a
-                  href="https://github.com/abdelkabirouadoukou/x"
+                  href="https://github.com/thexjs/x"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="lp-link"

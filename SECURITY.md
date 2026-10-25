@@ -24,7 +24,7 @@ is reasonably hardened out of the box:
 | `/healthz` + `/readyz` | on | `observability.health` |
 
 Configuration lives in `x.config.ts` under the `security` and `observability`
-keys. See [Config](https://thexjs.vercel.app/docs) for the full option list.
+keys. See [Config](https://thexjs.abdelkabir.me/docs) for the full option list.
 
 ## Security headers
 
@@ -34,7 +34,7 @@ Every response is hardened with a conservative same-origin Content-Security-Poli
 
 The strict CSP defaults to `img-src 'self' data:`. To load remote images under
 this policy, use the built-in `/_x/image` proxy (see
-[Client navigation & images](https://thexjs.vercel.app/docs/client-navigation))
+[Client navigation & images](https://thexjs.abdelkabir.me/docs/client-navigation))
 instead of loosening the CSP.
 
 ```ts

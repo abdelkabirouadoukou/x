@@ -129,7 +129,7 @@ contained:
 **Guarantee today:** request-handling failures are contained; event-loop
 monopolization and process-level crashes are not. The framework does not
 (yet) provide worker-thread or child-process isolation for routes — tracked in
-[#85](https://github.com/abdelkabirouadoukou/x/issues/85). If you need hard
+[#85](https://github.com/thexjs/x/issues/85). If you need hard
 isolation, deploy multiple replicas (a CDN/load balancer in front is the
 practical mitigant).
 
@@ -139,7 +139,7 @@ practical mitigant).
 is no `tenantId`-scoped data-layer wrapper and no cross-tenant enforcement in
 the runtime. If you host a multi-tenant SaaS, you must implement tenant
 scoping yourself in loaders/actions/API handlers. This assumption is being
-tracked in [#76](https://github.com/abdelkabirouadoukou/x/issues/76); until it
+tracked in [#76](https://github.com/thexjs/x/issues/76); until it
 is confirmed, the framework's isolation story is single-tenant by design.
 
 ### Audit logging
@@ -147,7 +147,7 @@ is confirmed, the framework's isolation story is single-tenant by design.
 **Current state:** structured JSON request logs exist (`observability.logging`)
 but are **not** append-only or tamper-evident, and there is no audit-logging
 facility for who did what. For compliance-bound deployments this is a gap —
-tracked in [#74](https://github.com/abdelkabirouadoukou/x/issues/74). Until it
+tracked in [#74](https://github.com/thexjs/x/issues/74). Until it
 lands, treat request logs as best-effort operational telemetry, not an
 accountability record. See `DATA_POLICIES.md` for the retention corollary.
 

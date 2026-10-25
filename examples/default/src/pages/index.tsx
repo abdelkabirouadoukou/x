@@ -47,13 +47,13 @@ export default function HomePage(_props: RouteProps) {
 
       <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
         <a
-          href="https://thexjs.vercel.app/docs"
+          href="https://thexjs.abdelkabir.me/docs"
           className="inline-flex h-11 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
         >
           Read the docs
         </a>
         <a
-          href="https://github.com/abdelkabirouadoukou/x"
+          href="https://github.com/thexjs/x"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-11 items-center rounded-xl border border-border px-5 text-sm font-medium text-foreground transition-colors hover:bg-muted"

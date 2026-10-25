@@ -352,8 +352,8 @@ releases. Pin exact versions if stability matters to you.
 
 ## Links
 
-- Docs: https://thexjs.vercel.app/docs
-- Repo: https://github.com/abdelkabirouadoukou/x
+- Docs: https://thexjs.abdelkabir.me/docs
+- Repo: https://github.com/thexjs/x
 - Security: [SECURITY.md](SECURITY.md)
 - Threat model: [THREAT_MODEL.md](THREAT_MODEL.md)
 - Data retention & deletion: [DATA_POLICIES.md](DATA_POLICIES.md)

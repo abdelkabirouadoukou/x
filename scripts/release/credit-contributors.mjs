@@ -20,7 +20,7 @@
 import { execSync } from "node:child_process";
 
 const token = process.env.GITHUB_TOKEN;
-const repo = process.env.GITHUB_REPOSITORY ?? "abdelkabirouadoukou/x";
+const repo = process.env.GITHUB_REPOSITORY ?? "thexjs/x";
 const dryRun = process.argv.includes("--dry-run");
 if (!token && !dryRun) {
   console.error("GITHUB_TOKEN is required");

@@ -55,7 +55,7 @@ v3 tree (`.vercel/output/`), no `vercel.json` needed. `examples/basic` and
 ### Option 1 (recommended): rootDirectory per app
 
 In the Vercel project, set **Root Directory** to the app you're deploying, e.g.
-`examples/basic` (the same setup `examples/landing` uses for thexjs.vercel.app).
+`examples/basic` (the same setup `examples/landing` uses for thexjs.abdelkabir.me).
 Vercel then runs `bun install` + `bun run vercel-build` inside that directory.
 
 ### Option 2: deploy from the repo root

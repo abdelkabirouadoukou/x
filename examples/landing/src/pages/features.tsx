@@ -132,7 +132,7 @@ const allFeatures: {
     icon: GitBranch,
     title: "Open source",
     desc: "MIT licensed and developed in the open on GitHub. Standard React and TypeScript throughout; nothing proprietary to migrate away from later.",
-    href: "https://github.com/abdelkabirouadoukou/x",
+    href: "https://github.com/thexjs/x",
   },
 ];
 
