@@ -10,7 +10,7 @@
     "vercel-build": "bun ../../packages/cli/src/index.ts build --adapter vercel"
   },
   "dependencies": {
-    "@base-ui/react": "^1.6.0",
+    "@base-ui/react": "^1.9.0",
     "@tailwindcss/cli": "^4.3.3",
     "@thexjs/core": "workspace:*",
     "class-variance-authority": "^0.7.1",
