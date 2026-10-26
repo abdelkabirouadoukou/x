@@ -54,28 +54,36 @@ function walk(dir: string): string[] {
 }
 
 function decode(s: string): string {
+  // Decode `&amp;` last so an encoded entity such as `&amp;lt;` becomes the
+  // literal text `&lt;` instead of being decoded twice into `<`.
   return s
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, " ");
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&");
+}
+
+function stripTagsOnce(s: string, replacement: string): string {
+  let out = s;
+  let previous: string;
+  // Repeat until stable so nested or recombined markup cannot leave a tag
+  // fragment behind (e.g. `<scr<script>ipt>`).
+  do {
+    previous = out;
+    out = out.replace(/<[^>]*>/g, replacement);
+  } while (out !== previous);
+  return out.replace(/\s+/g, " ").trim();
 }
 
 function stripTags(s: string): string {
-  return decode(s)
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return stripTagsOnce(decode(s), " ");
 }
 
 /** Tag-strip that keeps code tokens dense (no injected whitespace). */
 function stripTagsDense(s: string): string {
-  return decode(s)
-    .replace(/<[^>]*>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return stripTagsOnce(decode(s), "");
 }
 
 /** Slice of html covering the .doc-content div (or null). */
